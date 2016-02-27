@@ -18,10 +18,12 @@ import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.component.PlayerComponent;
 import com.google.common.collect.Iterables;
 
-import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -43,7 +45,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     private Executor generatingChunksExecutor = Executors.newFixedThreadPool(4);
 
     // This is being accessed both by main thread, as well as generating threads
-    private Collection<ChunkBlocks> chunkBlocks = new HashSet<>();
+    private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
 
     private List<Iterable<EntityData>> entitiesToConsume = new LinkedList<>();
     private List<ChunkLocation> chunksToNotify = new LinkedList<>();
@@ -140,15 +142,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     }
 
     private ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
-        for (ChunkBlocks blocks : chunkBlocks) {
-            if (blocks.worldId.equals(worldId)
-                    && blocks.x == x
-                    && blocks.y == y
-                    && blocks.z == z) {
-                return blocks;
-            }
-        }
-        return null;
+        Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
+        if (chunksInWorld == null)
+            return null;
+        return chunksInWorld.get(new Vector3(x, y, z));
     }
 
     private void ensureChunkLoaded(String worldId, int x, int y, int z) {
@@ -159,7 +156,12 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
 
     private void loadOrGenerateChunk(String worldId, int x, int y, int z) {
         ChunkBlocks chunkDataHolder = new ChunkBlocks(ChunkBlocks.Status.QUEUED, worldId, x, y, z);
-        chunkBlocks.add(chunkDataHolder);
+        Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
+        if (chunksInWorld == null) {
+            chunksInWorld = Collections.synchronizedMap(new HashMap<>());
+            chunkBlocks.put(worldId, chunksInWorld);
+        }
+        chunksInWorld.put(new Vector3(x, y, z), chunkDataHolder);
         generatingChunksExecutor.execute(new GenerateChunkTask(chunkDataHolder));
     }
 

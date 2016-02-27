@@ -10,14 +10,6 @@ import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
-import org.codehaus.jackson.Base64Variant;
-import org.codehaus.jackson.JsonLocation;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonStreamContext;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.ObjectCodec;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -35,7 +27,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RegisterSystem(
@@ -83,7 +74,7 @@ public class ReflectionsPrefabManager implements PrefabManager, LifeCycleSystem 
                     public boolean apply(PrefabData prefabData) {
                         Map<String, PrefabComponentData> prefabComponents = prefabData.getComponents();
                         for (Class<? extends Component> component : components) {
-                            if (!prefabComponents.containsKey(component.getSimpleName()))
+                            if (!prefabComponents.containsKey(terasologyComponentManager.getNameByComponent(component)))
                                 return false;
                         }
 

@@ -19,7 +19,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
     @In
     private TerasologyComponentManager terasologyComponentManager;
 
-    private float noiseScale = 0.01f;
+    private float noiseScale = 0.005f;
     private Noise noise = new SimplexNoise(0);
 
     @Override

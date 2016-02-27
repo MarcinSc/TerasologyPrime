@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
@@ -22,12 +23,18 @@ public class BlockMeshGenerator {
     private TextureAtlasProvider textureAtlasProvider;
     private ShapeProvider shapeProvider;
 
+    private String textureComponentName;
+    private String shapeComponentName;
+
     public BlockMeshGenerator(CommonBlockManager commonBlockManager, WorldStorage worldStorage, TextureAtlasProvider textureAtlasProvider,
-                              ShapeProvider shapeProvider) {
+                              TerasologyComponentManager terasologyComponentManager, ShapeProvider shapeProvider) {
         this.commonBlockManager = commonBlockManager;
         this.worldStorage = worldStorage;
         this.textureAtlasProvider = textureAtlasProvider;
         this.shapeProvider = shapeProvider;
+
+        textureComponentName = terasologyComponentManager.getNameByComponent(TextureComponent.class);
+        shapeComponentName = terasologyComponentManager.getNameByComponent(ShapeComponent.class);
     }
 
     public void generateCustomMeshForBlock(ModelBuilder modelBuilder, String worldId, int x, int y, int z) {
@@ -57,7 +64,6 @@ public class BlockMeshGenerator {
                 List<String> textureIds = shapePart.getTextures();
 
                 String textureToUse = findFirstTexture(textureIds, availableTextures);
-                textureToUse = textureToUse.substring(0, textureToUse.lastIndexOf('.'));
                 TextureRegion textureRegion = textureAtlasProvider.getTexture(textureToUse);
                 if (textureRegion.getTexture() == texture) {
                     // This array will store indexes of vertices in the resulting Mesh
@@ -101,7 +107,7 @@ public class BlockMeshGenerator {
         for (String textureId : textureIds) {
             String texture = availableTextures.get(textureId);
             if (texture != null)
-                return texture;
+                return texture.substring(0, texture.lastIndexOf('.'));
         }
 
         return null;
@@ -112,7 +118,7 @@ public class BlockMeshGenerator {
             return block.entityRef.getComponent(TextureComponent.class).isOpaque();
         else
             return (Boolean) commonBlockManager.getCommonBlockById(block.commonBlockId).getComponents().
-                    get(TextureComponent.class.getSimpleName()).getFields().get("opaque");
+                    get(textureComponentName).getFields().get("opaque");
     }
 
     private Map<String, String> getTextureParts(WorldStorage.EntityRefOrCommonBlockId block) {
@@ -120,7 +126,7 @@ public class BlockMeshGenerator {
             return block.entityRef.getComponent(TextureComponent.class).getParts();
         else
             return (Map<String, String>) commonBlockManager.getCommonBlockById(block.commonBlockId).getComponents().
-                    get(TextureComponent.class.getSimpleName()).getFields().get("parts");
+                    get(textureComponentName).getFields().get("parts");
     }
 
     private String getShapeId(WorldStorage.EntityRefOrCommonBlockId block) {
@@ -128,7 +134,7 @@ public class BlockMeshGenerator {
             return block.entityRef.getComponent(ShapeComponent.class).getId();
         else
             return (String) commonBlockManager.getCommonBlockById(block.commonBlockId).getComponents().
-                    get(ShapeComponent.class.getSimpleName()).getFields().get("id");
+                    get(shapeComponentName).getFields().get("id");
     }
 
     private boolean hasTextureAndShape(WorldStorage.EntityRefOrCommonBlockId block) {
@@ -137,8 +143,8 @@ public class BlockMeshGenerator {
                     && block.entityRef.hasComponent(ShapeComponent.class);
         else
             return commonBlockManager.getCommonBlockById(block.commonBlockId).getComponents().
-                    get(TextureComponent.class.getSimpleName()) != null
+                    get(textureComponentName) != null
                     && commonBlockManager.getCommonBlockById(block.commonBlockId).getComponents().
-                    get(ShapeComponent.class.getSimpleName()) != null;
+                    get(shapeComponentName) != null;
     }
 }

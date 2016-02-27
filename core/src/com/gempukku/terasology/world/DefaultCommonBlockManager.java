@@ -3,6 +3,7 @@ package com.gempukku.terasology.world;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
+import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
@@ -15,6 +16,8 @@ import java.util.Map;
 public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;
+    @In
+    private TerasologyComponentManager terasologyComponentManager;
 
     private Map<String, PrefabData> commonBlockPrefabsById;
 
@@ -30,7 +33,8 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
         commonBlockPrefabsById = new HashMap<>();
 
         for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class)) {
-            String blockId = (String) prefabData.getComponents().get(CommonBlockComponent.class.getSimpleName()).getFields().get("id");
+            String simpleName = terasologyComponentManager.getNameByComponent(CommonBlockComponent.class);
+            String blockId = (String) prefabData.getComponents().get(simpleName).getFields().get("id");
             commonBlockPrefabsById.put(blockId, prefabData);
         }
     }

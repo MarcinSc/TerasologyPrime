@@ -9,6 +9,7 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
+import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
 import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
@@ -21,11 +22,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
@@ -40,6 +38,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private CommonBlockManager commonBlockManager;
     @In
     private ShapeProvider shapeProvider;
+    @In
+    private TerasologyComponentManager terasologyComponentManager;
 
     private Executor meshGenerationExecutor = new Executor() {
         @Override
@@ -143,7 +143,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     private void initializeChunkRenderableBuilder() {
         BlockMeshGenerator blockMeshGenerator = new BlockMeshGenerator(commonBlockManager, worldStorage, textureAtlasProvider,
-                shapeProvider);
+                terasologyComponentManager, shapeProvider);
         chunkRenderableBuilder = new ChunkRenderableBuilder(blockMeshGenerator, textureAtlasProvider.getTextureAtlas());
     }
 

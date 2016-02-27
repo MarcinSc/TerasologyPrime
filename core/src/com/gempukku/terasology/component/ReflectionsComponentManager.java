@@ -15,22 +15,30 @@ import java.util.Map;
 @RegisterSystem(
         shared = TerasologyComponentManager.class)
 public class ReflectionsComponentManager implements TerasologyComponentManager, LifeCycleSystem {
-    private Map<String, Class<? extends Component>> prefabsByName = new HashMap<>();
+    private Map<String, Class<? extends Component>> componentsByName = new HashMap<>();
+    private Map<Class<? extends Component>, String> namesByComponent = new HashMap<>();
 
     @Override
     public void preInitialize() {
-        Configuration scanPrefabs = new ConfigurationBuilder()
+        Configuration scanComponents = new ConfigurationBuilder()
                 .setScanners(new SubTypesScanner(true))
                 .setUrls(ClasspathHelper.forJavaClassPath());
 
-        Reflections reflections = new Reflections(scanPrefabs);
+        Reflections reflections = new Reflections(scanComponents);
         for (Class<? extends Component> component : reflections.getSubTypesOf(Component.class)) {
-            prefabsByName.put(component.getSimpleName(), component);
+            String simpleName = component.getSimpleName();
+            componentsByName.put(simpleName, component);
+            namesByComponent.put(component, simpleName);
         }
     }
 
     @Override
     public Class<? extends Component> getComponentByName(String name) {
-        return prefabsByName.get(name);
+        return componentsByName.get(name);
+    }
+
+    @Override
+    public String getNameByComponent(Class<? extends Component> componentClass) {
+        return namesByComponent.get(componentClass);
     }
 }
