@@ -1,0 +1,14 @@
+{
+    "CommonBlockComponent": {
+        "id": "stone"
+    },
+    "ShapeComponent": {
+        "id": "cube"
+    },
+    "TextureComponent": {
+        "opaque": true,
+        "parts": {
+            "all": "blockTiles/Stone.png"
+        }
+    }
+}

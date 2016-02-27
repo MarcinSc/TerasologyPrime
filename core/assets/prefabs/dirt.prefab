@@ -1,0 +1,14 @@
+{
+    "CommonBlockComponent": {
+        "id": "dirt"
+    },
+    "ShapeComponent": {
+        "id": "cube"
+    },
+    "TextureComponent": {
+        "opaque": true,
+        "parts": {
+            "all": "blockTiles/soil/Dirt.png"
+        }
+    }
+}

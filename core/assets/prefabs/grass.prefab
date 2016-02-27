@@ -1,0 +1,16 @@
+{
+    "CommonBlockComponent": {
+        "id": "grass"
+    },
+    "ShapeComponent": {
+        "id": "cube"
+    },
+    "TextureComponent": {
+        "opaque": true,
+        "parts": {
+            "top": "blockTiles/plant/Grass.png",
+            "sides": "blockTiles/plant/GrassSide.png",
+            "bottom": "blockTiles/soil/Dirt.png"
+        }
+    }
+}
