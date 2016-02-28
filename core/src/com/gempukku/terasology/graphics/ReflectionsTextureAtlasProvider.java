@@ -13,7 +13,7 @@ import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
-import com.gempukku.terasology.world.component.TextureComponent;
+import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
 import java.io.File;
 import java.net.URL;
@@ -40,8 +40,8 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
         File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile();
         TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);
 
-        for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, TextureComponent.class)) {
-            String textureComponentName = terasologyComponentManager.getNameByComponent(TextureComponent.class);
+        for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
+            String textureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
             for (String partTexture : ((Map<String, String>) prefabData.getComponents().get(textureComponentName).getFields().get("parts")).values()) {
                 URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + partTexture);
                 if (textureResource != null) {

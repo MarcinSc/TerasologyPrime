@@ -6,7 +6,13 @@ import com.gempukku.secsy.entity.component.map.SetProperty;
 
 import java.util.Map;
 
-public interface TextureComponent extends Component {
+public interface ShapeAndTextureComponent extends Component {
+    @SetProperty("shapeId")
+    void setShapeId(String id);
+
+    @GetProperty("shapeId")
+    String getShapeId();
+
     @SetProperty("parts")
     void setParts(Map<String, String> parts);
 

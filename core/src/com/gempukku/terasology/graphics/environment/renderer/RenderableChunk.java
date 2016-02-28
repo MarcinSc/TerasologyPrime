@@ -2,7 +2,6 @@ package com.gempukku.terasology.graphics.environment.renderer;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelCache;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.RenderableProvider;
 import com.badlogic.gdx.math.Vector3;
@@ -37,9 +36,9 @@ public class RenderableChunk implements Disposable {
     public void updateModel() {
         dispose();
 
-        ChunkRenderableBuilder.BuildResult buildResult = chunkRenderableBuilder.buildChunkRenderable(worldId, x, y, z);
-        model = buildResult.model;
-        modelInstance = buildResult.modelInstance;
+        model = chunkRenderableBuilder.buildChunkRenderable(worldId, x, y, z);
+
+        modelInstance = new ModelInstance(model);
     }
 
     public RenderableProvider getRenderableProvider() {
