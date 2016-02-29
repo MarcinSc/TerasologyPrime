@@ -141,7 +141,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         return chunkBlocks != null && chunkBlocks.getStatus() == ChunkBlocks.Status.READY;
     }
 
-    private ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
+    public ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
         Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
         if (chunksInWorld == null)
             return null;

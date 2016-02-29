@@ -16,6 +16,7 @@ import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.WorldStorage;
+import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
@@ -40,6 +41,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private ShapeProvider shapeProvider;
     @In
     private TerasologyComponentManager terasologyComponentManager;
+    @In
+    private ChunkBlocksProvider chunkBlocksProvider;
 
     private Executor meshGenerationExecutor = new Executor() {
         @Override
@@ -144,7 +147,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private void initializeChunkRenderableBuilder() {
         BlockMeshGenerator blockMeshGenerator = new BlockMeshGenerator(commonBlockManager, worldStorage, textureAtlasProvider,
                 terasologyComponentManager, shapeProvider);
-        chunkRenderableBuilder = new ChunkRenderableBuilder(blockMeshGenerator, textureAtlasProvider.getTextureAtlas());
+        chunkRenderableBuilder = new ChunkRenderableBuilder(blockMeshGenerator, chunkBlocksProvider, textureAtlasProvider.getTextureAtlas());
     }
 
     @Override

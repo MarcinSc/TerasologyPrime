@@ -5,11 +5,8 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.component.LocationComponent;
-import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
-import com.gempukku.terasology.world.chunk.DefaultComponentData;
-import com.gempukku.terasology.world.chunk.DefaultEntityData;
 import com.gempukku.terasology.world.component.BlockComponent;
 
 @RegisterSystem(
@@ -25,43 +22,24 @@ public class DefaultWorldStorage implements WorldStorage {
     private CommonBlockManager commonBlockManager;
 
     @Override
-    public EntityRef getBlockEntityAt(String worldId, int x, int y, int z) {
-        EntityRefOrCommonBlockId blockEntityOrBlockIdAt = getBlockEntityOrBlockIdAt(worldId, x, y, z);
-        if (blockEntityOrBlockIdAt.entityRef != null)
-            return blockEntityOrBlockIdAt.entityRef;
+    public EntityRefAndCommonBlockId getBlockEntityAndBlockIdAt(String worldId, int x, int y, int z) {
+        String commonBlockAt = getBlockIdAt(worldId, x, y, z);
+        if (commonBlockAt == null)
+            return null;
 
-        if (blockEntityOrBlockIdAt.commonBlockId != null) {
-            PrefabData prefabData = commonBlockManager.getCommonBlockById(blockEntityOrBlockIdAt.commonBlockId);
-
-            DefaultEntityData entityData = new DefaultEntityData(prefabManager.convertToEntityData(prefabData));
-            DefaultComponentData locationComponentData = new DefaultComponentData(LocationComponent.class);
-            locationComponentData.addField("worldId", worldId);
-            locationComponentData.addField("x", (float) x);
-            locationComponentData.addField("y", (float) y);
-            locationComponentData.addField("z", (float) z);
-
-            entityData.addComponent(locationComponentData);
-            return entityManager.createNewTemporaryEntity(entityData);
-        }
-
-        return null;
-    }
-
-    @Override
-    public EntityRefOrCommonBlockId getBlockEntityOrBlockIdAt(String worldId, int x, int y, int z) {
         for (EntityRef entityRef : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
             LocationComponent location = entityRef.getComponent(LocationComponent.class);
             if (location.getWorldId().equals(worldId) && location.getX() == x
                     && location.getY() == y && location.getZ() == z)
-                return new EntityRefOrCommonBlockId(entityRef, null);
+                return new EntityRefAndCommonBlockId(entityRef, commonBlockAt);
         }
 
-        String commonBlockAt = chunkBlocksProvider.getCommonBlockAt(worldId, x, y, z);
-        if (commonBlockAt != null) {
-            return new EntityRefOrCommonBlockId(null, commonBlockAt);
-        }
+        return new EntityRefAndCommonBlockId(null, commonBlockAt);
+    }
 
-        return null;
+    @Override
+    public String getBlockIdAt(String worldId, int x, int y, int z) {
+        return chunkBlocksProvider.getCommonBlockAt(worldId, x, y, z);
     }
 
     @Override
