@@ -4,4 +4,6 @@ public interface InternalEntityManager {
     void addEntityEventListener(EntityEventListener entityEventListener);
 
     void removeEntityEventListener(EntityEventListener entityEventListener);
+
+    int getEntityId(EntityRef entityRef);
 }

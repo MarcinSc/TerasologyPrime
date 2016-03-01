@@ -7,6 +7,7 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.component.ComponentManager;
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
+import com.gempukku.secsy.entity.event.AfterComponentRemoved;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
 import com.gempukku.secsy.entity.event.AfterEntityLoaded;
 import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
@@ -114,6 +115,11 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         sendEventsToThem(loadedEntities, lastMaxId);
 
         entityRelevanceRules.forEach(EntityRelevanceRule::newRelevantEntitiesLoaded);
+    }
+
+    @Override
+    public int getEntityId(EntityRef entityRef) {
+        return ((EntityRefImpl) entityRef).entity.getEntityId();
     }
 
     private void sendEventsToThem(Set<Entity> loadedEntities, int createdIfIdGreaterThan) {
@@ -422,6 +428,9 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 newInThisEntityRef.remove(clazz);
                 entity.entityValues.remove(componentClass);
             }
+
+            AfterComponentRemoved afterEvent = new AfterComponentRemoved(removedComponents);
+            createNewEntityRef(this).send(afterEvent);
         }
 
         @Override
