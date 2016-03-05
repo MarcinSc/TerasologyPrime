@@ -17,17 +17,14 @@ import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
+import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
@@ -47,19 +44,22 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
 
-    private Executor meshGenerationExecutor = Executors.newFixedThreadPool(5);
+    private OfflineProcessingThread offlineProcessingThread;
 
     private ChunkRenderableBuilder chunkRenderableBuilder;
 
-    private Multimap<String, RenderableChunk> renderableChunksInWorld = Multimaps.synchronizedMultimap(HashMultimap.create());
-
-    private Multimap<String, Vector3> loadedButNotRenderedChunks = HashMultimap.create();
+    private Multimap<String, RenderableChunk> renderableChunksInWorld = HashMultimap.create();
 
     private ModelBatch modelBatch;
+
+    private volatile Camera lastCamera;
 
     @Override
     public void preInitialize() {
         modelBatch = new ModelBatch();
+        offlineProcessingThread = new OfflineProcessingThread();
+        Thread thr = new Thread(offlineProcessingThread);
+        thr.start();
     }
 
     @Override
@@ -73,6 +73,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     @Override
     public void renderEnvironment(Camera camera, String worldId) {
+        lastCamera = camera;
         synchronized (renderableChunksInWorld) {
             for (RenderableChunk renderableChunk : renderableChunksInWorld.values()) {
                 renderableChunk.updateModelIfNeeded();
@@ -102,11 +103,14 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         int y = event.y;
         int z = event.z;
 
-        loadedButNotRenderedChunks.put(worldId, new Vector3(x, y, z));
+        synchronized (renderableChunksInWorld) {
+            RenderableChunk renderableChunk = new RenderableChunk(chunkRenderableBuilder, worldId, x, y, z);
+            renderableChunksInWorld.put(worldId, renderableChunk);
 
-        for (Vector3 notRenderedChunk : new LinkedList<>(loadedButNotRenderedChunks.get(worldId))) {
-            if (canBeRenderedNow(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z)) {
-                prepareRenderableChunk(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z);
+            for (RenderableChunk chunk : renderableChunksInWorld.get(worldId)) {
+                if (chunk.getStatus().isInvalid() && canBeRenderedNow(worldId, chunk.x, chunk.y, chunk.z)) {
+                    chunk.validate();
+                }
             }
         }
     }
@@ -131,10 +135,6 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
                 renderableChunks.remove(chunk);
                 chunk.dispose();
             }
-        }
-
-        synchronized (loadedButNotRenderedChunks) {
-            loadedButNotRenderedChunks.remove(worldId, new Vector3(x, y, z));
         }
     }
 
@@ -168,13 +168,6 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         return true;
     }
 
-    private void prepareRenderableChunk(String worldId, int x, int y, int z) {
-        RenderableChunk chunk = new RenderableChunk(chunkRenderableBuilder, worldId, x, y, z);
-        renderableChunksInWorld.put(worldId, chunk);
-        loadedButNotRenderedChunks.remove(worldId, new Vector3(x, y, z));
-        meshGenerationExecutor.execute(new ChunkUpdateTask(chunk));
-    }
-
     private void initializeChunkRenderableBuilder() {
         BlockMeshGenerator blockMeshGenerator = new BlockMeshGenerator(commonBlockManager, textureAtlasProvider,
                 terasologyComponentManager, shapeProvider);
@@ -183,23 +176,52 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     @Override
     public void postDestroy() {
-        for (RenderableChunk renderableChunk : renderableChunksInWorld.values()) {
-            renderableChunk.dispose();
+        synchronized (renderableChunksInWorld) {
+            for (RenderableChunk renderableChunk : renderableChunksInWorld.values()) {
+                renderableChunk.dispose();
+            }
         }
 
         modelBatch.dispose();
     }
 
-    private class ChunkUpdateTask implements Runnable {
-        private RenderableChunk chunk;
-
-        public ChunkUpdateTask(RenderableChunk chunk) {
-            this.chunk = chunk;
+    private class OfflineProcessingThread implements Runnable {
+        public void run() {
+            while (true) {
+                RenderableChunk chunkToProcess = getClosestChunkToProcess();
+                if (chunkToProcess == null) {
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException exp) {
+                        // Ignore
+                    }
+                } else {
+                    chunkToProcess.processOffLine();
+                }
+            }
         }
 
-        @Override
-        public void run() {
-            chunk.generateChunkLists();
+        private RenderableChunk getClosestChunkToProcess() {
+            RenderableChunk chunkToProcess = null;
+            if (lastCamera != null) {
+                Vector3 cameraPosition = lastCamera.position;
+                synchronized (renderableChunksInWorld) {
+                    float minDistance = Float.MAX_VALUE;
+                    for (RenderableChunk renderableChunk : renderableChunksInWorld.values()) {
+                        if (renderableChunk.getStatus().canOfflineProcess()) {
+                            float distance = cameraPosition.dst(
+                                    renderableChunk.x * ChunkSize.X + ChunkSize.X / 2,
+                                    renderableChunk.y * ChunkSize.Y + ChunkSize.Y / 2,
+                                    renderableChunk.z * ChunkSize.Z + ChunkSize.Z / 2);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                chunkToProcess = renderableChunk;
+                            }
+                        }
+                    }
+                }
+            }
+            return chunkToProcess;
         }
     }
 }
