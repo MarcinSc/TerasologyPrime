@@ -26,6 +26,7 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class TerasologyApplication extends ApplicationAdapter {
@@ -34,12 +35,13 @@ public class TerasologyApplication extends ApplicationAdapter {
     private SECSyContext serverContext;
     private SECSyContext clientContext;
 
-    private InternalGameLoop serverInternalGameLoop;
     private InternalGameLoop clientInternalGameLoop;
     private RenderingEngine renderingEngine;
 
     private FPSLogger fpsLogger = new FPSLogger();
     private long startTime;
+
+    private RunningServer runningServer;
 
     @Override
     public void create() {
@@ -51,7 +53,6 @@ public class TerasologyApplication extends ApplicationAdapter {
 
         setupClientContext(scanBasedOnAnnotations);
 
-        serverInternalGameLoop = serverContext.getSystem(InternalGameLoop.class);
         clientInternalGameLoop = clientContext.getSystem(InternalGameLoop.class);
         renderingEngine = clientContext.getSystem(RenderingEngine.class);
 
@@ -61,6 +62,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         LocalCommunication localCommunication = new LocalCommunication(serverContext.getSystem(InternalComponentManager.class), playerEntity);
         serverContext.getSystem(ClientManager.class).addClient("clientId", playerEntity, localCommunication);
         ((RemoteEntityManager) clientContext.getSystem(EntityManager.class)).setServerCommunication(localCommunication);
+
+        runningServer = new RunningServer(serverContext.getSystem(InternalGameLoop.class));
+        runningServer.start();
 
         if (PROFILE)
             GLProfiler.enable();
@@ -129,6 +133,22 @@ public class TerasologyApplication extends ApplicationAdapter {
 
     @Override
     public void render() {
+        fpsLogger.log();
+
+        clientInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
+
+        renderingEngine.render();
+        if (PROFILE) {
+            System.out.println("Texture bindings: " + GLProfiler.textureBindings);
+            System.out.println("Draw calls: " + GLProfiler.drawCalls);
+            System.out.println("Vertices: " + GLProfiler.vertexCount.total);
+            System.out.println("Shader switches: " + GLProfiler.shaderSwitches);
+
+            GLProfiler.reset();
+        }
+    }
+
+    private void updatePlayerPosition() {
         EntityRef playerEntity = serverContext.getSystem(PlayerManager.class).getPlayer("clientId");
         CameraComponent camera = playerEntity.getComponent(CameraComponent.class);
         LocationComponent location = playerEntity.getComponent(LocationComponent.class);
@@ -138,29 +158,29 @@ public class TerasologyApplication extends ApplicationAdapter {
 
         boolean changed = false;
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            location.setX(location.getX()+camera.getDirectionX()*stepLength);
-            location.setY(location.getY()+camera.getDirectionY()*stepLength);
-            location.setZ(location.getZ()+camera.getDirectionZ()*stepLength);
+            location.setX(location.getX() + camera.getDirectionX() * stepLength);
+            location.setY(location.getY() + camera.getDirectionY() * stepLength);
+            location.setZ(location.getZ() + camera.getDirectionZ() * stepLength);
             changed = true;
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            location.setX(location.getX()-camera.getDirectionX()*stepLength);
-            location.setY(location.getY()-camera.getDirectionY()*stepLength);
-            location.setZ(location.getZ()-camera.getDirectionZ()*stepLength);
+            location.setX(location.getX() - camera.getDirectionX() * stepLength);
+            location.setY(location.getY() - camera.getDirectionY() * stepLength);
+            location.setZ(location.getZ() - camera.getDirectionZ() * stepLength);
             changed = true;
         }
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            location.setY(location.getY()+stepLength);
+            location.setY(location.getY() + stepLength);
             changed = true;
         }
         if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
-            location.setY(location.getY()-stepLength);
+            location.setY(location.getY() - stepLength);
             changed = true;
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            location.setX(location.getX()-camera.getDirectionX()*stepLength);
-            location.setY(location.getY()-camera.getDirectionY()*stepLength);
-            location.setZ(location.getZ()-camera.getDirectionZ()*stepLength);
+            location.setX(location.getX() - camera.getDirectionX() * stepLength);
+            location.setY(location.getY() - camera.getDirectionY() * stepLength);
+            location.setZ(location.getZ() - camera.getDirectionZ() * stepLength);
             changed = true;
         }
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
@@ -181,28 +201,55 @@ public class TerasologyApplication extends ApplicationAdapter {
         }
         if (changed)
             playerEntity.saveComponents(camera, location);
-
-        fpsLogger.log();
-
-        serverInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
-        clientInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
-
-        renderingEngine.render();
-        if (PROFILE) {
-            System.out.println("Texture bindings: " + GLProfiler.textureBindings);
-            System.out.println("Draw calls: " + GLProfiler.drawCalls);
-            System.out.println("Vertices: " + GLProfiler.vertexCount.total);
-            System.out.println("Shader switches: " + GLProfiler.shaderSwitches);
-
-            GLProfiler.reset();
-        }
     }
 
     @Override
     public void dispose() {
+        runningServer.stopServer();
+        try {
+            runningServer.join();
+        } catch (InterruptedException exp) {
+            // ignore
+        }
+
         serverContext.shutdown();
         clientContext.shutdown();
     }
 
+    private class RunningServer extends Thread {
+        private volatile boolean running = true;
+        private InternalGameLoop internalGameLoop;
+        private LinkedList<Runnable> tasksToExecute = new LinkedList<>();
 
+        public RunningServer(InternalGameLoop internalGameLoop) {
+            this.internalGameLoop = internalGameLoop;
+        }
+
+        public void executeInServerThread(Runnable runnable) {
+            tasksToExecute.add(runnable);
+        }
+
+        public void stopServer() {
+            running = false;
+        }
+
+        public void run() {
+            while (running) {
+                while (true) {
+                    Runnable task = tasksToExecute.poll();
+                    if (task == null)
+                        break;
+                    else
+                        task.run();
+                }
+                updatePlayerPosition();
+                internalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException exp) {
+                    // ignore
+                }
+            }
+        }
+    }
 }

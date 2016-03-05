@@ -203,15 +203,6 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
                 });
     }
 
-    private void logEntityData(EntityData entityData) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            objectMapper.writeValue(System.out, entityData);
-        } catch (IOException exp) {
-            // ignore
-        }
-    }
-
     @Override
     public void postUpdate() {
         // Do nothing
