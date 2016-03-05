@@ -21,7 +21,7 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
     private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = new HashMap<>();
 
     @ReceiveEvent
-    public void componentAdded(AfterComponentAdded event, EntityRef chunkEntity, ChunkComponent chunk) {
+    public synchronized void componentAdded(AfterComponentAdded event, EntityRef chunkEntity, ChunkComponent chunk) {
         String worldId = chunk.getWorldId();
         ChunkBlocks chunkDataHolder = new ChunkBlocks(ChunkBlocks.Status.READY, worldId, chunk.getX(), chunk.getY(), chunk.getZ());
         chunkDataHolder.setChunkEntity(chunkEntity);
@@ -35,20 +35,20 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
     }
 
     @ReceiveEvent
-    public void componentRemoved(BeforeComponentRemoved event, EntityRef chunkEntity, ChunkComponent chunk) {
+    public synchronized void componentRemoved(BeforeComponentRemoved event, EntityRef chunkEntity, ChunkComponent chunk) {
         chunkEntity.send(BeforeChunkUnloadedEvent.INSTANCE);
         String worldId = chunk.getWorldId();
         chunkBlocks.get(worldId).remove(new Vector3(chunk.getX(), chunk.getY(), chunk.getZ()));
     }
 
     @Override
-    public boolean isChunkLoaded(String worldId, int x, int y, int z) {
+    public synchronized boolean isChunkLoaded(String worldId, int x, int y, int z) {
         ChunkBlocks chunkBlocks = getChunkBlocks(worldId, x, y, z);
         return chunkBlocks != null && chunkBlocks.getStatus() == ChunkBlocks.Status.READY;
     }
 
     @Override
-    public ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
+    public synchronized ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
         Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
         if (chunksInWorld == null)
             return null;
@@ -56,7 +56,7 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
     }
 
     @Override
-    public String getCommonBlockAt(String worldId, int x, int y, int z) {
+    public synchronized String getCommonBlockAt(String worldId, int x, int y, int z) {
         WorldBlock tempWorldBlock = new WorldBlock();
         tempWorldBlock.set(x, y, z);
 

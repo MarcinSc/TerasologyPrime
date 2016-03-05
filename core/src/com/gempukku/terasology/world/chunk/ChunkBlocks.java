@@ -37,7 +37,11 @@ public class ChunkBlocks {
 
     public String getCommonBlockAt(int xInChunk, int yInChunk, int zInChunk) {
         int index = getIndex(xInChunk, yInChunk, zInChunk);
-        return chunkEntity.getComponent(ChunkComponent.class).getChunkBlocks()[index];
+        String blockId = chunkEntity.getComponent(ChunkComponent.class).getChunkBlocks()[index];
+        if (blockId == null) {
+            System.out.println("HM?!");
+        }
+        return blockId;
     }
 
     private int getIndex(int xInChunk, int yInChunk, int zInChunk) {

@@ -20,6 +20,8 @@ public class RenderableChunk implements Disposable {
     private Model model;
     private ModelInstance modelInstance;
 
+    private volatile ChunkMeshLists chunkMeshLists;
+
     public RenderableChunk(ChunkRenderableBuilder chunkRenderableBuilder, String worldId, int x, int y, int z) {
         this.chunkRenderableBuilder = chunkRenderableBuilder;
         this.worldId = worldId;
@@ -33,12 +35,29 @@ public class RenderableChunk implements Disposable {
         return camera.frustum.boundsInFrustum(boundingBox);
     }
 
-    public void updateModel() {
-        dispose();
+    public void generateChunkLists() {
+        ChunkMeshLists generatedLists = chunkRenderableBuilder.buildChunkMeshArrays(worldId, x, y, z);
+        synchronized (this) {
+            chunkMeshLists = generatedLists;
+        }
+    }
 
-        model = chunkRenderableBuilder.buildChunkRenderable(worldId, x, y, z);
+    public void updateModelIfNeeded() {
+        if (chunkMeshLists != null) {
+            dispose();
 
-        modelInstance = new ModelInstance(model);
+            synchronized (this) {
+                model = chunkRenderableBuilder.buildChunkRenderable(chunkMeshLists.verticesPerTexture, chunkMeshLists.indicesPerTexture, worldId, x, y, z);
+
+                modelInstance = new ModelInstance(model);
+
+                chunkMeshLists = null;
+            }
+        }
+    }
+
+    public boolean isRenderable() {
+        return modelInstance != null;
     }
 
     public RenderableProvider getRenderableProvider() {

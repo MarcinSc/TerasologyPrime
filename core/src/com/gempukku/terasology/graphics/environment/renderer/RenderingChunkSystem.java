@@ -27,6 +27,7 @@ import com.google.common.collect.Multimaps;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
@@ -46,12 +47,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
 
-    private Executor meshGenerationExecutor = new Executor() {
-        @Override
-        public void execute(Runnable command) {
-            command.run();
-        }
-    };
+    private Executor meshGenerationExecutor = Executors.newFixedThreadPool(5);
 
     private ChunkRenderableBuilder chunkRenderableBuilder;
 
@@ -77,11 +73,17 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     @Override
     public void renderEnvironment(Camera camera, String worldId) {
+        synchronized (renderableChunksInWorld) {
+            for (RenderableChunk renderableChunk : renderableChunksInWorld.values()) {
+                renderableChunk.updateModelIfNeeded();
+            }
+        }
+
         modelBatch.begin(camera);
 
         synchronized (renderableChunksInWorld) {
             for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-                if (renderableChunk.isVisible(camera)) {
+                if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
                     modelBatch.render(renderableChunk.getRenderableProvider());
                 }
             }
@@ -100,13 +102,11 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         int y = chunkComponent.getY();
         int z = chunkComponent.getZ();
 
-        synchronized (loadedButNotRenderedChunks) {
-            loadedButNotRenderedChunks.put(worldId, new Vector3(x, y, z));
+        loadedButNotRenderedChunks.put(worldId, new Vector3(x, y, z));
 
-            for (Vector3 notRenderedChunk : new LinkedList<>(loadedButNotRenderedChunks.get(worldId))) {
-                if (canBeRenderedNow(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z)) {
-                    prepareRenderableChunk(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z);
-                }
+        for (Vector3 notRenderedChunk : new LinkedList<>(loadedButNotRenderedChunks.get(worldId))) {
+            if (canBeRenderedNow(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z)) {
+                prepareRenderableChunk(worldId, (int) notRenderedChunk.x, (int) notRenderedChunk.y, (int) notRenderedChunk.z);
             }
         }
     }
@@ -170,11 +170,13 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     private void prepareRenderableChunk(String worldId, int x, int y, int z) {
         RenderableChunk chunk = new RenderableChunk(chunkRenderableBuilder, worldId, x, y, z);
+        renderableChunksInWorld.put(worldId, chunk);
+        loadedButNotRenderedChunks.remove(worldId, new Vector3(x, y, z));
         meshGenerationExecutor.execute(new ChunkUpdateTask(chunk));
     }
 
     private void initializeChunkRenderableBuilder() {
-        BlockMeshGenerator blockMeshGenerator = new BlockMeshGenerator(commonBlockManager, worldStorage, textureAtlasProvider,
+        BlockMeshGenerator blockMeshGenerator = new BlockMeshGenerator(commonBlockManager, textureAtlasProvider,
                 terasologyComponentManager, shapeProvider);
         chunkRenderableBuilder = new ChunkRenderableBuilder(blockMeshGenerator, chunkBlocksProvider, textureAtlasProvider.getTextureAtlas());
     }
@@ -197,13 +199,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
         @Override
         public void run() {
-            chunk.updateModel();
-            synchronized (renderableChunksInWorld) {
-                renderableChunksInWorld.put(chunk.worldId, chunk);
-            }
-            synchronized (loadedButNotRenderedChunks) {
-                loadedButNotRenderedChunks.remove(chunk.worldId, new Vector3(chunk.x, chunk.y, chunk.z));
-            }
+            chunk.generateChunkLists();
         }
     }
 }

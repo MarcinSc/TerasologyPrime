@@ -26,6 +26,9 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
         if (commonBlockPrefabsById == null)
             populateMap();
 
+        if (id == null)
+            throw new IllegalArgumentException("Can't ask for block with null id");
+
         return commonBlockPrefabsById.get(id);
     }
 

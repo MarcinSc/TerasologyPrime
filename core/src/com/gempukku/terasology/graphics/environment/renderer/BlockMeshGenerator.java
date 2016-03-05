@@ -1,24 +1,18 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
-import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,40 +20,30 @@ import java.util.List;
 import java.util.Map;
 
 public class BlockMeshGenerator {
-    private CommonBlockManager commonBlockManager;
-    private WorldStorage worldStorage;
-    private TextureAtlasProvider textureAtlasProvider;
-    private ShapeProvider shapeProvider;
+    private final CommonBlockManager commonBlockManager;
+    private final TextureAtlasProvider textureAtlasProvider;
+    private final ShapeProvider shapeProvider;
 
     private String shapeAndTextureComponentName;
 
-    public BlockMeshGenerator(CommonBlockManager commonBlockManager, WorldStorage worldStorage, TextureAtlasProvider textureAtlasProvider,
+    public BlockMeshGenerator(CommonBlockManager commonBlockManager, TextureAtlasProvider textureAtlasProvider,
                               TerasologyComponentManager terasologyComponentManager, ShapeProvider shapeProvider) {
         this.commonBlockManager = commonBlockManager;
-        this.worldStorage = worldStorage;
         this.textureAtlasProvider = textureAtlasProvider;
         this.shapeProvider = shapeProvider;
 
         shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
     }
 
-    public void generateCustomMeshForBlock(ModelBuilder modelBuilder, String worldId, int x, int y, int z) {
-        WorldStorage.EntityRefAndCommonBlockId block = worldStorage.getBlockEntityAndBlockIdAt(worldId, x, y, z);
-
-        // TODO Check if the entity for the block has a component that has special mesh generation
-    }
-
-    public void generateChunkMeshFromChunkBlocks(ModelBuilder modelBuilder, ChunkBlocks chunkBlocks, List<Texture> textures) {
-        int parameterCount = 3 + 3 + 2;
-
+    public ChunkMeshLists generateChunkMeshFromChunkBlocks(ChunkBlocks chunkBlocks, List<Texture> textures) {
         int chunkX = chunkBlocks.x * ChunkSize.X;
         int chunkY = chunkBlocks.y * ChunkSize.Y;
         int chunkZ = chunkBlocks.z * ChunkSize.Z;
 
         int textureCount = textures.size();
 
-        List<Float>[] verticesPerTexture = new List[textureCount];
-        List<Short>[] indicesPerTexture = new List[textureCount];
+        List<float[]> verticesPerTexture = new ArrayList<>(textureCount);
+        List<short[]> indicesPerTexture = new ArrayList<>(textureCount);
 
         for (int i = 0; i < textureCount; i++) {
             Texture texture = textures.get(i);
@@ -76,25 +60,11 @@ public class BlockMeshGenerator {
                     }
                 }
             }
-            verticesPerTexture[i] = vertices;
-            indicesPerTexture[i] = indices;
+            verticesPerTexture.add(convertToFloatArray(vertices));
+            indicesPerTexture.add(convertToShortArray(indices));
         }
 
-        for (int i = 0; i < textureCount; i++) {
-            List<Float> vertices = verticesPerTexture[i];
-            List<Short> indices = indicesPerTexture[i];
-
-            if (!indices.isEmpty()) {
-                Mesh mesh = new Mesh(true, vertices.size() / parameterCount, indices.size(), VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
-                mesh.setVertices(convertToFloatArray(vertices));
-                mesh.setIndices(convertToShortArray(indices));
-
-                Texture texture = textures.get(i);
-                Material material = new Material(TextureAttribute.createDiffuse(texture));
-
-                modelBuilder.part("chunk", mesh, GL20.GL_TRIANGLES, material);
-            }
-        }
+        return new ChunkMeshLists(verticesPerTexture, indicesPerTexture);
     }
 
     public void generateMeshForBlockFromAtlas(List<Float> vertices, List<Short> indices, Texture texture, ChunkBlocks chunkBlocks,
@@ -172,16 +142,12 @@ public class BlockMeshGenerator {
         int resultY = y + blockSide.getNormalY();
         int resultZ = z + blockSide.getNormalZ();
 
-        String neighbouringBlock;
+        // If it's outside of chunk, we don't bother checking
         if (isOutsideOfChunk(resultX, resultY, resultZ)) {
-            neighbouringBlock =
-                    worldStorage.getBlockIdAt(chunkBlocks.worldId,
-                            chunkBlocks.x * ChunkSize.X + resultX,
-                            chunkBlocks.y * ChunkSize.Y + resultY,
-                            chunkBlocks.z * ChunkSize.Z + resultZ);
-        } else {
-            neighbouringBlock = chunkBlocks.getCommonBlockAt(resultX, resultY, resultZ);
+            return false;
         }
+
+        String neighbouringBlock = chunkBlocks.getCommonBlockAt(resultX, resultY, resultZ);
         if (hasTextureAndShape(neighbouringBlock)) {
             if (isTextureOpaque(neighbouringBlock)) {
                 ShapeDef neighbourShapeDef = shapeProvider.getShapeById(getShapeId(neighbouringBlock));
