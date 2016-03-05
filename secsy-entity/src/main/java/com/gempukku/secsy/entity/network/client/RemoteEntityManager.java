@@ -23,9 +23,7 @@ import com.gempukku.secsy.entity.game.InternalGameLoopListener;
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.google.common.collect.Iterables;
-import org.codehaus.jackson.map.ObjectMapper;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -193,11 +191,11 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
 
                     @Override
                     public void visitEventReceived(int entityId, Event event) {
-                        try {
-                            new ObjectMapper().writeValue(System.out, event);
-                        } catch (IOException exp) {
-                            // ignore
-                        }
+//                        try {
+//                            new ObjectMapper().writeValue(System.out, event);
+//                        } catch (IOException exp) {
+//                            // ignore
+//                        }
                         sendEventToEntity(getServerEntityById(entityId), event);
                     }
                 });

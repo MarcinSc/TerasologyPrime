@@ -19,9 +19,9 @@ public class DefaultPlayerManager implements PlayerManager {
         EntityRef entity = entityManager.createEntity();
         ClientComponent player = entity.createComponent(ClientComponent.class);
         player.setClientId(id);
-        player.setChunkDistanceX(3);
+        player.setChunkDistanceX(5);
         player.setChunkDistanceY(3);
-        player.setChunkDistanceZ(3);
+        player.setChunkDistanceZ(5);
         entity.saveComponents(player);
         return entity;
     }

@@ -1,7 +1,5 @@
 package com.gempukku.terasology.world.chunk;
 
-import com.gempukku.secsy.entity.EntityRef;
-
 public class ChunkBlocks {
     public enum Status {
         QUEUED, READY
@@ -13,7 +11,7 @@ public class ChunkBlocks {
     public final int z;
     private Status status;
 
-    private EntityRef chunkEntity;
+    private String[] blocks;
 
     public ChunkBlocks(Status status, String worldId, int x, int y, int z) {
         this.status = status;
@@ -31,17 +29,17 @@ public class ChunkBlocks {
         this.status = status;
     }
 
-    public void setChunkEntity(EntityRef chunkEntity) {
-        this.chunkEntity = chunkEntity;
+    public void setBlocks(String[] blocks) {
+        this.blocks = blocks;
+    }
+
+    public String[] getBlocks() {
+        return blocks;
     }
 
     public String getCommonBlockAt(int xInChunk, int yInChunk, int zInChunk) {
         int index = getIndex(xInChunk, yInChunk, zInChunk);
-        String blockId = chunkEntity.getComponent(ChunkComponent.class).getChunkBlocks()[index];
-        if (blockId == null) {
-            System.out.println("HM?!");
-        }
-        return blockId;
+        return blocks[index];
     }
 
     private int getIndex(int xInChunk, int yInChunk, int zInChunk) {

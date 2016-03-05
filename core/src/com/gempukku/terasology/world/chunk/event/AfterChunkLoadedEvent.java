@@ -3,8 +3,13 @@ package com.gempukku.terasology.world.chunk.event;
 import com.gempukku.secsy.entity.event.Event;
 
 public class AfterChunkLoadedEvent extends Event {
-    public final static AfterChunkLoadedEvent INSTANCE = new AfterChunkLoadedEvent();
+    public final int x;
+    public final int y;
+    public final int z;
 
-    private AfterChunkLoadedEvent() {
+    public AfterChunkLoadedEvent(int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 }

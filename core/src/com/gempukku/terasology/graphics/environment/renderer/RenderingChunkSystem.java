@@ -17,9 +17,9 @@ import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
-import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
+import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -92,15 +92,15 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     @ReceiveEvent
-    public void chunkLoaded(AfterChunkLoadedEvent event, EntityRef entity, ChunkComponent chunkComponent) {
+    public void chunkLoaded(AfterChunkLoadedEvent event, EntityRef worldEntity, WorldComponent worldComponent) {
         if (chunkRenderableBuilder == null) {
             initializeChunkRenderableBuilder();
         }
 
-        String worldId = chunkComponent.getWorldId();
-        int x = chunkComponent.getX();
-        int y = chunkComponent.getY();
-        int z = chunkComponent.getZ();
+        String worldId = worldComponent.getWorldId();
+        int x = event.x;
+        int y = event.y;
+        int z = event.z;
 
         loadedButNotRenderedChunks.put(worldId, new Vector3(x, y, z));
 
@@ -112,11 +112,11 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     @ReceiveEvent
-    public void chunkUnloaded(BeforeChunkUnloadedEvent event, EntityRef entity, ChunkComponent chunkComponent) {
-        String worldId = chunkComponent.getWorldId();
-        int x = chunkComponent.getX();
-        int y = chunkComponent.getY();
-        int z = chunkComponent.getZ();
+    public void chunkUnloaded(BeforeChunkUnloadedEvent event, EntityRef worldEntity, WorldComponent worldComponent) {
+        String worldId = worldComponent.getWorldId();
+        int x = event.x;
+        int y = event.y;
+        int z = event.z;
 
         synchronized (renderableChunksInWorld) {
             Collection<RenderableChunk> renderableChunks = renderableChunksInWorld.get(worldId);

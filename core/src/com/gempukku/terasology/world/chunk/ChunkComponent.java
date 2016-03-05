@@ -7,12 +7,6 @@ import com.gempukku.terasology.communication.SharedComponent;
 
 @SharedComponent
 public interface ChunkComponent extends Component {
-    @GetProperty("chunkBlocks")
-    String[] getChunkBlocks();
-
-    @SetProperty("chunkBlocks")
-    void setChunkBlocks(String[] chunkBlocks);
-
     @GetProperty("worldId")
     String getWorldId();
 
