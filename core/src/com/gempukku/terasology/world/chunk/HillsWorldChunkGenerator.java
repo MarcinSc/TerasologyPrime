@@ -1,6 +1,7 @@
 package com.gempukku.terasology.world.chunk;
 
 import com.gempukku.secsy.context.annotation.In;
+import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.prefab.PrefabManager;
@@ -12,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @RegisterSystem(
-        profiles = "hillsWorld", shared = ChunkGenerator.class)
+        profiles = {NetProfiles.AUTHORITY, "hillsWorld"}, shared = ChunkGenerator.class)
 public class HillsWorldChunkGenerator implements ChunkGenerator {
     @In
     private PrefabManager prefabManager;

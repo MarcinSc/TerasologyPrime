@@ -1,4 +1,4 @@
-package com.gempukku.terasology.util;
+package com.gempukku.secsy.context.util;
 
 import com.google.common.base.Supplier;
 import com.google.common.collect.Multimap;
@@ -15,11 +15,22 @@ public class PriorityCollection<T> implements Iterable<T> {
             (Supplier<Collection<T>>) ArrayList::new);
 
     public void add(T t) {
+        int priority = getItemPriority(t);
+
+        multimap.put(priority, t);
+    }
+
+    public void remove(T t) {
+        int priority = getItemPriority(t);
+
+        multimap.remove(priority, t);
+    }
+
+    private int getItemPriority(T t) {
         int priority = 0;
         if (t instanceof Prioritable)
             priority = ((Prioritable) t).getPriority();
-
-        multimap.put(priority, t);
+        return priority;
     }
 
     @Override

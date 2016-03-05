@@ -22,9 +22,11 @@ public interface ServerCommunication {
      * @param entityId
      * @param event
      */
-    void sendServerEvent(int entityId, Event event);
+    void sendEventToServer(Event event);
 
     interface ClientEventVisitor {
+        void visitEntityCreate(EntityData entityData);
+
         void visitEntityUpdate(EntityData entityData);
 
         void visitEntityRemove(int entityId);

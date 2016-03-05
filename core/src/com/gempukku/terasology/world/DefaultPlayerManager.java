@@ -6,11 +6,10 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.PlayerManager;
-import com.gempukku.terasology.world.component.PlayerComponent;
+import com.gempukku.terasology.world.component.ClientComponent;
 
 @RegisterSystem(
-        profiles = NetProfiles.AUTHORITY, shared = PlayerManager.class
-)
+        profiles = NetProfiles.AUTHORITY, shared = PlayerManager.class)
 public class DefaultPlayerManager implements PlayerManager {
     @In
     private EntityManager entityManager;
@@ -18,8 +17,8 @@ public class DefaultPlayerManager implements PlayerManager {
     @Override
     public EntityRef createPlayer(String id) {
         EntityRef entity = entityManager.createEntity();
-        PlayerComponent player = entity.createComponent(PlayerComponent.class);
-        player.setPlayerId(id);
+        ClientComponent player = entity.createComponent(ClientComponent.class);
+        player.setClientId(id);
         player.setChunkDistanceX(3);
         player.setChunkDistanceY(3);
         player.setChunkDistanceZ(3);
@@ -29,8 +28,8 @@ public class DefaultPlayerManager implements PlayerManager {
 
     @Override
     public EntityRef getPlayer(String id) {
-        for (EntityRef entityRef : entityManager.getEntitiesWithComponents(PlayerComponent.class)) {
-            if (entityRef.getComponent(PlayerComponent.class).getPlayerId().equals(id))
+        for (EntityRef entityRef : entityManager.getEntitiesWithComponents(ClientComponent.class)) {
+            if (entityRef.getComponent(ClientComponent.class).getClientId().equals(id))
                 return entityRef;
         }
         return null;

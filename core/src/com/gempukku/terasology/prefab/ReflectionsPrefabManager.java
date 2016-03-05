@@ -109,10 +109,8 @@ public class ReflectionsPrefabManager implements PrefabManager, LifeCycleSystem 
                             }
 
                             @Override
-                            public Iterable<FieldNameAndValue> getFields() {
-                                return componentData.getValue().getFields().entrySet().stream().map(
-                                        fieldNameAndValue ->
-                                                new FieldNameAndValue(fieldNameAndValue.getKey(), fieldNameAndValue.getValue())).collect(Collectors.toList());
+                            public Map<String, Object> getFields() {
+                                return componentData.getValue().getFields();
                             }
                         }).collect(Collectors.toList());
             }

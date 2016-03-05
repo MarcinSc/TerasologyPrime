@@ -18,7 +18,9 @@ import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT, shared = TextureAtlasProvider.class)
@@ -36,19 +38,26 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
         TexturePacker.Settings settings = new TexturePacker.Settings();
         settings.maxWidth = 512;
         settings.maxHeight = 512;
+        settings.silent = true;
 
         File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile();
         TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);
+
+        Set<String> texturePaths = new HashSet<>();
 
         for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
             String textureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
             for (String partTexture : ((Map<String, String>) prefabData.getComponents().get(textureComponentName).getFields().get("parts")).values()) {
                 URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + partTexture);
                 if (textureResource != null) {
-                    File imageFile = new File(textureResource.getPath());
-                    texturePacker.addImage(imageFile);
+                    texturePaths.add(textureResource.getPath());
                 }
             }
+        }
+
+        for (String texturePath : texturePaths) {
+            File imageFile = new File(texturePath);
+            texturePacker.addImage(imageFile);
         }
 
         FileHandle temp = Gdx.files.local("temp");

@@ -8,6 +8,8 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.network.serialize.ComponentInformation;
+import com.gempukku.secsy.entity.network.serialize.EntityInformation;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.gempukku.terasology.component.LocationComponent;
@@ -15,7 +17,8 @@ import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
-import com.gempukku.terasology.world.component.PlayerComponent;
+import com.gempukku.terasology.world.component.BlockComponent;
+import com.gempukku.terasology.world.component.ClientComponent;
 import com.google.common.collect.Iterables;
 
 import java.util.Collections;
@@ -79,8 +82,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
             chunksToNotifyOffMainThread.clear();
         }
 
-        for (EntityRef player : entityManager.getEntitiesWithComponents(PlayerComponent.class, LocationComponent.class)) {
-            PlayerComponent comp = player.getComponent(PlayerComponent.class);
+        for (EntityRef player : entityManager.getEntitiesWithComponents(ClientComponent.class, LocationComponent.class)) {
+            ClientComponent comp = player.getComponent(ClientComponent.class);
             int chunkDistanceX = comp.getChunkDistanceX();
             int chunkDistanceY = comp.getChunkDistanceY();
             int chunkDistanceZ = comp.getChunkDistanceZ();
@@ -116,12 +119,22 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
 
     @Override
     public void newRelevantEntitiesLoaded() {
+        // We have to assign to ChunkBlocks the entity that it represents
         for (ChunkLocation chunkLocation : chunksToNotify) {
-            EntityRef worldEntity = multiverseManager.getWorldEntity(chunkLocation.worldId);
-            worldEntity.send(new AfterChunkLoadedEvent(chunkLocation.x, chunkLocation.y, chunkLocation.z));
+            Iterable<EntityRef> chunkEntities = entityManager.getEntitiesWithComponents(ChunkComponent.class);
+            for (EntityRef chunkEntity : chunkEntities) {
+                ChunkComponent chunkComponent = chunkEntity.getComponent(ChunkComponent.class);
+                if (chunkComponent.getWorldId().equals(chunkLocation.worldId)
+                        && chunkComponent.getX() == chunkLocation.x
+                        && chunkComponent.getY() == chunkLocation.y
+                        && chunkComponent.getZ() == chunkLocation.z) {
+                    chunkLocation.chunkBlocks.setChunkEntity(chunkEntity);
+                    break;
+                }
+                chunkEntity.send(AfterChunkLoadedEvent.INSTANCE);
+            }
         }
     }
-
 
     @Override
     public String getCommonBlockAt(String worldId, int x, int y, int z) {
@@ -141,6 +154,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         return chunkBlocks != null && chunkBlocks.getStatus() == ChunkBlocks.Status.READY;
     }
 
+    @Override
     public ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
         Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
         if (chunksInWorld == null)
@@ -180,8 +194,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         private final int x;
         private final int y;
         private final int z;
+        private ChunkBlocks chunkBlocks;
 
-        public ChunkLocation(String worldId, int x, int y, int z) {
+        public ChunkLocation(ChunkBlocks chunkBlocks, String worldId, int x, int y, int z) {
+            this.chunkBlocks = chunkBlocks;
             this.worldId = worldId;
             this.x = x;
             this.y = y;
@@ -200,32 +216,45 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         public void run() {
             Iterable<ChunkGenerator.EntityDataOrCommonBlock> chunkData = chunkGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
 
+            String[] chunkBlockIds = new String[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
+
             Set<EntityData> entities = new HashSet<>();
             int index = 0;
             for (ChunkGenerator.EntityDataOrCommonBlock blockInfo : chunkData) {
                 int blockInChunkX = index / (ChunkSize.Y * ChunkSize.Z);
                 int blockInChunkY = (index / ChunkSize.Z) % ChunkSize.Y;
                 int blockInChunkZ = index % ChunkSize.Z;
-                if (blockInfo.commonBlock != null) {
-                    chunkBlocks.setCommonBlockAt(blockInfo.commonBlock, blockInChunkX, blockInChunkY, blockInChunkZ);
-                } else {
-                    DefaultEntityData entityData = new DefaultEntityData(blockInfo.entityData);
-                    DefaultComponentData locationComponentData = new DefaultComponentData(LocationComponent.class);
+
+                chunkBlockIds[index] = blockInfo.commonBlock;
+                if (blockInfo.entityData != null) {
+                    EntityInformation entityData = new EntityInformation(blockInfo.entityData);
+                    ComponentInformation locationComponentData = new ComponentInformation(LocationComponent.class);
                     locationComponentData.addField("worldId", chunkBlocks.worldId);
                     locationComponentData.addField("x", (float) (chunkBlocks.x * ChunkSize.X + blockInChunkX));
                     locationComponentData.addField("y", (float) (chunkBlocks.y * ChunkSize.Y + blockInChunkY));
                     locationComponentData.addField("z", (float) (chunkBlocks.z * ChunkSize.Z + blockInChunkZ));
 
                     entityData.addComponent(locationComponentData);
+                    entityData.addComponent(new ComponentInformation(BlockComponent.class));
                     entities.add(entityData);
                 }
                 index++;
             }
 
+            EntityInformation chunkEntity = new EntityInformation();
+            ComponentInformation chunkComponent = new ComponentInformation(ChunkComponent.class);
+            chunkComponent.addField("worldId", chunkBlocks.worldId);
+            chunkComponent.addField("x", chunkBlocks.x);
+            chunkComponent.addField("y", chunkBlocks.y);
+            chunkComponent.addField("z", chunkBlocks.z);
+            chunkComponent.addField("chunkBlocks", chunkBlockIds);
+            chunkEntity.addComponent(chunkComponent);
+            entities.add(chunkEntity);
+
             synchronized (copyLockObject) {
                 finishedBlocksOffMainThread.add(chunkBlocks);
                 entitiesToConsumeOffMainThread.add(entities);
-                chunksToNotifyOffMainThread.add(new ChunkLocation(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z));
+                chunksToNotifyOffMainThread.add(new ChunkLocation(chunkBlocks, chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z));
             }
         }
     }

@@ -3,7 +3,9 @@ package com.gempukku.terasology.graphics.component;
 import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.component.map.GetProperty;
 import com.gempukku.secsy.entity.component.map.SetProperty;
+import com.gempukku.terasology.communication.SharedComponent;
 
+@SharedComponent
 public interface CameraComponent extends Component {
     @SetProperty("near")
     void setNear(float near);

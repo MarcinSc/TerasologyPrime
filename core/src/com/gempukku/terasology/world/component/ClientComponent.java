@@ -4,12 +4,12 @@ import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.component.map.GetProperty;
 import com.gempukku.secsy.entity.component.map.SetProperty;
 
-public interface PlayerComponent extends Component {
-    @GetProperty("playerId")
-    String getPlayerId();
+public interface ClientComponent extends Component {
+    @GetProperty("clientId")
+    String getClientId();
 
-    @SetProperty("playerId")
-    void setPlayerId(String playerId);
+    @SetProperty("clientId")
+    void setClientId(String clientId);
 
     @GetProperty("chunkDistanceX")
     int getChunkDistanceX();

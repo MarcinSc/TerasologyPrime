@@ -17,6 +17,7 @@ import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.entity.game.InternalGameLoopListener;
 import com.gempukku.secsy.entity.network.ToClientEvent;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -71,7 +72,11 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
     @Override
     public void preUpdate() {
         for (ClientCommunication clientCommunication : connectedClients.values()) {
-            clientCommunication.commitChanges();
+            try {
+                clientCommunication.commitChanges();
+            } catch (IOException exp) {
+                handleCommunicationErrorWithClient(clientCommunication);
+            }
         }
 
         for (Map.Entry<String, ClientCommunication> clientChannels : connectedClients.entrySet()) {
@@ -94,7 +99,12 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
             for (Map.Entry<String, Set<Integer>> clientKnownEntities : entitiesClientIsAwareOf.entrySet()) {
                 String clientId = clientKnownEntities.getKey();
                 if (clientKnownEntities.getValue().contains(entityId)) {
-                    connectedClients.get(clientId).sendEvent(entityId, event);
+                    ClientCommunication clientCommunication = connectedClients.get(clientId);
+                    try {
+                        clientCommunication.sendEventToClient(entityId, event);
+                    } catch (IOException exp) {
+                        handleCommunicationErrorWithClient(clientCommunication);
+                    }
                 }
             }
         }
@@ -112,9 +122,17 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
             boolean isKnown = entitiesClientKnows.contains(entityId);
             if (shouldBeKnown && !isKnown) {
                 entitiesClientKnows.add(entityId);
-                clientCommunication.addEntity(entityId, entity, entityComponentFieldFilters);
+                try {
+                    clientCommunication.addEntity(entityId, entity, entityComponentFieldFilters);
+                } catch (IOException exp) {
+                    handleCommunicationErrorWithClient(clientCommunication);
+                }
             } else if (!shouldBeKnown && isKnown) {
-                clientCommunication.removeEntity(entityId);
+                try {
+                    clientCommunication.removeEntity(entityId);
+                } catch (IOException exp) {
+                    handleCommunicationErrorWithClient(clientCommunication);
+                }
                 entitiesClientKnows.remove(entityId);
             }
         }
@@ -143,7 +161,11 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
             ClientCommunication clientCommunication = connectedClients.get(clientId);
 
             if (clientKnownEntities.getValue().remove(entityId)) {
-                clientCommunication.removeEntity(entityId);
+                try {
+                    clientCommunication.removeEntity(entityId);
+                } catch (IOException exp) {
+                    handleCommunicationErrorWithClient(clientCommunication);
+                }
             }
         }
     }
@@ -158,14 +180,18 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
 
             boolean clientShouldKnow = shouldEntityBeKnownToClient(clientEntity, entity);
             boolean clientKnows = entitiesKnownByClient.contains(entityId);
-            if (clientKnows && clientShouldKnow) {
-                clientCommunication.updateEntity(entityId, entity, entityComponentFieldFilters);
-            } else if (clientKnows && !clientShouldKnow) {
-                clientCommunication.removeEntity(entityId);
-                entitiesKnownByClient.remove(entityId);
-            } else if (!clientKnows && clientShouldKnow) {
-                clientCommunication.addEntity(entityId, entity, entityComponentFieldFilters);
-                entitiesKnownByClient.add(entityId);
+            try {
+                if (clientKnows && clientShouldKnow) {
+                    clientCommunication.updateEntity(entityId, entity, entityComponentFieldFilters);
+                } else if (clientKnows && !clientShouldKnow) {
+                    clientCommunication.removeEntity(entityId);
+                    entitiesKnownByClient.remove(entityId);
+                } else if (!clientKnows && clientShouldKnow) {
+                    clientCommunication.addEntity(entityId, entity, entityComponentFieldFilters);
+                    entitiesKnownByClient.add(entityId);
+                }
+            } catch (IOException exp) {
+                handleCommunicationErrorWithClient(clientCommunication);
             }
         }
     }
@@ -183,6 +209,8 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
         clientEntityMap.put(clientId, clientEntity);
         connectedClients.put(clientId, clientCommunication);
         entitiesClientIsAwareOf.put(clientId, new HashSet<>());
+
+        clientEntity.send(ClientConnectedEvent.SINGLETON);
     }
 
     @Override
@@ -190,5 +218,9 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
         clientEntityMap.remove(clientId);
         connectedClients.remove(clientId);
         entitiesClientIsAwareOf.remove(clientId);
+    }
+
+    private void handleCommunicationErrorWithClient(ClientCommunication clientCommunication) {
+        // TODO
     }
 }

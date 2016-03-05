@@ -13,8 +13,8 @@ public interface ChunkGenerator {
             return new EntityDataOrCommonBlock(commonBlock, null);
         }
 
-        public static EntityDataOrCommonBlock entityData(EntityData entityData) {
-            return new EntityDataOrCommonBlock(null, entityData);
+        public static EntityDataOrCommonBlock entityData(String commonBlock, EntityData entityData) {
+            return new EntityDataOrCommonBlock(commonBlock, entityData);
         }
 
         private EntityDataOrCommonBlock(String commonBlock, EntityData entityData) {

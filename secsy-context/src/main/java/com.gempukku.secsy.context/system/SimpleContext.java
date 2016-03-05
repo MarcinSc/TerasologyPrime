@@ -1,18 +1,16 @@
 package com.gempukku.secsy.context.system;
 
 import com.gempukku.secsy.context.SystemContext;
+import com.gempukku.secsy.context.util.PriorityCollection;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SimpleContext<S> implements SystemContext<S> {
     private SystemProducer<S> systemProducer;
     private SystemInitializer<S> systemInitializer;
 
-    private List<LifeCycleSystem> lifeCycleSystems = new LinkedList<>();
+    private PriorityCollection<LifeCycleSystem> lifeCycleSystems = new PriorityCollection<>();
 
     private Collection<S> systems;
     private Map<Class<?>, S> systemMap;

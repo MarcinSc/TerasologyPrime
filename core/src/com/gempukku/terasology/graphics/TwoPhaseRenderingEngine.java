@@ -7,6 +7,7 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
+import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.component.LocationComponent;
@@ -15,7 +16,6 @@ import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
 import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.ui.UiRenderer;
 import com.gempukku.terasology.graphics.ui.UiRendererRegistry;
-import com.gempukku.terasology.util.PriorityCollection;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT,

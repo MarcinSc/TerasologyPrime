@@ -84,7 +84,7 @@ public class BlockMeshGenerator {
             List<Float> vertices = verticesPerTexture[i];
             List<Short> indices = indicesPerTexture[i];
 
-            if (indices.size() > 0) {
+            if (!indices.isEmpty()) {
                 Mesh mesh = new Mesh(true, vertices.size() / parameterCount, indices.size(), VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
                 mesh.setVertices(convertToFloatArray(vertices));
                 mesh.setIndices(convertToShortArray(indices));

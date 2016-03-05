@@ -4,6 +4,7 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
+import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.component.ComponentManager;
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
@@ -15,8 +16,6 @@ import com.gempukku.secsy.entity.event.BeforeEntityUnloaded;
 import com.gempukku.secsy.entity.event.Event;
 import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.entity.game.InternalGameLoopListener;
-import com.gempukku.secsy.entity.io.ComponentData;
-import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.google.common.collect.HashMultimap;
@@ -27,11 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RegisterSystem(profiles = NetProfiles.AUTHORITY, shared = {EntityManager.class, InternalEntityManager.class, EntityRelevanceRuleRegistry.class})
 public class SimpleEntityManager implements EntityManager, InternalEntityManager,
@@ -43,11 +39,11 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     @In
     private InternalGameLoop internalGameLoop;
 
-    private List<EntityEventListener> entityEventListeners = new LinkedList<>();
+    private PriorityCollection<EntityEventListener> entityEventListeners = new PriorityCollection<>();
     private Set<EntityRelevanceRule> entityRelevanceRules = new HashSet<>();
 
     private int maxId;
-    private Set<Entity> entities = new HashSet<>();
+    private Set<SimpleEntity> entities = new HashSet<>();
 
     @Override
     public void addEntityEventListener(EntityEventListener entityEventListener) {
@@ -94,13 +90,13 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         entityRelevanceRules.forEach(EntityRelevanceRule::determineRelevance);
 
         // Determine, which entities are unloaded for which rule
-        Multimap<EntityRelevanceRule, Entity> entitiesToUnloadByRules = determineEntitiesToUnloadByRules();
+        Multimap<EntityRelevanceRule, SimpleEntity> entitiesToUnloadByRules = determineEntitiesToUnloadByRules();
 
         // Pass the entities to their rules to store them before unload
         tellRulesToStoreUnloadingEntities(entitiesToUnloadByRules);
 
         // Send events to them
-        Collection<Entity> entitiesToUnload = entitiesToUnloadByRules.values();
+        Collection<SimpleEntity> entitiesToUnload = entitiesToUnloadByRules.values();
         notifyEntitiesTheyAreBeingUnloaded(entitiesToUnload);
 
         // Unload the entities
@@ -109,7 +105,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         int lastMaxId = maxId;
 
         // Load any new entities that became relevant
-        Set<Entity> loadedEntities = loadNewlyRelevantEntities();
+        Set<SimpleEntity> loadedEntities = loadNewlyRelevantEntities();
 
         // Send events to them
         sendEventsToThem(loadedEntities, lastMaxId);
@@ -122,8 +118,8 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         return ((EntityRefImpl) entityRef).entity.getEntityId();
     }
 
-    private void sendEventsToThem(Set<Entity> loadedEntities, int createdIfIdGreaterThan) {
-        for (Entity entity : loadedEntities) {
+    private void sendEventsToThem(Set<SimpleEntity> loadedEntities, int createdIfIdGreaterThan) {
+        for (SimpleEntity entity : loadedEntities) {
             Map<Class<? extends Component>, Component> components = new HashMap<>();
             for (Map.Entry<Class<? extends Component>, Component> originalComponents : entity.entityValues.entrySet()) {
                 components.put(originalComponents.getKey(), internalComponentManager.copyComponentUnmodifiable(originalComponents.getValue(), false));
@@ -138,21 +134,21 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         }
     }
 
-    private Set<Entity> loadNewlyRelevantEntities() {
-        Set<Entity> loadedEntities = new HashSet<>();
+    private Set<SimpleEntity> loadNewlyRelevantEntities() {
+        Set<SimpleEntity> loadedEntities = new HashSet<>();
         for (EntityRelevanceRule entityRelevanceRule : entityRelevanceRules) {
             entityRelevanceRule.getNewRelevantEntities().forEach(
                     entityData -> {
                         int id = entityData.getEntityId();
                         if (id == 0)
                             id = ++maxId;
-                        Entity entity = new Entity(id);
+                        SimpleEntity entity = new SimpleEntity(internalComponentManager, id);
                         entityData.getComponents().forEach(
                                 componentData -> {
                                     Class<? extends Component> componentClass = componentData.getComponentClass();
                                     Component component = internalComponentManager.createComponent(null, componentClass);
-                                    componentData.getFields().forEach(
-                                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.name, fieldNameAndValue.value));
+                                    componentData.getFields().entrySet().forEach(
+                                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.getKey(), fieldNameAndValue.getValue()));
                                     entity.entityValues.put(componentClass, component);
                                 });
                         entities.add(entity);
@@ -162,7 +158,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         return loadedEntities;
     }
 
-    private void unloadTheEntities(Collection<Entity> entitiesToUnload) {
+    private void unloadTheEntities(Collection<SimpleEntity> entitiesToUnload) {
         entitiesToUnload.forEach(
                 entity -> {
                     entity.exists = false;
@@ -170,7 +166,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 });
     }
 
-    private void notifyEntitiesTheyAreBeingUnloaded(Collection<Entity> entitiesToUnload) {
+    private void notifyEntitiesTheyAreBeingUnloaded(Collection<SimpleEntity> entitiesToUnload) {
         entitiesToUnload.forEach(
                 entity -> {
                     Map<Class<? extends Component>, Component> components = new HashMap<>();
@@ -182,16 +178,16 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 });
     }
 
-    private void tellRulesToStoreUnloadingEntities(Multimap<EntityRelevanceRule, Entity> entitiesToUnload) {
-        for (Map.Entry<EntityRelevanceRule, Collection<Entity>> ruleEntities : entitiesToUnload.asMap().entrySet()) {
+    private void tellRulesToStoreUnloadingEntities(Multimap<EntityRelevanceRule, SimpleEntity> entitiesToUnload) {
+        for (Map.Entry<EntityRelevanceRule, Collection<SimpleEntity>> ruleEntities : entitiesToUnload.asMap().entrySet()) {
             EntityRelevanceRule rule = ruleEntities.getKey();
             rule.storeEntities(ruleEntities.getValue());
         }
     }
 
-    private Multimap<EntityRelevanceRule, Entity> determineEntitiesToUnloadByRules() {
-        Multimap<EntityRelevanceRule, Entity> entitiesToUnload = HashMultimap.create();
-        for (Entity entity : entities) {
+    private Multimap<EntityRelevanceRule, SimpleEntity> determineEntitiesToUnloadByRules() {
+        Multimap<EntityRelevanceRule, SimpleEntity> entitiesToUnload = HashMultimap.create();
+        for (SimpleEntity entity : entities) {
             entityRelevanceRules.stream().
                     filter(entityRelevanceRule -> entityRelevanceRule.isEntityRuledByRuleAndIrrelevant(new EntityRefImpl(entity, true))).
                     forEach(entityRelevanceRule -> entitiesToUnload.put(entityRelevanceRule, entity));
@@ -201,24 +197,8 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
 
     @Override
     public EntityRef createEntity() {
-        Entity entity = new Entity(++maxId);
+        SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
         entities.add(entity);
-        return new EntityRefImpl(entity, false);
-    }
-
-    @Override
-    public EntityRef createNewTemporaryEntity(EntityData entityData) {
-        Entity entity = new Entity(++maxId);
-        entityData.getComponents().forEach(
-                componentData -> {
-                    Class<? extends Component> componentClass = componentData.getComponentClass();
-                    Component component = internalComponentManager.createComponent(null, componentClass);
-                    componentData.getFields().forEach(
-                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.name, fieldNameAndValue.value));
-                    entity.entityValues.put(componentClass, component);
-                });
-        entities.add(entity);
-
         return new EntityRefImpl(entity, false);
     }
 
@@ -237,7 +217,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         Collection<Class<? extends Component>> components = entityRef.listComponents();
         //noinspection unchecked
         entityRef.removeComponents(components.toArray(new Class[components.size()]));
-        Entity underlyingEntity = ((EntityRefImpl) entityRef).entity;
+        SimpleEntity underlyingEntity = ((EntityRefImpl) entityRef).entity;
         underlyingEntity.exists = false;
         entities.remove(underlyingEntity);
     }
@@ -259,53 +239,18 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 entity -> new EntityRefImpl(entity, false));
     }
 
-    private void sendEventToEntity(Entity entity, Event event) {
+    private void sendEventToEntity(SimpleEntity entity, Event event) {
         entityEventListeners.forEach(entityListener -> entityListener.eventSent(new EntityRefImpl(entity, false), event));
-    }
-
-    private class Entity implements EntityData {
-        private int id;
-        private Map<Class<? extends Component>, Component> entityValues = new HashMap<>();
-        private boolean exists = true;
-
-        public Entity(int id) {
-            this.id = id;
-        }
-
-        @Override
-        public int getEntityId() {
-            return id;
-        }
-
-        @Override
-        public Iterable<ComponentData> getComponents() {
-            return entityValues.entrySet().stream().map(
-                    componentEntry -> new ComponentData() {
-                        @Override
-                        public Class<? extends Component> getComponentClass() {
-                            return componentEntry.getKey();
-                        }
-
-                        @Override
-                        public Iterable<FieldNameAndValue> getFields() {
-                            return internalComponentManager.getComponentFieldTypes(componentEntry.getValue()).entrySet().stream().map(
-                                    fieldDef -> {
-                                        Object fieldValue = internalComponentManager.getComponentFieldValue(componentEntry.getValue(), fieldDef.getKey(), componentEntry.getKey());
-                                        return new FieldNameAndValue(fieldDef.getKey(), fieldValue);
-                                    }).collect(Collectors.toList());
-                        }
-                    }).collect(Collectors.toList());
-        }
     }
 
     @SuppressWarnings("unchecked")
     private class EntityRefImpl implements EntityRef {
-        private Entity entity;
+        private SimpleEntity entity;
         private Map<Class<? extends Component>, Boolean> newInThisEntityRef = new HashMap<>();
         private Map<Class<? extends Component>, Component> accessibleComponents = new HashMap<>();
         private boolean readOnly;
 
-        public EntityRefImpl(Entity entity, boolean readOnly) {
+        public EntityRefImpl(SimpleEntity entity, boolean readOnly) {
             this.entity = entity;
             this.readOnly = readOnly;
         }
@@ -396,12 +341,12 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
             addedComponents.keySet().forEach(
                     clazz -> newInThisEntityRef.put(clazz, false));
 
-            if (addedComponents.size() > 0) {
+            if (!addedComponents.isEmpty()) {
                 AfterComponentAdded event = new AfterComponentAdded(addedComponents);
                 createNewEntityRef(this).send(event);
             }
 
-            if (updatedComponentsOld.size() > 0) {
+            if (!updatedComponentsOld.isEmpty()) {
                 AfterComponentUpdated event = new AfterComponentUpdated(updatedComponentsOld, updatedComponentsNew);
                 createNewEntityRef(this).send(event);
             }

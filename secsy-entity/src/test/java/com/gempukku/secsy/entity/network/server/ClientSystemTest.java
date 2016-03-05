@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,7 +62,7 @@ public class ClientSystemTest {
     }
 
     @Test
-    public void clientIsAwareOfRelevantEntities() {
+    public void clientIsAwareOfRelevantEntities() throws IOException {
         EntityRef clientEntity = Mockito.mock(EntityRef.class);
         ClientCommunication clientCommunication = Mockito.mock(ClientCommunication.class);
 
@@ -106,7 +107,7 @@ public class ClientSystemTest {
     }
 
     @Test
-    public void clientNotAwareOfNotClientEventsOnRelevantEntity() {
+    public void clientNotAwareOfNotClientEventsOnRelevantEntity() throws IOException {
         EntityRef clientEntity = Mockito.mock(EntityRef.class);
         ClientCommunication clientCommunication = Mockito.mock(ClientCommunication.class);
 
@@ -127,7 +128,7 @@ public class ClientSystemTest {
     }
 
     @Test
-    public void clientIsAwareOfClientEventsOnRelevantEntity() {
+    public void clientIsAwareOfClientEventsOnRelevantEntity() throws IOException {
         EntityRef clientEntity = Mockito.mock(EntityRef.class);
         ClientCommunication clientCommunication = Mockito.mock(ClientCommunication.class);
 
@@ -144,13 +145,13 @@ public class ClientSystemTest {
 
         EventRelevantToClient event = new EventRelevantToClient();
         clientSystem.eventSent(relevantEntity, event);
-        Mockito.verify(clientCommunication).sendEvent(Mockito.eq(1), Mockito.same(event));
+        Mockito.verify(clientCommunication).sendEventToClient(Mockito.eq(1), Mockito.same(event));
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
 
     @Test
-    public void clientIsNotifiedIfEntityTheyWatchIsUnloaded() {
+    public void clientIsNotifiedIfEntityTheyWatchIsUnloaded() throws IOException {
         EntityRef clientEntity = Mockito.mock(EntityRef.class);
         ClientCommunication clientCommunication = Mockito.mock(ClientCommunication.class);
 
@@ -172,7 +173,7 @@ public class ClientSystemTest {
     }
 
     @Test
-    public void clientsAreNotifiedOfFrameEndAndTheirPendingEventsAreProcessed() {
+    public void clientsAreNotifiedOfFrameEndAndTheirPendingEventsAreProcessed() throws IOException {
         EntityRef clientEntity = Mockito.mock(EntityRef.class);
         SampleEvent event = new SampleEvent();
         ClientCommunication clientCommunication = Mockito.mock(ClientCommunication.class);
