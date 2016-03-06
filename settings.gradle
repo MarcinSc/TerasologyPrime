@@ -1,1 +1,1 @@
-include 'desktop', 'core', 'secsy-context', 'secsy-entity'
+include 'desktop', 'physics', 'core', 'secsy-context', 'secsy-entity'

@@ -33,7 +33,7 @@ project(":desktop") {
 
 
     dependencies {
-        compile project(":core")
+        compile project(":physics")
 
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
@@ -43,6 +43,14 @@ project(":desktop") {
         compile "com.gempukku.secsy:secsy-context:1.0"
         compile "com.gempukku.secsy:secsy-entity:1.0"
         compile "com.googlecode.json-simple:json-simple:1.1"
+    }
+}
+
+project(":physics") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":core")
     }
 }
 

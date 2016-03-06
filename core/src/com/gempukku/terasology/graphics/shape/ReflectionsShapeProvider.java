@@ -1,23 +1,9 @@
 package com.gempukku.terasology.graphics.shape;
 
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
-import com.gempukku.secsy.entity.Component;
-import com.gempukku.secsy.entity.io.ComponentData;
-import com.gempukku.secsy.entity.io.EntityData;
-import com.gempukku.terasology.graphics.environment.renderer.BlockSide;
-import com.gempukku.terasology.prefab.PrefabComponentData;
-import com.gempukku.terasology.prefab.PrefabData;
-import com.gempukku.terasology.world.component.TexturePart;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.reflections.Configuration;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
@@ -25,18 +11,11 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.vfs.Vfs;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RegisterSystem(
         shared = ShapeProvider.class)

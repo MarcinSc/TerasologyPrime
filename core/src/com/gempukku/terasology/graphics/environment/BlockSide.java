@@ -1,6 +1,4 @@
-package com.gempukku.terasology.graphics.environment.renderer;
-
-import com.badlogic.gdx.math.Vector3;
+package com.gempukku.terasology.graphics.environment;
 
 import java.util.HashMap;
 import java.util.Map;

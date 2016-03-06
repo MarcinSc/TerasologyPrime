@@ -76,6 +76,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         clientProfiles.add(NetProfiles.CLIENT);
         // We use components created in map
         clientProfiles.add("mapComponent");
+        clientProfiles.add("generateChunkMeshes");
 
         clientContext = new SECSyContext(clientProfiles, new Reflections(scanBasedOnAnnotations));
         clientContext.startup();

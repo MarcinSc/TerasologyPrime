@@ -1,7 +1,11 @@
-package com.gempukku.terasology.graphics.environment.renderer;
+package com.gempukku.terasology.graphics.environment;
 
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
@@ -9,6 +13,7 @@ import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
+import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
@@ -19,15 +24,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class BlockMeshGenerator {
+public class ChunkMeshGenerator {
+    private ChunkBlocksProvider chunkBlocksProvider;
     private final CommonBlockManager commonBlockManager;
     private final TextureAtlasProvider textureAtlasProvider;
     private final ShapeProvider shapeProvider;
 
     private String shapeAndTextureComponentName;
 
-    public BlockMeshGenerator(CommonBlockManager commonBlockManager, TextureAtlasProvider textureAtlasProvider,
+    public ChunkMeshGenerator(ChunkBlocksProvider chunkBlocksProvider, CommonBlockManager commonBlockManager, TextureAtlasProvider textureAtlasProvider,
                               TerasologyComponentManager terasologyComponentManager, ShapeProvider shapeProvider) {
+        this.chunkBlocksProvider = chunkBlocksProvider;
         this.commonBlockManager = commonBlockManager;
         this.textureAtlasProvider = textureAtlasProvider;
         this.shapeProvider = shapeProvider;
@@ -35,7 +42,9 @@ public class BlockMeshGenerator {
         shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
     }
 
-    public ChunkMeshLists generateChunkMeshFromChunkBlocks(ChunkBlocks chunkBlocks, List<Texture> textures) {
+    // Would be nice to get rid of the "textures" here
+    public ChunkMeshLists generateStaticChunkMeshFromChunkBlocks(List<Texture> textures, String worldId, int x, int y, int z) {
+        ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, x, y, z);
         int chunkX = chunkBlocks.x * ChunkSize.X;
         int chunkY = chunkBlocks.y * ChunkSize.Y;
         int chunkZ = chunkBlocks.z * ChunkSize.Z;
@@ -64,7 +73,29 @@ public class BlockMeshGenerator {
             indicesPerTexture.add(convertToShortArray(indices));
         }
 
-        return new ChunkMeshLists(verticesPerTexture, indicesPerTexture);
+        return new ChunkMeshLists(8, verticesPerTexture, indicesPerTexture);
+    }
+
+    public List<MeshPart> generateMeshParts(ChunkMeshLists chunkMeshLists) {
+        List<MeshPart> result = new LinkedList<>();
+        int textureCount = chunkMeshLists.verticesPerTexture.size();
+        for (int i = 0; i < textureCount; i++) {
+            float[] vertices = chunkMeshLists.verticesPerTexture.get(i);
+            short[] indices = chunkMeshLists.indicesPerTexture.get(i);
+
+            if (indices.length > 0) {
+                Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length, VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
+                mesh.setVertices(vertices);
+                mesh.setIndices(indices);
+
+                MeshPart meshPart = new MeshPart("chunk", mesh, 0, indices.length, GL20.GL_TRIANGLES);
+
+                result.add(meshPart);
+            } else {
+                result.add(null);
+            }
+        }
+        return result;
     }
 
     public void generateMeshForBlockFromAtlas(List<Float> vertices, List<Short> indices, Texture texture, ChunkBlocks chunkBlocks,
