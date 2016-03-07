@@ -26,7 +26,8 @@ import com.google.common.collect.Multimap;
 import java.util.HashMap;
 import java.util.Map;
 
-@RegisterSystem
+@RegisterSystem(
+        profiles = "physics")
 public class PhysicsEngine implements LifeCycleSystem {
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
