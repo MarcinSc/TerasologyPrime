@@ -17,11 +17,11 @@ public class MyShaderProvider implements ShaderProvider {
     private Vector3 lightPosition;
     private float cameraFar;
 
-    public void setShadowRendering(boolean shadowRendering) {
+    public void setShadowPass(boolean shadowRendering) {
         this.shadowRendering = shadowRendering;
     }
 
-    public void setCameraFar(float cameraFar) {
+    public void setLightCameraFar(float cameraFar) {
         this.cameraFar = cameraFar;
     }
 

@@ -59,8 +59,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     public void preInitialize() {
         myShaderProvider = new MyShaderProvider();
         modelBatch = new ModelBatch(myShaderProvider);
-        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 2048, 2048, true);
-        lightCamera = new OrthographicCamera(2048, 2048);
+        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1024, 1024, true);
+        lightCamera = new OrthographicCamera(1024, 1024);
     }
 
     @Override
@@ -79,19 +79,19 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     private void renderLights(Camera camera, String worldId) {
-        float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % 20000) / 20000f);
+        float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % 60000) / 60000f);
 
         lightCamera.position.set(
-                (float) (camera.position.x + camera.far * Math.sin(direction) / 2),
-                (float) (camera.position.y + camera.far * Math.cos(direction) / 2),
+                (float) (camera.position.x + 2 * camera.far * Math.sin(direction)),
+                (float) (camera.position.y + 2 * camera.far * Math.cos(direction)),
                 camera.position.z);
         lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
-        lightCamera.far = camera.far;
+        lightCamera.far = camera.far * 3.1f;
         lightCamera.near = camera.near;
         lightCamera.update();
 
-        myShaderProvider.setShadowRendering(true);
-        myShaderProvider.setCameraFar(camera.far);
+        myShaderProvider.setShadowPass(true);
+        myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
 
         lightFrameBuffer.begin();
@@ -99,7 +99,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         modelBatch.begin(lightCamera);
         for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-            if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
+            if (renderableChunk.isRenderable()) {// && renderableChunk.isVisible(camera)) {
                 modelBatch.render(renderableChunk.getRenderableProvider());
             }
         }
@@ -108,9 +108,9 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     private void renderChunks(Camera camera, String worldId) {
-        myShaderProvider.setShadowRendering(false);
+        myShaderProvider.setShadowPass(false);
         myShaderProvider.setLightTrans(lightCamera.combined);
-        myShaderProvider.setCameraFar(camera.far);
+        myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
 
         lightFrameBuffer.getColorBufferTexture().bind(2);

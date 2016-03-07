@@ -54,7 +54,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         boolean hasActiveCamera = false;
 
         //noinspection unchecked
-        for (EntityRef entity: entityManager.getEntitiesWithComponents(CameraComponent.class, LocationComponent.class)) {
+        for (EntityRef entity : entityManager.getEntitiesWithComponents(CameraComponent.class, LocationComponent.class)) {
             CameraComponent cameraComponent = entity.getComponent(CameraComponent.class);
             if (cameraComponent.isActive()) {
                 camera.near = cameraComponent.getNear();
@@ -62,9 +62,9 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
                 LocationComponent location = entity.getComponent(LocationComponent.class);
                 camera.position.set(
-                        location.getX()+cameraComponent.getTranslateFromLocationX(),
-                        location.getY()+cameraComponent.getTranslateFromLocationY(),
-                        location.getZ()+cameraComponent.getTranslateFromLocationZ());
+                        location.getX() + cameraComponent.getTranslateFromLocationX(),
+                        location.getY() + cameraComponent.getTranslateFromLocationY(),
+                        location.getZ() + cameraComponent.getTranslateFromLocationZ());
 
                 camera.direction.set(cameraComponent.getDirectionX(), cameraComponent.getDirectionY(), cameraComponent.getDirectionZ());
                 camera.up.set(0, 1, 0);
