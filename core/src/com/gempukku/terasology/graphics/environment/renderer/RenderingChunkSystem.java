@@ -2,8 +2,11 @@ package com.gempukku.terasology.graphics.environment.renderer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -48,13 +51,16 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private Multimap<String, RenderableChunk> renderableChunksInWorld = HashMultimap.create();
 
     private ModelBatch modelBatch;
-    private Shader shader;
+    private MyShaderProvider myShaderProvider;
+    private FrameBuffer lightFrameBuffer;
+    private Camera lightCamera;
 
     @Override
     public void preInitialize() {
-        modelBatch = new ModelBatch(
-                Gdx.files.internal("shader/chunk.vert"),
-                Gdx.files.internal("shader/chunk.frag"));
+        myShaderProvider = new MyShaderProvider();
+        modelBatch = new ModelBatch(myShaderProvider);
+        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 2048, 2048, true);
+        lightCamera = new OrthographicCamera(2048, 2048);
     }
 
     @Override
@@ -68,6 +74,47 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
 
     @Override
     public void renderEnvironment(Camera camera, String worldId) {
+        renderLights(camera, worldId);
+        renderChunks(camera, worldId);
+    }
+
+    private void renderLights(Camera camera, String worldId) {
+        float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % 20000) / 20000f);
+
+        lightCamera.position.set(
+                (float) (camera.position.x + camera.far * Math.sin(direction) / 2),
+                (float) (camera.position.y + camera.far * Math.cos(direction) / 2),
+                camera.position.z);
+        lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
+        lightCamera.far = camera.far;
+        lightCamera.near = camera.near;
+        lightCamera.update();
+
+        myShaderProvider.setShadowRendering(true);
+        myShaderProvider.setCameraFar(camera.far);
+        myShaderProvider.setLightPosition(lightCamera.position);
+
+        lightFrameBuffer.begin();
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        modelBatch.begin(lightCamera);
+        for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
+            if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
+                modelBatch.render(renderableChunk.getRenderableProvider());
+            }
+        }
+        modelBatch.end();
+        lightFrameBuffer.end();
+    }
+
+    private void renderChunks(Camera camera, String worldId) {
+        myShaderProvider.setShadowRendering(false);
+        myShaderProvider.setLightTrans(lightCamera.combined);
+        myShaderProvider.setCameraFar(camera.far);
+        myShaderProvider.setLightPosition(lightCamera.position);
+
+        lightFrameBuffer.getColorBufferTexture().bind(2);
+
         modelBatch.begin(camera);
 
         for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {

@@ -47,17 +47,21 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
             for (int dy = 0; dy < ChunkSize.Y; dy++) {
                 int blockLevel = y * ChunkSize.Y + dy;
                 for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                    float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
-                    noiseForColumn = (noiseForColumn + 1 / 2);
-                    int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
-                    if (blockLevel > groundLevel) {
+                    if (Math.pow(x * ChunkSize.X + dx, 2) + Math.pow(y * ChunkSize.Y + dy + 10, 2) + Math.pow(z * ChunkSize.Z + dz, 2) < 100) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(air));
-                    } else if (blockLevel > groundLevel - 1) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(grass));
-                    } else if (blockLevel > groundLevel - 3) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
                     } else {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(stone));
+                        float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
+                        noiseForColumn = (noiseForColumn + 1 / 2);
+                        int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
+                        if (blockLevel > groundLevel) {
+                            entities.add(EntityDataOrCommonBlock.commonBlock(air));
+                        } else if (blockLevel > groundLevel - 1) {
+                            entities.add(EntityDataOrCommonBlock.commonBlock(grass));
+                        } else if (blockLevel > groundLevel - 3) {
+                            entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
+                        } else {
+                            entities.add(EntityDataOrCommonBlock.commonBlock(stone));
+                        }
                     }
                 }
             }
