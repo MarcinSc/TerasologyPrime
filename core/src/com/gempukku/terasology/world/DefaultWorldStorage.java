@@ -23,8 +23,8 @@ public class DefaultWorldStorage implements WorldStorage {
 
     @Override
     public EntityRefAndCommonBlockId getBlockEntityAndBlockIdAt(String worldId, int x, int y, int z) {
-        String commonBlockAt = getBlockIdAt(worldId, x, y, z);
-        if (commonBlockAt == null)
+        short commonBlockAt = getBlockIdAt(worldId, x, y, z);
+        if (commonBlockAt == -1)
             return null;
 
         for (EntityRef entityRef : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
@@ -38,7 +38,7 @@ public class DefaultWorldStorage implements WorldStorage {
     }
 
     @Override
-    public String getBlockIdAt(String worldId, int x, int y, int z) {
+    public short getBlockIdAt(String worldId, int x, int y, int z) {
         return chunkBlocksProvider.getCommonBlockAt(worldId, x, y, z);
     }
 

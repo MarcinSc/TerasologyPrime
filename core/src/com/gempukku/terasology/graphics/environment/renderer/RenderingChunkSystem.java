@@ -70,11 +70,9 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     public void renderEnvironment(Camera camera, String worldId) {
         modelBatch.begin(camera);
 
-        synchronized (renderableChunksInWorld) {
-            for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-                if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
-                    modelBatch.render(renderableChunk.getRenderableProvider());
-                }
+        for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
+            if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
+                modelBatch.render(renderableChunk.getRenderableProvider());
             }
         }
         modelBatch.end();

@@ -72,13 +72,13 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
     }
 
     @Override
-    public synchronized String getCommonBlockAt(String worldId, int x, int y, int z) {
+    public synchronized short getCommonBlockAt(String worldId, int x, int y, int z) {
         WorldBlock tempWorldBlock = new WorldBlock();
         tempWorldBlock.set(x, y, z);
 
         ChunkBlocks chunkBlocks = getChunkBlocks(worldId, tempWorldBlock.getChunkX(), tempWorldBlock.getChunkY(), tempWorldBlock.getChunkZ());
         if (chunkBlocks == null || chunkBlocks.getStatus() != ChunkBlocks.Status.READY)
-            return null;
+            return -1;
 
         return chunkBlocks.getCommonBlockAt(tempWorldBlock.getInChunkX(), tempWorldBlock.getInChunkY(), tempWorldBlock.getInChunkZ());
     }

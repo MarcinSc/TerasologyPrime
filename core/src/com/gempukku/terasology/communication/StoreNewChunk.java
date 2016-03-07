@@ -9,9 +9,9 @@ public class StoreNewChunk extends Event {
     public final int x;
     public final int y;
     public final int z;
-    public final String[] blockIds;
+    public final short[] blockIds;
 
-    public StoreNewChunk(String worldId, int x, int y, int z, String[] blockIds) {
+    public StoreNewChunk(String worldId, int x, int y, int z, short[] blockIds) {
         this.worldId = worldId;
         this.x = x;
         this.y = y;

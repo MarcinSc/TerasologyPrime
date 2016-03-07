@@ -13,6 +13,7 @@ import com.gempukku.secsy.entity.network.serialize.EntityInformation;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.gempukku.terasology.component.LocationComponent;
+import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.WorldStorage;
@@ -44,8 +45,15 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     private WorldStorage worldStorage;
     @In
     private ChunkGenerator chunkGenerator;
+    @In
+    private CommonBlockManager commonBlockManager;
 
-    private Executor generatingChunksExecutor = Executors.newFixedThreadPool(4);
+    private Executor generatingChunksExecutor = Executors.newFixedThreadPool(4,
+            r -> {
+                Thread thr = new Thread(r);
+                thr.setName("Chunk generation");
+                return thr;
+            });
 
     // This is being accessed both by main thread, as well as generating threads
     private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
@@ -127,13 +135,13 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     }
 
     @Override
-    public String getCommonBlockAt(String worldId, int x, int y, int z) {
+    public short getCommonBlockAt(String worldId, int x, int y, int z) {
         WorldBlock tempWorldBlock = new WorldBlock();
         tempWorldBlock.set(x, y, z);
 
         ChunkBlocks chunkBlocks = getChunkBlocks(worldId, tempWorldBlock.getChunkX(), tempWorldBlock.getChunkY(), tempWorldBlock.getChunkZ());
         if (chunkBlocks == null || chunkBlocks.getStatus() != ChunkBlocks.Status.READY)
-            return null;
+            return -1;
 
         return chunkBlocks.getCommonBlockAt(tempWorldBlock.getInChunkX(), tempWorldBlock.getInChunkY(), tempWorldBlock.getInChunkZ());
     }
@@ -204,7 +212,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         public void run() {
             Iterable<ChunkGenerator.EntityDataOrCommonBlock> chunkData = chunkGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
 
-            String[] chunkBlockIds = new String[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
+            short[] chunkBlockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
 
             Set<EntityData> entities = new HashSet<>();
             int index = 0;

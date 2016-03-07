@@ -49,6 +49,20 @@ public enum BlockSide {
     }
 
     public BlockSide getOpposite() {
-        return opposite.get(this);
+        switch (this) {
+            case top:
+                return bottom;
+            case bottom:
+                return top;
+            case front:
+                return back;
+            case back:
+                return front;
+            case left:
+                return right;
+            case right:
+                return left;
+        }
+        return null;
     }
 }

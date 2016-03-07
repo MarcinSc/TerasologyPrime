@@ -44,33 +44,39 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     @In
     private ChunkMeshGenerationOrder chunkMeshGenerationOrder;
 
+    private final int offlineThreadCount = 3;
+
     private ChunkMeshGenerator chunkMeshGenerator;
     private Multimap<String, ChunkMesh> chunkMeshesInWorld = HashMultimap.create();
-    private OfflineProcessingThread offlineProcessingThread;
+    private OfflineProcessingThread[] offlineProcessingThread;
 
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
 
-        offlineProcessingThread = new OfflineProcessingThread();
-        Thread thr = new Thread(offlineProcessingThread);
-        thr.start();
+        offlineProcessingThread = new OfflineProcessingThread[offlineThreadCount];
+        for (int i = 0; i < offlineThreadCount; i++) {
+            offlineProcessingThread[i] = new OfflineProcessingThread();
+            Thread thr = new Thread(offlineProcessingThread[i]);
+            thr.setName("Chunk-mesh-generation-" + i);
+            thr.start();
+        }
     }
 
     @Override
     public ChunkMesh getChunkMesh(String worldId, int x, int y, int z) {
-        synchronized (chunkMeshesInWorld) {
+//        synchronized (chunkMeshesInWorld) {
             for (ChunkMesh chunkMesh : chunkMeshesInWorld.get(worldId)) {
                 if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z)
                     return chunkMesh;
             }
-        }
+//        }
         return null;
     }
 
     @Override
     public void update(long delta) {
-        synchronized (chunkMeshesInWorld) {
+//        synchronized (chunkMeshesInWorld) {
             for (ChunkMesh renderableChunk : chunkMeshesInWorld.values()) {
                 boolean updated = renderableChunk.updateModelIfNeeded(chunkMeshGenerator);
                 if (updated) {
@@ -79,7 +85,7 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
                             renderableChunk.worldId, renderableChunk.x, renderableChunk.y, renderableChunk.z));
                 }
             }
-        }
+//        }
     }
 
     private EntityRef findWorldEntity(String worldId) {

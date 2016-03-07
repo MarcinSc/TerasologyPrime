@@ -92,7 +92,7 @@ public class PhysicsEngine implements LifeCycleSystem {
         for (int dx = 0; dx < ChunkSize.X; dx++) {
             for (int dy = 0; dy < ChunkSize.Y; dy++) {
                 for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                    String commonBlockAt = chunkBlocks.getCommonBlockAt(dx, dy, dz);
+                    short commonBlockAt = chunkBlocks.getCommonBlockAt(dx, dy, dz);
                     if (hasTextureAndShape(commonBlockAt)) {
 //                        btConvexTriangleMeshShape blockMeshShape = new btConvexTriangleMeshShape()
 //
@@ -107,12 +107,12 @@ public class PhysicsEngine implements LifeCycleSystem {
         }
     }
 
-    private String getShapeId(String commonBlockId) {
+    private String getShapeId(short commonBlockId) {
         return (String) commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
                 get(shapeAndTextureComponentName).getFields().get("shapeId");
     }
 
-    private boolean hasTextureAndShape(String commonBlockId) {
+    private boolean hasTextureAndShape(short commonBlockId) {
         return commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
                 get(shapeAndTextureComponentName) != null;
     }

@@ -191,11 +191,6 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
 
                     @Override
                     public void visitEventReceived(int entityId, Event event) {
-//                        try {
-//                            new ObjectMapper().writeValue(System.out, event);
-//                        } catch (IOException exp) {
-//                            // ignore
-//                        }
                         sendEventToEntity(getServerEntityById(entityId), event);
                     }
                 });

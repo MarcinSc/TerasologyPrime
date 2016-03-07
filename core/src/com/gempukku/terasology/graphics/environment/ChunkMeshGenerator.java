@@ -6,20 +6,21 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.ShortArray;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
+import com.gempukku.terasology.prefab.PrefabComponentData;
+import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,12 @@ public class ChunkMeshGenerator {
     private final TextureAtlasProvider textureAtlasProvider;
     private final ShapeProvider shapeProvider;
 
-    private String shapeAndTextureComponentName;
+    private ShortArrayThreadLocal shorts = new ShortArrayThreadLocal();
+    private FloatArrayThreadLocal floats = new FloatArrayThreadLocal();
+
+    private ShapeDef[] shapesByBlockId;
+    private Map<String, String>[] texturesByBlockId;
+    private boolean[] opaqueByBlockId;
 
     public ChunkMeshGenerator(ChunkBlocksProvider chunkBlocksProvider, CommonBlockManager commonBlockManager, TextureAtlasProvider textureAtlasProvider,
                               TerasologyComponentManager terasologyComponentManager, ShapeProvider shapeProvider) {
@@ -39,7 +45,22 @@ public class ChunkMeshGenerator {
         this.textureAtlasProvider = textureAtlasProvider;
         this.shapeProvider = shapeProvider;
 
-        shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
+        String shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
+
+        int commonBlockCount = commonBlockManager.getCommonBlockCount();
+        shapesByBlockId = new ShapeDef[commonBlockCount];
+        texturesByBlockId = new Map[commonBlockCount];
+        opaqueByBlockId = new boolean[commonBlockCount];
+        for (short i = 0; i < commonBlockCount; i++) {
+            PrefabData commonBlockData = commonBlockManager.getCommonBlockById(i);
+            PrefabComponentData shapeAndTextureComponent = commonBlockData.getComponents().
+                    get(shapeAndTextureComponentName);
+            if (shapeAndTextureComponent != null) {
+                shapesByBlockId[i] = shapeProvider.getShapeById((String) shapeAndTextureComponent.getFields().get("shapeId"));
+                texturesByBlockId[i] = (Map<String, String>) shapeAndTextureComponent.getFields().get("parts");
+                opaqueByBlockId[i] = (Boolean) shapeAndTextureComponent.getFields().get("opaque");
+            }
+        }
     }
 
     // Would be nice to get rid of the "textures" here
@@ -51,14 +72,17 @@ public class ChunkMeshGenerator {
 
         int textureCount = textures.size();
 
-        List<float[]> verticesPerTexture = new ArrayList<>(textureCount);
-        List<short[]> indicesPerTexture = new ArrayList<>(textureCount);
+        float[][] verticesPerTexture = new float[textureCount][];
+        short[][] indicesPerTexture = new short[textureCount][];
 
         for (int i = 0; i < textureCount; i++) {
             Texture texture = textures.get(i);
 
-            List<Float> vertices = new LinkedList<>();
-            List<Short> indices = new LinkedList<>();
+            FloatArray vertices = floats.get();
+            vertices.clear();
+
+            ShortArray indices = shorts.get();
+            indices.clear();
 
             for (int dx = 0; dx < ChunkSize.X; dx++) {
                 for (int dy = 0; dy < ChunkSize.Y; dy++) {
@@ -69,8 +93,8 @@ public class ChunkMeshGenerator {
                     }
                 }
             }
-            verticesPerTexture.add(convertToFloatArray(vertices));
-            indicesPerTexture.add(convertToShortArray(indices));
+            verticesPerTexture[i] = vertices.toArray();
+            indicesPerTexture[i] = indices.toArray();
         }
 
         return new ChunkMeshLists(8, verticesPerTexture, indicesPerTexture);
@@ -78,10 +102,10 @@ public class ChunkMeshGenerator {
 
     public List<MeshPart> generateMeshParts(ChunkMeshLists chunkMeshLists) {
         List<MeshPart> result = new LinkedList<>();
-        int textureCount = chunkMeshLists.verticesPerTexture.size();
+        int textureCount = chunkMeshLists.verticesPerTexture.length;
         for (int i = 0; i < textureCount; i++) {
-            float[] vertices = chunkMeshLists.verticesPerTexture.get(i);
-            short[] indices = chunkMeshLists.indicesPerTexture.get(i);
+            float[] vertices = chunkMeshLists.verticesPerTexture[i];
+            short[] indices = chunkMeshLists.indicesPerTexture[i];
 
             if (indices.length > 0) {
                 Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length, VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
@@ -98,15 +122,15 @@ public class ChunkMeshGenerator {
         return result;
     }
 
-    public void generateMeshForBlockFromAtlas(List<Float> vertices, List<Short> indices, Texture texture, ChunkBlocks chunkBlocks,
-                                              int chunkX, int chunkY, int chunkZ,
-                                              int x, int y, int z) {
-        String block = chunkBlocks.getCommonBlockAt(x, y, z);
-        if (hasTextureAndShape(block)) {
-            Map<String, String> availableTextures = getTextureParts(block);
-            String shapeId = getShapeId(block);
+    private void generateMeshForBlockFromAtlas(FloatArray vertices, ShortArray indices, Texture texture, ChunkBlocks chunkBlocks,
+                                               int chunkX, int chunkY, int chunkZ,
+                                               int x, int y, int z) {
+        short block = chunkBlocks.getCommonBlockAt(x, y, z);
 
-            ShapeDef shape = shapeProvider.getShapeById(shapeId);
+        if (shapesByBlockId[block] != null && texturesByBlockId[block] != null) {
+            Map<String, String> availableTextures = texturesByBlockId[block];
+
+            ShapeDef shape = shapesByBlockId[block];
             for (ShapePartDef shapePart : shape.getShapeParts()) {
                 String side = shapePart.getSide();
 
@@ -127,7 +151,7 @@ public class ChunkMeshGenerator {
                     // This array will store indexes of vertices in the resulting Mesh
                     short[] vertexMapping = new short[vertexCount];
                     for (int i = 0; i < vertexCount; i++) {
-                        vertexMapping[i] = (short) (vertices.size() / 8);
+                        vertexMapping[i] = (short) (vertices.size / 8);
 
                         Float[] vertexCoords = shapePart.getVertices().get(i);
                         Float[] normalValues = shapePart.getNormals().get(i);
@@ -150,24 +174,6 @@ public class ChunkMeshGenerator {
         }
     }
 
-    private float[] convertToFloatArray(Collection<Float> elements) {
-        float[] result = new float[elements.size()];
-        Iterator<Float> iterator = elements.iterator();
-        for (int i = 0; i < result.length; i++) {
-            result[i] = iterator.next();
-        }
-        return result;
-    }
-
-    private short[] convertToShortArray(Collection<Short> elements) {
-        short[] result = new short[elements.size()];
-        Iterator<Short> iterator = elements.iterator();
-        for (int i = 0; i < result.length; i++) {
-            result[i] = iterator.next();
-        }
-        return result;
-    }
-
     private boolean isNeighbourBlockCoveringSide(ChunkBlocks chunkBlocks, int x, int y, int z, BlockSide blockSide) {
         int resultX = x + blockSide.getNormalX();
         int resultY = y + blockSide.getNormalY();
@@ -178,10 +184,10 @@ public class ChunkMeshGenerator {
             return false;
         }
 
-        String neighbouringBlock = chunkBlocks.getCommonBlockAt(resultX, resultY, resultZ);
-        if (hasTextureAndShape(neighbouringBlock)) {
-            if (isTextureOpaque(neighbouringBlock)) {
-                ShapeDef neighbourShapeDef = shapeProvider.getShapeById(getShapeId(neighbouringBlock));
+        short neighbouringBlock = chunkBlocks.getCommonBlockAt(resultX, resultY, resultZ);
+        if (shapesByBlockId[neighbouringBlock] != null) {
+            if (opaqueByBlockId[neighbouringBlock]) {
+                ShapeDef neighbourShapeDef = shapesByBlockId[neighbouringBlock];
                 if (neighbourShapeDef.getFullParts().contains(blockSide.getOpposite().name())) {
                     return true;
                 }
@@ -206,23 +212,17 @@ public class ChunkMeshGenerator {
         return null;
     }
 
-    private boolean isTextureOpaque(String commonBlockId) {
-        return (Boolean) commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
-                get(shapeAndTextureComponentName).getFields().get("opaque");
+    private static class ShortArrayThreadLocal extends ThreadLocal<ShortArray> {
+        @Override
+        protected ShortArray initialValue() {
+            return new ShortArray(1024);
+        }
     }
 
-    private Map<String, String> getTextureParts(String commonBlockId) {
-        return (Map<String, String>) commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
-                get(shapeAndTextureComponentName).getFields().get("parts");
-    }
-
-    private String getShapeId(String commonBlockId) {
-        return (String) commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
-                get(shapeAndTextureComponentName).getFields().get("shapeId");
-    }
-
-    private boolean hasTextureAndShape(String commonBlockId) {
-        return commonBlockManager.getCommonBlockById(commonBlockId).getComponents().
-                get(shapeAndTextureComponentName) != null;
+    private static class FloatArrayThreadLocal extends ThreadLocal<FloatArray> {
+        @Override
+        protected FloatArray initialValue() {
+            return new FloatArray(1024);
+        }
     }
 }

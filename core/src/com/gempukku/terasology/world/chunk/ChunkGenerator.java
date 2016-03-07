@@ -7,17 +7,17 @@ public interface ChunkGenerator {
 
     class EntityDataOrCommonBlock {
         public final EntityData entityData;
-        public final String commonBlock;
+        public final short commonBlock;
 
-        public static EntityDataOrCommonBlock commonBlock(String commonBlock) {
+        public static EntityDataOrCommonBlock commonBlock(short commonBlock) {
             return new EntityDataOrCommonBlock(commonBlock, null);
         }
 
-        public static EntityDataOrCommonBlock entityData(String commonBlock, EntityData entityData) {
+        public static EntityDataOrCommonBlock entityData(short commonBlock, EntityData entityData) {
             return new EntityDataOrCommonBlock(commonBlock, entityData);
         }
 
-        private EntityDataOrCommonBlock(String commonBlock, EntityData entityData) {
+        private EntityDataOrCommonBlock(short commonBlock, EntityData entityData) {
             this.commonBlock = commonBlock;
             this.entityData = entityData;
         }

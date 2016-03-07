@@ -11,7 +11,7 @@ public class ChunkBlocks {
     public final int z;
     private Status status;
 
-    private String[] blocks;
+    private short[] blocks;
 
     public ChunkBlocks(Status status, String worldId, int x, int y, int z) {
         this.status = status;
@@ -29,15 +29,15 @@ public class ChunkBlocks {
         this.status = status;
     }
 
-    public void setBlocks(String[] blocks) {
+    public void setBlocks(short[] blocks) {
         this.blocks = blocks;
     }
 
-    public String[] getBlocks() {
+    public short[] getBlocks() {
         return blocks;
     }
 
-    public String getCommonBlockAt(int xInChunk, int yInChunk, int zInChunk) {
+    public short getCommonBlockAt(int xInChunk, int yInChunk, int zInChunk) {
         int index = getIndex(xInChunk, yInChunk, zInChunk);
         return blocks[index];
     }

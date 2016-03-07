@@ -8,6 +8,7 @@ import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.Noise;
 import com.gempukku.terasology.procedural.SimplexNoise;
+import com.gempukku.terasology.world.CommonBlockManager;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -19,12 +20,26 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
     private PrefabManager prefabManager;
     @In
     private TerasologyComponentManager terasologyComponentManager;
+    @In
+    private CommonBlockManager commonBlockManager;
 
     private float noiseScale = 0.005f;
     private Noise noise = new SimplexNoise(0);
 
+    private short air = -1;
+    private short grass = -1;
+    private short dirt = -1;
+    private short stone = -1;
+
     @Override
     public Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z) {
+        if (air == -1) {
+            air = commonBlockManager.getCommonBlockId("air");
+            grass = commonBlockManager.getCommonBlockId("grass");
+            dirt = commonBlockManager.getCommonBlockId("dirt");
+            stone = commonBlockManager.getCommonBlockId("stone");
+        }
+
         int mountainAmplitude = 32;
 
         List<EntityDataOrCommonBlock> entities = new LinkedList<>();
@@ -36,13 +51,13 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
                     if (blockLevel > groundLevel) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock("air"));
+                        entities.add(EntityDataOrCommonBlock.commonBlock(air));
                     } else if (blockLevel > groundLevel - 1) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock("grass"));
+                        entities.add(EntityDataOrCommonBlock.commonBlock(grass));
                     } else if (blockLevel > groundLevel - 3) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock("dirt"));
+                        entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
                     } else {
-                        entities.add(EntityDataOrCommonBlock.commonBlock("stone"));
+                        entities.add(EntityDataOrCommonBlock.commonBlock(stone));
                     }
                 }
             }

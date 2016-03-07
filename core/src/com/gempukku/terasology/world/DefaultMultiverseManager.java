@@ -5,6 +5,7 @@ import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
+import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
 @RegisterSystem(
@@ -15,13 +16,22 @@ public class DefaultMultiverseManager implements MultiverseManager {
 
     @Override
     public EntityRef createWorld(String worldId) {
+        if (!hasMultiverse()) {
+            createMultiverseEntity();
+        }
         if (hasWorld(worldId))
-            throw new IllegalStateException("This multiverse already has a world with id: "+worldId);
+            throw new IllegalStateException("This multiverse already has a world with id: " + worldId);
         EntityRef entity = entityManager.createEntity();
         WorldComponent component = entity.createComponent(WorldComponent.class);
         component.setWorldId(worldId);
         entity.saveComponents(component);
         return entity;
+    }
+
+    private void createMultiverseEntity() {
+        EntityRef multiverseEntity = entityManager.createEntity();
+        MultiverseComponent multiverseComponent = multiverseEntity.createComponent(MultiverseComponent.class);
+        multiverseEntity.saveComponents(multiverseComponent);
     }
 
     @Override
@@ -38,5 +48,9 @@ public class DefaultMultiverseManager implements MultiverseManager {
     @Override
     public boolean hasWorld(String worldId) {
         return getWorldEntity(worldId) != null;
+    }
+
+    private boolean hasMultiverse() {
+        return entityManager.getEntitiesWithComponents(MultiverseComponent.class).iterator().hasNext();
     }
 }
