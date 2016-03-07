@@ -1,8 +1,9 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.Shader;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -22,11 +23,7 @@ import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
@@ -51,10 +48,13 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private Multimap<String, RenderableChunk> renderableChunksInWorld = HashMultimap.create();
 
     private ModelBatch modelBatch;
+    private Shader shader;
 
     @Override
     public void preInitialize() {
-        modelBatch = new ModelBatch();
+        modelBatch = new ModelBatch(
+                Gdx.files.internal("shader/chunk.vert"),
+                Gdx.files.internal("shader/chunk.frag"));
     }
 
     @Override
@@ -92,10 +92,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
             renderableChunk = new RenderableChunk(worldId, x, y, z);
             renderableChunksInWorld.put(worldId, renderableChunk);
         }
-        List<Texture> textures = new ArrayList<>();
-        Iterables.addAll(textures, textureAtlasProvider.getTextureAtlas().getTextures());
-
-        renderableChunk.updateChunkMesh(chunkMeshManager.getChunkMesh(worldId, x, y, z), textures);
+        renderableChunk.updateChunkMesh(chunkMeshManager.getChunkMesh(worldId, x, y, z), textureAtlasProvider.getTextures());
     }
 
     @ReceiveEvent

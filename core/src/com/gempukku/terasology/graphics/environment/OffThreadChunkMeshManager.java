@@ -1,6 +1,5 @@
 package com.gempukku.terasology.graphics.environment;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
@@ -20,12 +19,9 @@ import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes",
@@ -45,21 +41,20 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     private GameLoop gameLoop;
     @In
     private EntityManager entityManager;
+    @In
+    private ChunkMeshGenerationOrder chunkMeshGenerationOrder;
 
     private ChunkMeshGenerator chunkMeshGenerator;
     private Multimap<String, ChunkMesh> chunkMeshesInWorld = HashMultimap.create();
     private OfflineProcessingThread offlineProcessingThread;
 
     @Override
-    public void preInitialize() {
+    public void initialize() {
+        gameLoop.addGameLoopListener(this);
+
         offlineProcessingThread = new OfflineProcessingThread();
         Thread thr = new Thread(offlineProcessingThread);
         thr.start();
-    }
-
-    @Override
-    public void initialize() {
-        gameLoop.addGameLoopListener(this);
     }
 
     @Override
@@ -148,31 +143,23 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     private class OfflineProcessingThread implements Runnable {
         public void run() {
             while (true) {
-                ChunkMesh chunkToProcess = getClosestChunkToProcess();
-                if (chunkToProcess == null) {
+                ChunkMesh chunkToProcess = getChunkToProcess();
+                if (chunkToProcess != null) {
+                    chunkToProcess.processOffLine(chunkMeshGenerator, textureAtlasProvider.getTextures());
+                } else {
                     try {
                         Thread.sleep(20);
                     } catch (InterruptedException exp) {
                         // Ignore
                     }
-                } else {
-                    List<Texture> textures = new ArrayList<>();
-                    Iterables.addAll(textures, textureAtlasProvider.getTextureAtlas().getTextures());
-
-                    chunkToProcess.processOffLine(chunkMeshGenerator, textures);
                 }
             }
         }
 
-        private ChunkMesh getClosestChunkToProcess() {
+        private ChunkMesh getChunkToProcess() {
             synchronized (chunkMeshesInWorld) {
-                for (ChunkMesh chunkMesh : chunkMeshesInWorld.values()) {
-                    if (chunkMesh.getStatus().canOfflineProcess()) {
-                        return chunkMesh;
-                    }
-                }
+                return chunkMeshGenerationOrder.getChunkMeshToProcess(chunkMeshesInWorld.values());
             }
-            return null;
         }
     }
 }

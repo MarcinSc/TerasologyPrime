@@ -2,6 +2,7 @@ package com.gempukku.terasology.graphics;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
@@ -14,11 +15,15 @@ import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
+import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,6 +36,7 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
     private TerasologyComponentManager terasologyComponentManager;
 
     private TextureAtlas textureAtlas;
+    private List<Texture> textureList;
     private Map<String, TextureRegion> textures = new HashMap<>();
 
     @Override
@@ -78,11 +84,14 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
         for (TextureAtlas.AtlasRegion atlasRegion : textureAtlas.getRegions()) {
             textures.put(atlasRegion.name, atlasRegion);
         }
+
+        textureList = new ArrayList<>();
+        Iterables.addAll(textureList, textureAtlas.getTextures());
     }
 
     @Override
-    public TextureAtlas getTextureAtlas() {
-        return textureAtlas;
+    public List<Texture> getTextures() {
+        return Collections.unmodifiableList(textureList);
     }
 
     @Override
