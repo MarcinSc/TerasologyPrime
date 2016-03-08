@@ -34,7 +34,7 @@ void main()
     vec3 lightToPointVector = normalize(u_lightPosition-v_position);
     float cosTheta = clamp(dot(v_normal, lightToPointVector), 0.0, 1.0);
 
-    float bias = clamp(0.005*tan(acos(cosTheta)), 0.001, 0.01);
+    float bias = clamp(1.0*tan(acos(cosTheta)), 0.05, 1.0);
     if (distanceFromShadowMap < distanceToLight - bias) {
         // Not lighted by directional lighting (star)
         finalColor.rgb *= ambientLighting;
