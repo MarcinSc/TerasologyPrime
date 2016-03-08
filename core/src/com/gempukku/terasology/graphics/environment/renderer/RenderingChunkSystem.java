@@ -3,7 +3,7 @@ package com.gempukku.terasology.graphics.environment.renderer;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -60,7 +60,7 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         myShaderProvider = new MyShaderProvider();
         modelBatch = new ModelBatch(myShaderProvider);
         lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1024, 1024, true);
-        lightCamera = new OrthographicCamera(1024, 1024);
+        lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     @Override
@@ -94,6 +94,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         myShaderProvider.setShadowPass(true);
         myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
+        myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
+        myShaderProvider.setLightDirection(lightCamera.direction);
 
         lightFrameBuffer.begin();
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -113,6 +115,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         myShaderProvider.setLightTrans(lightCamera.combined);
         myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
+        myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
+        myShaderProvider.setLightDirection(lightCamera.direction);
 
         lightFrameBuffer.getColorBufferTexture().bind(2);
 

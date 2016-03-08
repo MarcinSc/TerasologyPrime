@@ -4,6 +4,8 @@ precision mediump float;
 
 uniform float u_cameraFar;
 uniform vec3 u_lightPosition;
+uniform vec3 u_lightDirection;
+uniform float u_lightPlaneDistance;
 uniform sampler2D u_depthMap;
 uniform sampler2D u_diffuseTexture;
 
@@ -22,17 +24,17 @@ void main()
     vec3 depth = (v_positionLightTrans.xyz / v_positionLightTrans.w) * 0.5 + 0.5;
     vec4 distanceFromDepthMap = texture2D(u_depthMap, depth.xy);
     float distanceFromShadowMap =
-        distanceFromDepthMap.r*256.0*256.0
-        +distanceFromDepthMap.g*256.0
+        distanceFromDepthMap.r*255.0*255.0
+        +distanceFromDepthMap.g*255.0
         +distanceFromDepthMap.b
-        +distanceFromDepthMap.a/256.0;
+        +distanceFromDepthMap.a/255.0;
 
-    float distanceToLight = length(v_position.xyz - u_lightPosition);
+    float distanceToLight = dot(v_position.xyz, u_lightDirection) + u_lightPlaneDistance;
 
     vec3 lightToPointVector = normalize(u_lightPosition-v_position);
     float cosTheta = clamp(dot(v_normal, lightToPointVector), 0.0, 1.0);
 
-    float bias = clamp(0.005*tan(acos(cosTheta)), 0.0, 0.01);
+    float bias = clamp(0.005*tan(acos(cosTheta)), 0.001, 0.01);
     if (distanceFromShadowMap < distanceToLight - bias) {
         // Not lighted by directional lighting (star)
         finalColor.rgb *= ambientLighting;
@@ -43,7 +45,7 @@ void main()
 
     vec3 mistColor=vec3(0.0);
     float mistDistance = 0.9995;
-    if (gl_FragCoord.z>mistDistance) {
+    if (gl_FragCoord.z > mistDistance) {
         float multiplier = (gl_FragCoord.z-mistDistance)/(1.0-mistDistance);
 
         finalColor = vec4(

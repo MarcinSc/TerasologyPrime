@@ -15,6 +15,8 @@ public class MyShaderProvider implements ShaderProvider {
     private boolean shadowRendering;
     private Matrix4 lightTrans;
     private Vector3 lightPosition;
+    private Vector3 lightDirection;
+    private float lightPlaneDistance;
     private float cameraFar;
 
     public void setShadowPass(boolean shadowRendering) {
@@ -25,12 +27,20 @@ public class MyShaderProvider implements ShaderProvider {
         this.cameraFar = cameraFar;
     }
 
+    public void setLightTrans(Matrix4 lightTrans) {
+        this.lightTrans = lightTrans;
+    }
+
     public void setLightPosition(Vector3 lightPosition) {
         this.lightPosition = lightPosition;
     }
 
-    public void setLightTrans(Matrix4 lightTrans) {
-        this.lightTrans = lightTrans;
+    public void setLightDirection(Vector3 lightDirection) {
+        this.lightDirection = lightDirection;
+    }
+
+    public void setLightPlaneDistance(float lightPlaneDistance) {
+        this.lightPlaneDistance = lightPlaneDistance;
     }
 
     @Override
@@ -40,6 +50,8 @@ public class MyShaderProvider implements ShaderProvider {
                 chunkLightShader = createChunkLightShader(renderable);
             chunkLightShader.setCameraFar(cameraFar);
             chunkLightShader.setLightPosition(lightPosition);
+            chunkLightShader.setLightDirection(lightDirection);
+            chunkLightShader.setLightPlaneDistance(lightPlaneDistance);
             return chunkLightShader;
         } else {
             if (chunkShader == null)
@@ -47,6 +59,8 @@ public class MyShaderProvider implements ShaderProvider {
             chunkShader.setLightTrans(lightTrans);
             chunkShader.setCameraFar(cameraFar);
             chunkShader.setLightPosition(lightPosition);
+            chunkShader.setLightDirection(lightDirection);
+            chunkShader.setLightPlaneDistance(lightPlaneDistance);
             return chunkShader;
         }
     }
