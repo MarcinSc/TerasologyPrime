@@ -1,7 +1,6 @@
 package com.gempukku.secsy.context.system;
 
 import com.gempukku.secsy.context.annotation.In;
-import com.gempukku.secsy.context.SystemContext;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 
 import java.lang.reflect.Field;
@@ -56,7 +55,8 @@ public class ShareSystemInitializer<S> implements SystemInitializer<S> {
                         throw new RuntimeException(e);
                     }
                 } else {
-                    System.out.println("Unknown objects of type "+field.getType().getName()+" requested, but none found in context");
+                    if (!in.optional())
+                        throw new RuntimeException("Unknown objects of type " + field.getType().getName() + " requested in " + systemClass.getName() + ", but none found in context");
                 }
             }
         }
