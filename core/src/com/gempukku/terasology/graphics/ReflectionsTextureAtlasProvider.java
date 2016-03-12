@@ -11,15 +11,13 @@ import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.component.TerasologyComponentManager;
-import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
-import com.gempukku.terasology.world.component.CommonBlockComponent;
-import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,8 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 @RegisterSystem(
-        profiles = NetProfiles.CLIENT, shared = TextureAtlasProvider.class)
-public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, LifeCycleSystem {
+        profiles = NetProfiles.CLIENT, shared = {TextureAtlasProvider.class, TextureAtlasRegistry.class})
+public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, TextureAtlasRegistry, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;
     @In
@@ -39,8 +37,15 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
     private List<Texture> textureList;
     private Map<String, TextureRegion> textures = new HashMap<>();
 
+    private Set<String> texturesToRegister = new HashSet<>();
+
     @Override
-    public void initialize() {
+    public void registerTextures(Collection<String> textures) {
+        texturesToRegister.addAll(textures);
+    }
+
+    @Override
+    public void postInitialize() {
         TexturePacker.Settings settings = new TexturePacker.Settings();
         settings.maxWidth = 512;
         settings.maxHeight = 512;
@@ -49,21 +54,9 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
         File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile();
         TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);
 
-        Set<String> texturePaths = new HashSet<>();
-
-        for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
-            String textureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
-            for (String partTexture : ((Map<String, String>) prefabData.getComponents().get(textureComponentName).getFields().get("parts")).values()) {
-                URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + partTexture);
-                if (textureResource != null) {
-                    texturePaths.add(textureResource.getPath());
-                }
-            }
-        }
-
-        for (String texturePath : texturePaths) {
-            File imageFile = new File(texturePath);
-            texturePacker.addImage(imageFile);
+        for (String texturePath : texturesToRegister) {
+            URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + texturePath);
+            texturePacker.addImage(new File(textureResource.getPath()));
         }
 
         FileHandle temp = Gdx.files.local("temp");
@@ -87,6 +80,8 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Li
 
         textureList = new ArrayList<>();
         Iterables.addAll(textureList, textureAtlas.getTextures());
+
+        texturesToRegister = null;
     }
 
     @Override

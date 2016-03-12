@@ -8,14 +8,18 @@ import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.AfterEntityLoaded;
 import com.gempukku.terasology.component.TerasologyComponentManager;
+import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
 import com.gempukku.terasology.world.component.CommonBlockConfigComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
+import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @RegisterSystem(
         shared = CommonBlockManager.class)
@@ -24,9 +28,26 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
     private PrefabManager prefabManager;
     @In
     private TerasologyComponentManager terasologyComponentManager;
+    @In(optional = true)
+    private TextureAtlasRegistry textureAtlasRegistry;
 
     private volatile Map<String, PrefabData> commonBlockPrefabsById;
     private volatile String[] commonBlockIds;
+
+    @Override
+    public void initialize() {
+        if (textureAtlasRegistry != null) {
+            Set<String> texturePaths = new HashSet<>();
+
+            String textureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
+            for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
+                for (String partTexture : ((Map<String, String>) prefabData.getComponents().get(textureComponentName).getFields().get("parts")).values()) {
+                    texturePaths.add(partTexture);
+                }
+            }
+            textureAtlasRegistry.registerTextures(texturePaths);
+        }
+    }
 
     @ReceiveEvent
     public void multiverseCreated(AfterComponentAdded event, EntityRef entity, MultiverseComponent multiverse) {
