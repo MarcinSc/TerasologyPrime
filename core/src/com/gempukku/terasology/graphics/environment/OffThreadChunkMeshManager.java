@@ -43,10 +43,11 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     private EntityManager entityManager;
     @In
     private ChunkMeshGenerationOrder chunkMeshGenerationOrder;
+    @In
+    private ChunkMeshGenerator chunkMeshGenerator;
 
     private final int offlineThreadCount = 3;
 
-    private ChunkMeshGenerator chunkMeshGenerator;
     private Multimap<String, ChunkMesh> chunkMeshesInWorld = HashMultimap.create();
     private OfflineProcessingThread[] offlineProcessingThread;
 
@@ -98,10 +99,6 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
 
     @ReceiveEvent
     public void chunkLoaded(AfterChunkLoadedEvent event, EntityRef worldEntity, WorldComponent worldComponent) {
-        if (chunkMeshGenerator == null) {
-            initializeChunkMeshGenerator();
-        }
-
         String worldId = worldComponent.getWorldId();
         int x = event.x;
         int y = event.y;
@@ -139,12 +136,6 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
             }
         }
     }
-
-    private void initializeChunkMeshGenerator() {
-        chunkMeshGenerator = new ChunkMeshGenerator(chunkBlocksProvider, commonBlockManager, textureAtlasProvider,
-                terasologyComponentManager, shapeProvider);
-    }
-
 
     private class OfflineProcessingThread implements Runnable {
         public void run() {

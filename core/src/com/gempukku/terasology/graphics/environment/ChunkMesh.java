@@ -47,7 +47,7 @@ public class ChunkMesh implements Disposable {
 
     private volatile Status status;
 
-    private volatile ChunkMeshLists chunkMeshLists;
+    private volatile Object generatorPreparedObject;
     private Array<MeshPart> meshParts;
 
     public ChunkMesh(String worldId, int x, int y, int z) {
@@ -66,9 +66,9 @@ public class ChunkMesh implements Disposable {
             status.setProcessingOffline();
         }
 
-        ChunkMeshLists generatedLists = chunkMeshGenerator.generateStaticChunkMeshFromChunkBlocks(textures, worldId, x, y, z);
+        Object preparedObject = chunkMeshGenerator.prepareChunkDataOffThread(textures, worldId, x, y, z);
         synchronized (this) {
-            chunkMeshLists = generatedLists;
+            generatorPreparedObject = preparedObject;
             status.setWaitingForModel();
         }
     }
@@ -79,9 +79,9 @@ public class ChunkMesh implements Disposable {
                 dispose();
 
                 synchronized (this) {
-                    meshParts = chunkMeshGenerator.generateMeshParts(chunkMeshLists);
+                    meshParts = chunkMeshGenerator.generateMeshParts(generatorPreparedObject);
 
-                    chunkMeshLists = null;
+                    generatorPreparedObject = null;
                 }
                 status.setHasMesh();
                 return true;
