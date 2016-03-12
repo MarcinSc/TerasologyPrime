@@ -118,6 +118,11 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         return ((EntityRefImpl) entityRef).entity.getEntityId();
     }
 
+    @Override
+    public String getEntityUniqueIdentifier(EntityRef entityRef) {
+        return String.valueOf(getEntityId(entityRef));
+    }
+
     private void sendEventsToThem(Set<SimpleEntity> loadedEntities, int createdIfIdGreaterThan) {
         for (SimpleEntity entity : loadedEntities) {
             Map<Class<? extends Component>, Component> components = new HashMap<>();

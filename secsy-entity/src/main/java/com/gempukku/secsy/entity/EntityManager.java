@@ -13,4 +13,6 @@ public interface EntityManager {
     void destroyEntity(EntityRef entityRef);
 
     Iterable<EntityRef> getEntitiesWithComponents(Class<? extends Component> component, Class<? extends Component>... additionalComponents);
+
+    String getEntityUniqueIdentifier(EntityRef entityRef);
 }

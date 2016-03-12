@@ -2,6 +2,7 @@ package com.gempukku.terasology.graphics.environment;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 
 import java.util.List;
@@ -47,7 +48,7 @@ public class ChunkMesh implements Disposable {
     private volatile Status status;
 
     private volatile ChunkMeshLists chunkMeshLists;
-    private List<MeshPart> meshParts;
+    private Array<MeshPart> meshParts;
 
     public ChunkMesh(String worldId, int x, int y, int z) {
         this.worldId = worldId;
@@ -99,7 +100,7 @@ public class ChunkMesh implements Disposable {
         return status;
     }
 
-    public List<MeshPart> getMeshParts() {
+    public Array<MeshPart> getMeshParts() {
         return meshParts;
     }
 

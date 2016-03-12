@@ -77,6 +77,15 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
     }
 
     @Override
+    public String getEntityUniqueIdentifier(EntityRef entityRef) {
+        SimpleEntity entity = ((EntityRefImpl) entityRef).entity;
+        if (serverEntities.contains(entity))
+            return "s-" + entity.getEntityId();
+        else
+            return "c-" + entity.getEntityId();
+    }
+
+    @Override
     public void preUpdate() {
         serverCommunication.visitQueuedEvents(
                 new ServerCommunication.ClientEventVisitor() {

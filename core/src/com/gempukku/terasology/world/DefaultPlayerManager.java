@@ -7,6 +7,7 @@ import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.PlayerManager;
 import com.gempukku.terasology.world.component.ClientComponent;
+import com.gempukku.terasology.world.event.AfterPlayerCreatedEvent;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY, shared = PlayerManager.class)
@@ -23,6 +24,8 @@ public class DefaultPlayerManager implements PlayerManager {
         player.setChunkDistanceY(3);
         player.setChunkDistanceZ(5);
         entity.saveComponents(player);
+
+        entity.send(new AfterPlayerCreatedEvent());
         return entity;
     }
 

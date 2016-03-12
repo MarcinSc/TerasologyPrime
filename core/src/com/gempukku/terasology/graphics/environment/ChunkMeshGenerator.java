@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.gempukku.terasology.component.TerasologyComponentManager;
@@ -21,7 +22,6 @@ import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -100,8 +100,8 @@ public class ChunkMeshGenerator {
         return new ChunkMeshLists(8, verticesPerTexture, indicesPerTexture);
     }
 
-    public List<MeshPart> generateMeshParts(ChunkMeshLists chunkMeshLists) {
-        List<MeshPart> result = new LinkedList<>();
+    public Array<MeshPart> generateMeshParts(ChunkMeshLists chunkMeshLists) {
+        Array<MeshPart> result = new Array<>();
         int textureCount = chunkMeshLists.verticesPerTexture.length;
         for (int i = 0; i < textureCount; i++) {
             float[] vertices = chunkMeshLists.verticesPerTexture[i];
