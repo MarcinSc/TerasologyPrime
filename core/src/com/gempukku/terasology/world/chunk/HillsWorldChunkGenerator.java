@@ -30,6 +30,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
     private short grass = -1;
     private short dirt = -1;
     private short stone = -1;
+    private short tree = -1;
 
     @Override
     public Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z) {
@@ -38,6 +39,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
             grass = commonBlockManager.getCommonBlockId("grass");
             dirt = commonBlockManager.getCommonBlockId("dirt");
             stone = commonBlockManager.getCommonBlockId("stone");
+            tree = commonBlockManager.getCommonBlockId("tree");
         }
 
         int mountainAmplitude = 32;
@@ -47,21 +49,19 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
             for (int dy = 0; dy < ChunkSize.Y; dy++) {
                 int blockLevel = y * ChunkSize.Y + dy;
                 for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                    if (Math.pow(x * ChunkSize.X + dx, 2) + Math.pow(y * ChunkSize.Y + dy + 10, 2) + Math.pow(z * ChunkSize.Z + dz, 2) < 100) {
+                    float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
+                    noiseForColumn = (noiseForColumn + 1 / 2);
+                    int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
+                    if (blockLevel == groundLevel + 1 && dx == 0 && dz == 0) {
+                        entities.add(EntityDataOrCommonBlock.commonBlock(tree));
+                    } else if (blockLevel > groundLevel) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(air));
+                    } else if (blockLevel > groundLevel - 1) {
+                        entities.add(EntityDataOrCommonBlock.commonBlock(grass));
+                    } else if (blockLevel > groundLevel - 3) {
+                        entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
                     } else {
-                        float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
-                        noiseForColumn = (noiseForColumn + 1 / 2);
-                        int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
-                        if (blockLevel > groundLevel) {
-                            entities.add(EntityDataOrCommonBlock.commonBlock(air));
-                        } else if (blockLevel > groundLevel - 1) {
-                            entities.add(EntityDataOrCommonBlock.commonBlock(grass));
-                        } else if (blockLevel > groundLevel - 3) {
-                            entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
-                        } else {
-                            entities.add(EntityDataOrCommonBlock.commonBlock(stone));
-                        }
+                        entities.add(EntityDataOrCommonBlock.commonBlock(stone));
                     }
                 }
             }

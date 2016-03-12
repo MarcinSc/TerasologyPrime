@@ -18,7 +18,7 @@ varying vec3 v_position;
 
 void main()
 {
-    float ambientLighting = 0.2;
+    float ambientLighting = 0.4;
 
     vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
     vec3 depth = (v_positionLightTrans.xyz / v_positionLightTrans.w) * 0.5 + 0.5;

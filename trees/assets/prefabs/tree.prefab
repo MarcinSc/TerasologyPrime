@@ -1,0 +1,8 @@
+{
+  "CommonBlockComponent": {
+    "id": "tree"
+  },
+  "GeneratedBlockMeshComponent": {
+    "generatorType": "trees:tree"
+  }
+}

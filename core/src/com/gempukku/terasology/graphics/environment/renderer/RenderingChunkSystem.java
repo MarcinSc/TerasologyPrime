@@ -82,6 +82,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         int dayLengthInMs = 5 * 60 * 1000;
         float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
 
+        direction = (float) Math.PI / 8f;
+
         lightCamera.position.set(
                 (float) (camera.position.x + 2 * camera.far * Math.sin(direction)),
                 (float) (camera.position.y + 2 * camera.far * Math.cos(direction)),
