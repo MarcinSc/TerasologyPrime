@@ -79,10 +79,8 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     private void renderLights(Camera camera, String worldId) {
-        int dayLengthInMs = 5 * 60 * 1000;
+        int dayLengthInMs = 1 * 60 * 1000;
         float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
-
-        direction = (float) Math.PI / 8f;
 
         lightCamera.position.set(
                 (float) (camera.position.x + 2 * camera.far * Math.sin(direction)),
