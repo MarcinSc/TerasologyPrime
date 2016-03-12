@@ -40,7 +40,7 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
         textureAtlasRegistry.registerTextures(
                 Arrays.asList(
                         "blockTiles/plant/Tree/OakBark.png",
-                        "blockTiles/plant/leaf/GreenLeaf.png"));
+                        "blockTiles/plant/leaf/GreenLeaf2.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
         cubeShape = shapeProvider.getShapeById("cube");
     }
@@ -138,7 +138,7 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
     private void init() {
         if (oakBarkTexture == null) {
             oakBarkTexture = textureAtlasProvider.getTexture("blockTiles/plant/Tree/OakBark");
-            oakLeafTexture = textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf");
+            oakLeafTexture = textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf2");
         }
     }
 }

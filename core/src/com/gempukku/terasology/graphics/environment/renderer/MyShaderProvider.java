@@ -1,8 +1,10 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.ShaderProvider;
 import com.badlogic.gdx.math.Matrix4;
@@ -52,6 +54,7 @@ public class MyShaderProvider implements ShaderProvider {
             chunkLightShader.setLightPosition(lightPosition);
             chunkLightShader.setLightDirection(lightDirection);
             chunkLightShader.setLightPlaneDistance(lightPlaneDistance);
+            renderable.material.remove(BlendingAttribute.Type);
             return chunkLightShader;
         } else {
             if (chunkShader == null)
@@ -61,6 +64,7 @@ public class MyShaderProvider implements ShaderProvider {
             chunkShader.setLightPosition(lightPosition);
             chunkShader.setLightDirection(lightDirection);
             chunkShader.setLightPlaneDistance(lightPlaneDistance);
+            renderable.material.set(new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA));
             return chunkShader;
         }
     }
