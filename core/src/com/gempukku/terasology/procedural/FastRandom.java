@@ -42,17 +42,12 @@ public class FastRandom extends Random {
     public FastRandom() {
     }
 
-    /**
-     * Returns a random int value.
-     *
-     * @return Random value
-     */
     @Override
-    public int nextInt() {
+    protected int next(int bits) {
         seed++;
         seed ^= (seed << 21);
         seed ^= (seed >>> 35);
         seed ^= (seed << 4);
-        return (int) seed;
+        return Math.abs((int) seed);
     }
 }
