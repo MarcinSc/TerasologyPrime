@@ -34,6 +34,7 @@ project(":desktop") {
 
     dependencies {
         compile project(":physics")
+        compile project(":trees")
 
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
@@ -47,6 +48,14 @@ project(":desktop") {
 }
 
 project(":physics") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":core")
+    }
+}
+
+project(":trees") {
     apply plugin: "java"
 
     dependencies {

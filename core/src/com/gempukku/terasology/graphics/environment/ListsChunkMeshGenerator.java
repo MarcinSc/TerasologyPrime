@@ -14,6 +14,7 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
+import com.gempukku.terasology.graphics.component.GeneratedBlockMeshComponent;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
@@ -25,12 +26,14 @@ import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes", shared = ChunkMeshGenerator.class)
-public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshLists>, LifeCycleSystem {
+        profiles = "generateChunkMeshes", shared = {ChunkMeshGenerator.class, BlockMeshGeneratorRegistry.class})
+public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshLists>, ChunkMeshGeneratorCallback,
+        BlockMeshGeneratorRegistry, LifeCycleSystem {
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
     @In
@@ -48,15 +51,25 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     private ShapeDef[] shapesByBlockId;
     private Map<String, String>[] texturesByBlockId;
     private boolean[] opaqueByBlockId;
+    private String[] blockMeshGenerators;
+
+    private Map<String, BlockMeshGenerator> registeredBlockMeshGenerators = new HashMap<>();
+
+    @Override
+    public void registerBlockMeshGenerator(String generatorType, BlockMeshGenerator generator) {
+        registeredBlockMeshGenerators.put(generatorType, generator);
+    }
 
     private void init() {
         if (shapesByBlockId == null) {
             String shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
+            String generatedBlockMeshComponentName = terasologyComponentManager.getNameByComponent(GeneratedBlockMeshComponent.class);
 
             int commonBlockCount = commonBlockManager.getCommonBlockCount();
             shapesByBlockId = new ShapeDef[commonBlockCount];
             texturesByBlockId = new Map[commonBlockCount];
             opaqueByBlockId = new boolean[commonBlockCount];
+            blockMeshGenerators = new String[commonBlockCount];
             for (short i = 0; i < commonBlockCount; i++) {
                 PrefabData commonBlockData = commonBlockManager.getCommonBlockById(i);
                 PrefabComponentData shapeAndTextureComponent = commonBlockData.getComponents().
@@ -65,6 +78,10 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
                     shapesByBlockId[i] = shapeProvider.getShapeById((String) shapeAndTextureComponent.getFields().get("shapeId"));
                     texturesByBlockId[i] = (Map<String, String>) shapeAndTextureComponent.getFields().get("parts");
                     opaqueByBlockId[i] = (Boolean) shapeAndTextureComponent.getFields().get("opaque");
+                }
+                PrefabComponentData generatedBlockMeshComponent = commonBlockData.getComponents().get(generatedBlockMeshComponentName);
+                if (generatedBlockMeshComponent != null) {
+                    blockMeshGenerators[i] = (String) generatedBlockMeshComponent.getFields().get("generatorType");
                 }
             }
         }
@@ -181,10 +198,15 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
                     }
                 }
             }
+        } else if (blockMeshGenerators[block] != null) {
+            BlockMeshGenerator blockMeshGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
+            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertices, indices, texture, chunkBlocks,
+                    chunkX, chunkY, chunkZ, x, y, z);
         }
     }
 
-    private boolean isNeighbourBlockCoveringSide(ChunkBlocks chunkBlocks, int x, int y, int z, BlockSide blockSide) {
+    @Override
+    public boolean isNeighbourBlockCoveringSide(ChunkBlocks chunkBlocks, int x, int y, int z, BlockSide blockSide) {
         int resultX = x + blockSide.getNormalX();
         int resultY = y + blockSide.getNormalY();
         int resultZ = z + blockSide.getNormalZ();
