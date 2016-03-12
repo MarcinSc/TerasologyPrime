@@ -40,7 +40,7 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
         textureAtlasRegistry.registerTextures(
                 Arrays.asList(
                         "blockTiles/plant/Tree/OakBark.png",
-                        "blockTiles/plant/leaf/GreenLeaf2.png"));
+                        "blockTiles/plant/leaf/GreenLeaf.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
         cubeShape = shapeProvider.getShapeById("cube");
     }
@@ -53,16 +53,16 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
 
         if (texture == oakBarkTexture.getTexture()) {
             // 5 segments of bark - 1.8 meters tall each
-            float segmentHeight = 1.8f;
+            float segmentHeight = 3f;
 
             float[] segmentSkewX = new float[]{0f, 0.15f, -0.1f, 0.12f, 0.18f, 0f};
             float[] segmentSkewZ = new float[]{0f, 0.09f, -0.1f, 0.08f, 0.1f, -0.08f};
 
             for (int i = 0; i < 5; i++) {
-                float trunkDiameterStart = (5 - i) * 0.1f;
-                float trunkDiameterEnd = (5 - i - 1) * 0.1f;
-                float leavesDiameterStart = (i < 2) ? 0 : (5 - i) * 0.8f;
-                float leavesDiameterEnd = (i < 1) ? 0 : (5 - i - 1) * 0.8f;
+                float trunkDiameterStart = (5 - i) * 0.2f;
+                float trunkDiameterEnd = (5 - i - 1) * 0.2f;
+                float leavesDiameterStart = (i < 2) ? 0 : (5 - i) * 1.6f;
+                float leavesDiameterEnd = (i < 1) ? 0 : (5 - i - 1) * 1.6f;
 
                 float trunkStartY = i * segmentHeight;
                 float trunkEndY = (i + 1) * segmentHeight;
@@ -138,7 +138,7 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
     private void init() {
         if (oakBarkTexture == null) {
             oakBarkTexture = textureAtlasProvider.getTexture("blockTiles/plant/Tree/OakBark");
-            oakLeafTexture = textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf2");
+            oakLeafTexture = textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf");
         }
     }
 }
