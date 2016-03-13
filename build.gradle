@@ -69,6 +69,7 @@ project(":core") {
 
     dependencies {
         compile project(":secsy-entity")
+        compile project(":secsy-network")
 
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
@@ -99,6 +100,18 @@ project(":secsy-entity") {
 
     dependencies {
         compile project(":secsy-context")
+
+        testCompile "junit:junit:4.12"
+        testCompile "org.mockito:mockito-all:1.9.5"
+    }
+}
+
+project(":secsy-network") {
+    apply plugin: "java"
+
+
+    dependencies {
+        compile project(":secsy-entity")
 
         compile "org.codehaus.jackson:jackson-mapper-asl:1.9.13"
 

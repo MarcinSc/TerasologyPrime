@@ -1,7 +1,7 @@
 package com.gempukku.terasology.communication;
 
 import com.gempukku.secsy.entity.event.Event;
-import com.gempukku.secsy.entity.network.ToClientEvent;
+import com.gempukku.secsy.network.ToClientEvent;
 
 @ToClientEvent
 public class RemoveOldChunk extends Event {

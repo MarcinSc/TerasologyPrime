@@ -1,4 +1,4 @@
-package com.gempukku.secsy.entity.network.serialize;
+package com.gempukku.secsy.network.serialize;
 
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;

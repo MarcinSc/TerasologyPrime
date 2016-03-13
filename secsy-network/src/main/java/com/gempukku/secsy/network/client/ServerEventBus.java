@@ -1,4 +1,4 @@
-package com.gempukku.secsy.entity.network.client;
+package com.gempukku.secsy.network.client;
 
 import com.gempukku.secsy.entity.event.Event;
 

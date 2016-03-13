@@ -1,14 +1,14 @@
-package com.gempukku.secsy.entity.network;
+package com.gempukku.secsy.network;
 
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.event.Event;
 import com.gempukku.secsy.entity.io.EntityData;
-import com.gempukku.secsy.entity.network.client.ServerCommunication;
-import com.gempukku.secsy.entity.network.serialize.EntityInformation;
-import com.gempukku.secsy.entity.network.serialize.EntitySerializationUtil;
-import com.gempukku.secsy.entity.network.server.ClientCommunication;
-import com.gempukku.secsy.entity.network.server.EntityComponentFieldFilter;
+import com.gempukku.secsy.network.client.ServerCommunication;
+import com.gempukku.secsy.network.serialize.EntityInformation;
+import com.gempukku.secsy.network.serialize.EntitySerializationUtil;
+import com.gempukku.secsy.network.server.ClientCommunication;
+import com.gempukku.secsy.network.server.EntityComponentFieldFilter;
 
 import java.io.IOException;
 import java.util.Collection;

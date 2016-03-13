@@ -9,11 +9,11 @@ import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
-import com.gempukku.secsy.entity.network.server.ClientConnectedEvent;
-import com.gempukku.secsy.entity.network.server.ClientEntityRelevanceRule;
-import com.gempukku.secsy.entity.network.server.ClientEntityRelevancyRuleListener;
-import com.gempukku.secsy.entity.network.server.ClientManager;
-import com.gempukku.secsy.entity.network.server.EntityComponentFieldFilter;
+import com.gempukku.secsy.network.server.ClientConnectedEvent;
+import com.gempukku.secsy.network.server.ClientEntityRelevanceRule;
+import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
+import com.gempukku.secsy.network.server.ClientManager;
+import com.gempukku.secsy.network.server.EntityComponentFieldFilter;
 import com.gempukku.terasology.world.component.ClientComponent;
 
 import java.util.Collections;

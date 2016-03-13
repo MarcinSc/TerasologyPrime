@@ -1,4 +1,4 @@
-package com.gempukku.secsy.entity.network;
+package com.gempukku.secsy.network;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @Retention(value = RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface ToClientEvent {
+public @interface ToServerEvent {
 }

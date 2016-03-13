@@ -6,8 +6,8 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.secsy.entity.network.server.ClientManager;
-import com.gempukku.secsy.entity.network.server.EntityComponentFieldFilter;
+import com.gempukku.secsy.network.server.ClientManager;
+import com.gempukku.secsy.network.server.EntityComponentFieldFilter;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY)
