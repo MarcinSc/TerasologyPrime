@@ -116,7 +116,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 }
             }
 
-            int branchCount = rnd.nextInt(maxBranchesPerSegment);
+            int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
 
             List<BranchDefinition> branches = new LinkedList<>();
             for (int branch = 0; branch < branchCount; branch++) {
@@ -156,8 +156,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             goingMatrix.rotate(new Vector3(0, 0, 1), thisSegment.rotateZ);
             goingMatrix.rotate(new Vector3(1, 0, 0), thisSegment.rotateX);
             goingMatrix.translate(0, lastSegment.length / 2, 0);
-            Matrix4 branchMatrix = goingMatrix.cpy();
             for (BranchDefinition branch : lastSegment.branches) {
+                Matrix4 branchMatrix = goingMatrix.cpy();
                 vertexIndex = generateBranch(vertexIndex, branch, branchMatrix, vertices, indices);
             }
 
