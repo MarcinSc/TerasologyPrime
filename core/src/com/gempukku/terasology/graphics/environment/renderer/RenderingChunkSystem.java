@@ -55,11 +55,13 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private FrameBuffer lightFrameBuffer;
     private Camera lightCamera;
 
+    private static int shadowFidelity = 4;
+
     @Override
     public void preInitialize() {
         myShaderProvider = new MyShaderProvider();
         modelBatch = new ModelBatch(myShaderProvider);
-        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1024, 1024, true);
+        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, shadowFidelity * 1024, shadowFidelity * 1024, true);
         lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
@@ -82,12 +84,14 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
         int dayLengthInMs = 1 * 60 * 1000;
         float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
 
+//        direction = (float) -Math.PI/4f;
+
         lightCamera.position.set(
-                (float) (camera.position.x + 2 * camera.far * Math.sin(direction)),
-                (float) (camera.position.y + 2 * camera.far * Math.cos(direction)),
+                (float) (camera.position.x + 1.1 * camera.far * Math.sin(direction)),
+                (float) (camera.position.y + 1.1 * camera.far * Math.cos(direction)),
                 camera.position.z);
         lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
-        lightCamera.far = camera.far * 3.1f;
+        lightCamera.far = camera.far * 2.2f;
         lightCamera.near = camera.near;
         lightCamera.update();
 
