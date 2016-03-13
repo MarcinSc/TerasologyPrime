@@ -8,6 +8,5 @@ import com.gempukku.terasology.world.chunk.ChunkBlocks;
 public interface BlockMeshGenerator {
     void generateMeshForBlockFromAtlas(ChunkMeshGeneratorCallback callback, FloatArray vertices, ShortArray indices,
                                        Texture texture, ChunkBlocks chunkBlocks,
-                                       int chunkX, int chunkY, int chunkZ,
-                                       int x, int y, int z);
+                                       int xInChunk, int yInChunk, int zInChunk);
 }

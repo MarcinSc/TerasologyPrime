@@ -201,7 +201,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         } else if (blockMeshGenerators[block] != null) {
             BlockMeshGenerator blockMeshGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
             blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertices, indices, texture, chunkBlocks,
-                    chunkX, chunkY, chunkZ, x, y, z);
+                    x, y, z);
         }
     }
 

@@ -16,6 +16,7 @@ import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
+import com.gempukku.terasology.world.chunk.ChunkSize;
 
 import java.util.Arrays;
 
@@ -41,15 +42,19 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
                 Arrays.asList(
                         "blockTiles/plant/Tree/OakBark.png",
                         "blockTiles/plant/leaf/GreenLeaf.png"));
-        blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
+        blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:footree", this);
         cubeShape = shapeProvider.getShapeById("cube");
     }
 
     @Override
     public void generateMeshForBlockFromAtlas(ChunkMeshGeneratorCallback callback, FloatArray vertices, ShortArray indices,
                                               Texture texture, ChunkBlocks chunkBlocks,
-                                              int chunkX, int chunkY, int chunkZ, int x, int y, int z) {
+                                              int x, int y, int z) {
         init();
+
+        int chunkX = chunkBlocks.x * ChunkSize.X;
+        int chunkY = chunkBlocks.y * ChunkSize.Y;
+        int chunkZ = chunkBlocks.z * ChunkSize.Z;
 
         if (texture == oakBarkTexture.getTexture()) {
             // 5 segments of bark - 1.8 meters tall each

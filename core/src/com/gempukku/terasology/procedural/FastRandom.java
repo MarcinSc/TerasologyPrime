@@ -15,13 +15,11 @@
  */
 package com.gempukku.terasology.procedural;
 
-import java.util.Random;
-
 /**
  * Random number generator based on the Xorshift generator by George Marsaglia.
  *
  */
-public class FastRandom extends Random {
+public class FastRandom extends TerasologyRandom {
 
     private long seed = System.currentTimeMillis();
 
