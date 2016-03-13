@@ -43,7 +43,7 @@ public class FastRandom extends Random {
     }
 
     @Override
-    protected int next(int bits) {
+    public int nextInt() {
         seed++;
         seed ^= (seed << 21);
         seed ^= (seed >>> 35);
