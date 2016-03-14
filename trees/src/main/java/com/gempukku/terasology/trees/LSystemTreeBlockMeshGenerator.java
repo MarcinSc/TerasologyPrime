@@ -161,8 +161,6 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         private Vector3 thirdTop = new Vector3();
         private Vector3 fourthTop = new Vector3();
 
-        private BranchDefinition lastFinishedSegmentBranch;
-
         private int vertexIndex;
         private FloatArray vertices;
         private ShortArray indices;
@@ -227,43 +225,28 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         callback.branchStart(branchDefinition, movingMatrix);
 
-        BranchSegmentDefinition segment;
         Iterator<BranchSegmentDefinition> segmentIterator = branchDefinition.segments.iterator();
-        segment = segmentIterator.next();
-        callback.segmentStart(segment, movingMatrix);
+        BranchSegmentDefinition currentSegment = segmentIterator.next();
+        do {
+            BranchSegmentDefinition nextSegment = segmentIterator.hasNext() ? segmentIterator.next() : null;
 
-        while (segmentIterator.hasNext()) {
-            BranchSegmentDefinition nextSegment = segmentIterator.next();
+            callback.segmentStart(currentSegment, movingMatrix);
+            movingMatrix.rotate(new Vector3(0, 0, 1), currentSegment.rotateZ);
+            movingMatrix.rotate(new Vector3(1, 0, 0), currentSegment.rotateX);
+            movingMatrix.translate(0, currentSegment.length, 0);
+            callback.segmentEnd(currentSegment, nextSegment, movingMatrix);
 
-            movingMatrix.rotate(new Vector3(0, 0, 1), segment.rotateZ);
-            movingMatrix.rotate(new Vector3(1, 0, 0), segment.rotateX);
-            movingMatrix.translate(0, segment.length, 0);
-            callback.segmentEnd(segment, nextSegment, movingMatrix);
+            // Get back half of the segment to create branches
+            movingMatrix.translate(0, -currentSegment.length / 2, 0);
 
-            // Get back half of this segment to create branches
-            movingMatrix.translate(0, -segment.length / 2, 0);
-
-            for (BranchDefinition branch : segment.branches) {
+            for (BranchDefinition branch : currentSegment.branches) {
                 Matrix4 branchMatrix = movingMatrix.cpy();
                 generateTree(callback, branch, branchMatrix);
             }
-            movingMatrix.translate(0, segment.length / 2, 0);
+            movingMatrix.translate(0, currentSegment.length / 2, 0);
 
-            callback.segmentStart(nextSegment, movingMatrix);
-            segment = nextSegment;
-        }
-        movingMatrix.translate(0, segment.length, 0);
-
-        callback.segmentEnd(segment, null, movingMatrix);
-
-        // Get back half of this segment to create branches
-        movingMatrix.translate(0, -segment.length / 2, 0);
-
-        for (BranchDefinition branch : segment.branches) {
-            Matrix4 branchMatrix = movingMatrix.cpy();
-            generateTree(callback, branch, branchMatrix);
-        }
-        movingMatrix.translate(0, segment.length / 2, 0);
+            currentSegment = nextSegment;
+        } while (currentSegment != null);
 
         callback.branchEnd(branchDefinition, movingMatrix);
     }
