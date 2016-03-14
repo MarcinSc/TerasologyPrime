@@ -139,39 +139,52 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     private void generateTrunk(TreeDefinition treeDefinition, FloatArray vertices, ShortArray indices, int x, int y, int z) {
-        Matrix4 goingMatrix = new Matrix4().translate(x + 0.5f, y, z + 0.5f);
-        goingMatrix.rotate(new Vector3(0, 1, 0), treeDefinition.trunkRotationY);
+        Matrix4 movingMatrix = new Matrix4().translate(x + 0.5f, y, z + 0.5f);
+        movingMatrix.rotate(new Vector3(0, 1, 0), treeDefinition.trunkRotationY);
 
         int vertexIndex = (short) (vertices.size / 8);
 
+        Vector3 origin = new Vector3();
+        Vector3 normal = new Vector3();
+
         Iterator<TrunkSegmentDefinition> segmentIterator = treeDefinition.segments.iterator();
         TrunkSegmentDefinition lastSegment = segmentIterator.next();
-        Vector3 first = new Vector3(1, 0, 1).scl(lastSegment.radius).mul(goingMatrix);
-        Vector3 second = new Vector3(-1, 0, 1).scl(lastSegment.radius).mul(goingMatrix);
-        Vector3 third = new Vector3(-1, 0, -1).scl(lastSegment.radius).mul(goingMatrix);
-        Vector3 fourth = new Vector3(1, 0, -1).scl(lastSegment.radius).mul(goingMatrix);
+        Vector3 first = new Vector3(1, 0, 1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 second = new Vector3(-1, 0, 1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 third = new Vector3(-1, 0, -1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 fourth = new Vector3(1, 0, -1).scl(lastSegment.radius).mul(movingMatrix);
         while (segmentIterator.hasNext()) {
             TrunkSegmentDefinition thisSegment = segmentIterator.next();
 
-            goingMatrix.rotate(new Vector3(0, 0, 1), thisSegment.rotateZ);
-            goingMatrix.rotate(new Vector3(1, 0, 0), thisSegment.rotateX);
-            goingMatrix.translate(0, lastSegment.length / 2, 0);
+            movingMatrix.rotate(new Vector3(0, 0, 1), thisSegment.rotateZ);
+            movingMatrix.rotate(new Vector3(1, 0, 0), thisSegment.rotateX);
+            movingMatrix.translate(0, lastSegment.length / 2, 0);
             for (BranchDefinition branch : lastSegment.branches) {
-                Matrix4 branchMatrix = goingMatrix.cpy();
+                Matrix4 branchMatrix = movingMatrix.cpy();
                 vertexIndex = generateBranch(vertexIndex, branch, branchMatrix, vertices, indices);
             }
 
-            goingMatrix.translate(0, lastSegment.length / 2, 0);
+            movingMatrix.translate(0, lastSegment.length / 2, 0);
 
-            Vector3 firstTop = new Vector3(1, 0, 1).scl(thisSegment.radius).mul(goingMatrix);
-            Vector3 secondTop = new Vector3(-1, 0, 1).scl(thisSegment.radius).mul(goingMatrix);
-            Vector3 thirdTop = new Vector3(-1, 0, -1).scl(thisSegment.radius).mul(goingMatrix);
-            Vector3 fourthTop = new Vector3(1, 0, -1).scl(thisSegment.radius).mul(goingMatrix);
+            origin.set(0, 0, 0).mul(movingMatrix);
 
-            vertexIndex = addQuad(vertexIndex, vertices, indices, first, firstTop, secondTop, second);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, second, secondTop, thirdTop, third);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, third, thirdTop, fourthTop, fourth);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, fourth, fourthTop, firstTop, first);
+            Vector3 firstTop = new Vector3(1, 0, 1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 secondTop = new Vector3(-1, 0, 1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 thirdTop = new Vector3(-1, 0, -1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 fourthTop = new Vector3(1, 0, -1).scl(thisSegment.radius).mul(movingMatrix);
+
+            normal.set(0, 0, 1).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    first, firstTop, secondTop, second);
+            normal.set(-1, 0, 0).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    second, secondTop, thirdTop, third);
+            normal.set(0, 0, -1).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    third, thirdTop, fourthTop, fourth);
+            normal.set(1, 0, 0).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    fourth, fourthTop, firstTop, first);
 
             first.set(firstTop);
             second.set(secondTop);
@@ -181,44 +194,67 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             lastSegment = thisSegment;
         }
 
-        goingMatrix.translate(0, lastSegment.length, 0);
+        movingMatrix.translate(0, lastSegment.length, 0);
 
-        Vector3 firstTop = new Vector3(0, 0, 0).mul(goingMatrix);
-        Vector3 secondTop = new Vector3(0, 0, 0).mul(goingMatrix);
-        Vector3 thirdTop = new Vector3(0, 0, 0).mul(goingMatrix);
-        Vector3 fourthTop = new Vector3(0, 0, 0).mul(goingMatrix);
+        origin.set(0, 0, 0).mul(movingMatrix);
 
-        vertexIndex = addQuad(vertexIndex, vertices, indices, first, firstTop, secondTop, second);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, second, secondTop, thirdTop, third);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, third, thirdTop, fourthTop, fourth);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, fourth, fourthTop, firstTop, first);
+        Vector3 firstTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 secondTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 thirdTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 fourthTop = new Vector3(0, 0, 0).mul(movingMatrix);
+
+        normal.set(0, 0, 1).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                first, firstTop, secondTop, second);
+        normal.set(-1, 0, 0).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                second, secondTop, thirdTop, third);
+        normal.set(0, 0, -1).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                third, thirdTop, fourthTop, fourth);
+        normal.set(1, 0, 0).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                fourth, fourthTop, firstTop, first);
     }
 
-    private int generateBranch(int vertexIndex, BranchDefinition branch, Matrix4 branchMatrix, FloatArray vertices, ShortArray indices) {
-        branchMatrix.rotate(new Vector3(0, 1, 0), branch.angleY);
-        branchMatrix.rotate(new Vector3(0, 0, 1), branch.angleZ);
+    private int generateBranch(int vertexIndex, BranchDefinition branch, Matrix4 movingMatrix, FloatArray vertices, ShortArray indices) {
+        movingMatrix.rotate(new Vector3(0, 1, 0), branch.angleY);
+        movingMatrix.rotate(new Vector3(0, 0, 1), branch.angleZ);
+
+        Vector3 origin = new Vector3();
+        Vector3 normal = new Vector3();
 
         Iterator<BranchSegmentDefinition> segmentIterator = branch.branchSegments.iterator();
         BranchSegmentDefinition lastSegment = segmentIterator.next();
-        Vector3 first = new Vector3(1, 0, 1).scl(lastSegment.radius).mul(branchMatrix);
-        Vector3 second = new Vector3(-1, 0, 1).scl(lastSegment.radius).mul(branchMatrix);
-        Vector3 third = new Vector3(-1, 0, -1).scl(lastSegment.radius).mul(branchMatrix);
-        Vector3 fourth = new Vector3(1, 0, -1).scl(lastSegment.radius).mul(branchMatrix);
+        Vector3 first = new Vector3(1, 0, 1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 second = new Vector3(-1, 0, 1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 third = new Vector3(-1, 0, -1).scl(lastSegment.radius).mul(movingMatrix);
+        Vector3 fourth = new Vector3(1, 0, -1).scl(lastSegment.radius).mul(movingMatrix);
         while (segmentIterator.hasNext()) {
             BranchSegmentDefinition thisSegment = segmentIterator.next();
 
-            branchMatrix.rotate(new Vector3(0, 0, 1), thisSegment.rotateZ);
-            branchMatrix.translate(0, lastSegment.length, 0);
+            movingMatrix.rotate(new Vector3(0, 0, 1), thisSegment.rotateZ);
+            movingMatrix.translate(0, lastSegment.length, 0);
 
-            Vector3 firstTop = new Vector3(1, 0, 1).scl(thisSegment.radius).mul(branchMatrix);
-            Vector3 secondTop = new Vector3(-1, 0, 1).scl(thisSegment.radius).mul(branchMatrix);
-            Vector3 thirdTop = new Vector3(-1, 0, -1).scl(thisSegment.radius).mul(branchMatrix);
-            Vector3 fourthTop = new Vector3(1, 0, -1).scl(thisSegment.radius).mul(branchMatrix);
+            Vector3 firstTop = new Vector3(1, 0, 1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 secondTop = new Vector3(-1, 0, 1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 thirdTop = new Vector3(-1, 0, -1).scl(thisSegment.radius).mul(movingMatrix);
+            Vector3 fourthTop = new Vector3(1, 0, -1).scl(thisSegment.radius).mul(movingMatrix);
 
-            vertexIndex = addQuad(vertexIndex, vertices, indices, first, firstTop, secondTop, second);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, second, secondTop, thirdTop, third);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, third, thirdTop, fourthTop, fourth);
-            vertexIndex = addQuad(vertexIndex, vertices, indices, fourth, fourthTop, firstTop, first);
+            origin.set(0, 0, 0).mul(movingMatrix);
+
+            normal.set(0, 0, 1).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    first, firstTop, secondTop, second);
+            normal.set(-1, 0, 0).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    second, secondTop, thirdTop, third);
+            normal.set(0, 0, -1).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    third, thirdTop, fourthTop, fourth);
+            normal.set(1, 0, 0).mul(movingMatrix).sub(origin);
+            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                    fourth, fourthTop, firstTop, first);
 
             first.set(firstTop);
             second.set(secondTop);
@@ -228,55 +264,67 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             lastSegment = thisSegment;
         }
 
-        branchMatrix.translate(0, lastSegment.length, 0);
+        movingMatrix.translate(0, lastSegment.length, 0);
 
-        Vector3 firstTop = new Vector3(0, 0, 0).mul(branchMatrix);
-        Vector3 secondTop = new Vector3(0, 0, 0).mul(branchMatrix);
-        Vector3 thirdTop = new Vector3(0, 0, 0).mul(branchMatrix);
-        Vector3 fourthTop = new Vector3(0, 0, 0).mul(branchMatrix);
+        origin.set(0, 0, 0).mul(movingMatrix);
 
-        vertexIndex = addQuad(vertexIndex, vertices, indices, first, firstTop, secondTop, second);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, second, secondTop, thirdTop, third);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, third, thirdTop, fourthTop, fourth);
-        vertexIndex = addQuad(vertexIndex, vertices, indices, fourth, fourthTop, firstTop, first);
+        Vector3 firstTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 secondTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 thirdTop = new Vector3(0, 0, 0).mul(movingMatrix);
+        Vector3 fourthTop = new Vector3(0, 0, 0).mul(movingMatrix);
+
+        normal.set(0, 0, 1).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                first, firstTop, secondTop, second);
+        normal.set(-1, 0, 0).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                second, secondTop, thirdTop, third);
+        normal.set(0, 0, -1).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                third, thirdTop, fourthTop, fourth);
+        normal.set(1, 0, 0).mul(movingMatrix).sub(origin);
+        vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+                fourth, fourthTop, firstTop, first);
 
         return vertexIndex;
     }
 
-    private int addQuad(int vertexIndex, FloatArray vertices, ShortArray indices, Vector3 first, Vector3 second, Vector3 third, Vector3 fourth) {
+    private int addQuad(int vertexIndex, FloatArray vertices, ShortArray indices,
+                        Vector3 normal,
+                        Vector3 first, Vector3 second, Vector3 third, Vector3 fourth) {
         vertices.add(first.x);
         vertices.add(first.y);
         vertices.add(first.z);
-        vertices.add(0);
-        vertices.add(1);
-        vertices.add(0);
+        vertices.add(normal.x);
+        vertices.add(normal.y);
+        vertices.add(normal.z);
         vertices.add(oakBarkTexture.getU() + 1 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
         vertices.add(oakBarkTexture.getV() + 0 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
 
         vertices.add(second.x);
         vertices.add(second.y);
         vertices.add(second.z);
-        vertices.add(0);
-        vertices.add(1);
-        vertices.add(0);
+        vertices.add(normal.x);
+        vertices.add(normal.y);
+        vertices.add(normal.z);
         vertices.add(oakBarkTexture.getU() + 1 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
         vertices.add(oakBarkTexture.getV() + 1 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
 
         vertices.add(third.x);
         vertices.add(third.y);
         vertices.add(third.z);
-        vertices.add(0);
-        vertices.add(1);
-        vertices.add(0);
+        vertices.add(normal.x);
+        vertices.add(normal.y);
+        vertices.add(normal.z);
         vertices.add(oakBarkTexture.getU() + 0 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
         vertices.add(oakBarkTexture.getV() + 1 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
 
         vertices.add(fourth.x);
         vertices.add(fourth.y);
         vertices.add(fourth.z);
-        vertices.add(0);
-        vertices.add(1);
-        vertices.add(0);
+        vertices.add(normal.x);
+        vertices.add(normal.y);
+        vertices.add(normal.z);
         vertices.add(oakBarkTexture.getU() + 0 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
         vertices.add(oakBarkTexture.getV() + 0 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
 
