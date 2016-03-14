@@ -107,6 +107,9 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         BranchDefinition tree = new BranchDefinition(0, trunkRotation);
         for (int i = 0; i < generation; i++) {
             float lastBranchAngle = 0;
+
+            BranchSegmentDefinition lastExistingSegment = null;
+
             // Grow existing segments and their branches
             for (BranchSegmentDefinition segment : tree.segments) {
                 segment.length += 0.2f;
@@ -122,24 +125,28 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                             branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0,
                             branchCurveAngleZ.getValue(rnd)));
                 }
+                lastExistingSegment = segment;
+            }
+
+            if (lastExistingSegment != null) {
+                // Add branches to last existing segment
+                int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
+
+                for (int branch = 0; branch < branchCount; branch++) {
+                    lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
+                    BranchDefinition branchDef = new BranchDefinition(
+                            lastBranchAngle, branchInitialAngleZ.getValue(rnd));
+                    branchDef.segments.add(
+                            new BranchSegmentDefinition(
+                                    branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0));
+                    lastExistingSegment.branches.add(branchDef);
+                }
             }
 
             // Add new segment
             BranchSegmentDefinition segment = new BranchSegmentDefinition(
                     newTrunkSegmentLength.getValue(rnd), newTrunkSegmentRadius.getValue(rnd),
                     segmentRotateX.getValue(rnd), segmentRotateZ.getValue(rnd));
-
-            int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
-
-            for (int branch = 0; branch < branchCount; branch++) {
-                lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
-                BranchDefinition branchDef = new BranchDefinition(
-                        lastBranchAngle, branchInitialAngleZ.getValue(rnd));
-                branchDef.segments.add(
-                        new BranchSegmentDefinition(
-                                branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0));
-                segment.branches.add(branchDef);
-            }
 
             tree.segments.add(segment);
         }
