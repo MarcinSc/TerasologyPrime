@@ -134,6 +134,7 @@ public class TerasologyApplication extends ApplicationAdapter {
 
     @Override
     public void render() {
+        long start = System.currentTimeMillis();
         fpsLogger.log();
 
         clientInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
@@ -147,6 +148,7 @@ public class TerasologyApplication extends ApplicationAdapter {
 
             GLProfiler.reset();
         }
+        System.out.println("Frame length: " + (System.currentTimeMillis() - start));
     }
 
     private void updatePlayerPosition() {
@@ -154,8 +156,8 @@ public class TerasologyApplication extends ApplicationAdapter {
         CameraComponent camera = playerEntity.getComponent(CameraComponent.class);
         LocationComponent location = playerEntity.getComponent(LocationComponent.class);
 
-        float rotateStep = 0.05f;
-        float stepLength = 0.5f;
+        float rotateStep = 0.1f;
+        float stepLength = 2f;
 
         boolean changed = false;
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {

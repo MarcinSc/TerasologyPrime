@@ -171,7 +171,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
                 List<String> textureIds = shapePart.getTextures();
 
                 String textureToUse = findFirstTexture(textureIds, availableTextures);
-                TextureRegion textureRegion = textureAtlasProvider.getTexture(textureToUse);
+                TextureRegion textureRegion = textureAtlasProvider.getTexture("core/" + textureToUse);
                 if (textureRegion.getTexture() == texture) {
                     int vertexCount = shapePart.getVertices().size();
 

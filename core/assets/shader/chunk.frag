@@ -8,6 +8,7 @@ uniform vec3 u_lightDirection;
 uniform float u_lightPlaneDistance;
 uniform sampler2D u_depthMap;
 uniform sampler2D u_diffuseTexture;
+uniform float u_ambientLighting;
 
 // Fragment position in the light coordinates
 varying vec4 v_positionLightTrans;
@@ -18,8 +19,6 @@ varying vec3 v_position;
 
 void main()
 {
-    float ambientLighting = 0.4;
-
     vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
     vec3 depth = (v_positionLightTrans.xyz / v_positionLightTrans.w) * 0.5 + 0.5;
     vec4 distanceFromDepthMap = texture2D(u_depthMap, depth.xy);
@@ -37,9 +36,9 @@ void main()
     float bias = clamp(1.0*tan(acos(cosTheta)), 0.05, 1.0);
     if (distanceFromShadowMap < distanceToLight - bias) {
         // Not lighted by directional lighting (star)
-        finalColor.rgb *= ambientLighting;
+        finalColor.rgb *= u_ambientLighting;
     } else {
-        float totalLighting = clamp(ambientLighting+cosTheta, 0.0, 1.0);
+        float totalLighting = clamp(u_ambientLighting+cosTheta, 0.0, 1.0);
         finalColor.rgb *= totalLighting;
     }
 

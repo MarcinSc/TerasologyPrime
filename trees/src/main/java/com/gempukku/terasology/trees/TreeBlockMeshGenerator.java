@@ -40,8 +40,8 @@ public class TreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSyst
     public void initialize() {
         textureAtlasRegistry.registerTextures(
                 Arrays.asList(
-                        "blockTiles/plant/Tree/OakBark.png",
-                        "blockTiles/plant/leaf/GreenLeaf.png"));
+                        "blockTiles/trees/OakBark.png",
+                        "blockTiles/trees/OakLeaf.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:footree", this);
         cubeShape = shapeProvider.getShapeById("cube");
     }

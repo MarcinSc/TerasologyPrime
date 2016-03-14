@@ -49,7 +49,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     public void initialize() {
         textureAtlasRegistry.registerTextures(
                 Arrays.asList(
-                        "blockTiles/plant/Tree/OakBark.png",
+                        "blockTiles/trees/OakBark.png",
                         "blockTiles/plant/leaf/GreenLeaf.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
         cubeShape = shapeProvider.getShapeById("cube");
@@ -78,7 +78,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexIndex, vertices, indices);
 
-            generateTree(branchCallback, branchDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
         }
         if (texture == oakLeafTexture.getTexture()) {
             short vertexIndex = (short) (vertices.size / 8);
@@ -90,12 +90,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexIndex, vertices, indices);
 
-            generateTree(branchCallback, branchDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
         }
     }
 
     private BranchDefinition createTreeDefinition(EntityRef entity) {
-        int generation = 6;
+        int generation = 10;
         int seed = 0;
         FastRandom rnd = new FastRandom();
         PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
@@ -115,17 +115,21 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         float trunkRotation = rnd.nextFloat();
 
-        BranchDefinition tree = new BranchDefinition(0, trunkRotation);
+        BranchDefinition tree = new BranchDefinition(0, trunkRotation, 0.2f, 0.15f);
         for (int i = 0; i < generation; i++) {
-            float lastBranchAngle = 0;
+            tree.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 2) / 10f;
+            tree.verticalLeavesScale = tree.horizontalLeavesScale * 0.75f;
 
-            BranchSegmentDefinition lastExistingSegment = null;
+            float lastBranchAngle = 0;
 
             // Grow existing segments and their branches
             for (BranchSegmentDefinition segment : tree.segments) {
                 segment.length += 0.2f;
-                segment.radius += 0.03f;
+                segment.radius += 0.05f;
                 for (BranchDefinition branch : segment.branches) {
+                    branch.horizontalLeavesScale = (float) Math.pow(branch.segments.size(), 2) / 10f;
+                    branch.verticalLeavesScale = branch.horizontalLeavesScale * 0.75f;
+
                     lastBranchAngle += branch.rotationY;
                     for (BranchSegmentDefinition branchSegment : branch.segments) {
                         branchSegment.length += 0.08f;
@@ -136,21 +140,22 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                             branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0,
                             branchCurveAngleZ.getValue(rnd)));
                 }
-                lastExistingSegment = segment;
             }
 
-            if (lastExistingSegment != null) {
+            int existingSegmentCount = tree.segments.size();
+
+            if (existingSegmentCount > 2) {
                 // Add branches to last existing segment
                 int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
 
                 for (int branch = 0; branch < branchCount; branch++) {
                     lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
                     BranchDefinition branchDef = new BranchDefinition(
-                            lastBranchAngle, branchInitialAngleZ.getValue(rnd));
+                            lastBranchAngle, branchInitialAngleZ.getValue(rnd), 0.2f, 0.15f);
                     branchDef.segments.add(
                             new BranchSegmentDefinition(
                                     branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0));
-                    lastExistingSegment.branches.add(branchDef);
+                    tree.segments.get(existingSegmentCount - 1).branches.add(branchDef);
                 }
             }
 
@@ -196,8 +201,6 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         @Override
         public void branchEnd(BranchDefinition branch, Matrix4 movingMatrix) {
-            int segmentCount = branch.segments.size();
-
             origin.set(0, 0, 0).mul(movingMatrix);
 
             for (ShapePartDef shapePart : cubeShape.getShapeParts()) {
@@ -214,11 +217,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                     Float[] normalValues = shapePart.getNormals().get(vertex);
                     Float[] textureCoords = shapePart.getUvs().get(vertex);
 
-                    float horizontalScale = (float) Math.pow(segmentCount, 2) / 10f;
-                    float verticalScale = horizontalScale / 2f;
-
-                    tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
-                            .scl(horizontalScale, verticalScale, horizontalScale).add(origin);
+                    tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 1f, vertexCoords[2] - 0.5f)
+                            .scl(branch.horizontalLeavesScale, branch.verticalLeavesScale, branch.horizontalLeavesScale).add(origin);
 
                     vertices.add(tempVector.x);
                     vertices.add(tempVector.y);
@@ -312,7 +312,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
     }
 
-    private void generateTree(LSystemCallback callback, BranchDefinition branchDefinition, Matrix4 movingMatrix) {
+    private void processBranchWithCallback(LSystemCallback callback, BranchDefinition branchDefinition, Matrix4 movingMatrix) {
         movingMatrix.rotate(new Vector3(0, 1, 0), branchDefinition.rotationY);
         movingMatrix.rotate(new Vector3(0, 0, 1), branchDefinition.rotationZ);
 
@@ -334,7 +334,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             for (BranchDefinition branch : currentSegment.branches) {
                 Matrix4 branchMatrix = movingMatrix.cpy();
-                generateTree(callback, branch, branchMatrix);
+                processBranchWithCallback(callback, branch, branchMatrix);
             }
             movingMatrix.translate(0, currentSegment.length / 2, 0);
 
@@ -393,14 +393,10 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         return (short) (vertexIndex + 4);
     }
 
-    private void generateLeaves(BranchDefinition branchDefinition, FloatArray vertices, ShortArray indices, int x, int y, int z) {
-        // TODO
-    }
-
     private void init() {
         if (oakBarkTexture == null) {
-            oakBarkTexture = textureAtlasProvider.getTexture("blockTiles/plant/Tree/OakBark");
-            oakLeafTexture = textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf");
+            oakBarkTexture = textureAtlasProvider.getTexture("trees/blockTiles/trees/OakBark");
+            oakLeafTexture = textureAtlasProvider.getTexture("core/blockTiles/plant/leaf/GreenLeaf");
         }
     }
 

@@ -35,7 +35,17 @@ public class RenderableChunk {
     }
 
     public boolean isVisible(Camera camera) {
-        return camera.frustum.boundsInFrustum(boundingBox);
+        // Move camera back one chunk
+        camera.position.sub(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));
+        camera.update();
+
+        boolean result = camera.frustum.boundsInFrustum(boundingBox);
+
+        // Move the camera to its original position
+        camera.position.add(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));
+        camera.update();
+
+        return result;
     }
 
     public void updateChunkMesh(ChunkMesh chunkMesh, List<Texture> textures) {

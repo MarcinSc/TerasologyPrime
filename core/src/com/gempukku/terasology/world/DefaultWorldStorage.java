@@ -4,10 +4,9 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
+import com.gempukku.terasology.world.blockEntity.BlockEntityManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
-import com.gempukku.terasology.world.component.BlockComponent;
 
 @RegisterSystem(
         shared = WorldStorage.class)
@@ -20,6 +19,8 @@ public class DefaultWorldStorage implements WorldStorage {
     private PrefabManager prefabManager;
     @In
     private CommonBlockManager commonBlockManager;
+    @In
+    private BlockEntityManager blockEntityManager;
 
     @Override
     public EntityRefAndCommonBlockId getBlockEntityAndBlockIdAt(String worldId, int x, int y, int z) {
@@ -27,14 +28,9 @@ public class DefaultWorldStorage implements WorldStorage {
         if (commonBlockAt == -1)
             return null;
 
-        for (EntityRef entityRef : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
-            LocationComponent location = entityRef.getComponent(LocationComponent.class);
-            if (location.getWorldId().equals(worldId) && location.getX() == x
-                    && location.getY() == y && location.getZ() == z)
-                return new EntityRefAndCommonBlockId(entityRef, commonBlockAt);
-        }
+        EntityRef entity = blockEntityManager.getBlockEntityAt(worldId, x, y, z);
 
-        return new EntityRefAndCommonBlockId(null, commonBlockAt);
+        return new EntityRefAndCommonBlockId(entity, commonBlockAt);
     }
 
     @Override

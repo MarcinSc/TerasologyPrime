@@ -13,6 +13,7 @@ public class ChunkShader extends DefaultShader {
     private final int u_lightDirection = register("u_lightDirection");
     private final int u_lightPosition = register("u_lightPosition");
     private final int u_lightPlaneDistance = register("u_lightPlaneDistance");
+    private final int u_ambientLighting = register("u_ambientLighting");
 
     private Matrix4 lightTrans;
     private Vector3 lightDirection;
@@ -53,6 +54,7 @@ public class ChunkShader extends DefaultShader {
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
         set(u_depthMap, 2);
+        set(u_ambientLighting, 0.2f);
 
         super.render(renderable, combinedAttributes);
     }

@@ -52,7 +52,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                     float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
-                    if (blockLevel == groundLevel + 1 && dx == 0 && dz == 0) {
+                    if (blockLevel == groundLevel + 1 && dx%(ChunkSize.X/2) == 0 && dz%(ChunkSize.Z/2) == 0) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(tree));
                     } else if (blockLevel > groundLevel) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(air));

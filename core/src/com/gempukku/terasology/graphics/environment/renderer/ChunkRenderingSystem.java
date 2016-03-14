@@ -30,7 +30,7 @@ import com.google.common.collect.Multimap;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
-public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSystem {
+public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSystem {
     @In
     private EnvironmentRendererRegistry environmentRendererRegistry;
     @In
@@ -83,8 +83,6 @@ public class RenderingChunkSystem implements EnvironmentRenderer, LifeCycleSyste
     private void renderLights(Camera camera, String worldId) {
         int dayLengthInMs = 1 * 60 * 1000;
         float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
-
-//        direction = (float) -Math.PI/4f;
 
         lightCamera.position.set(
                 (float) (camera.position.x + 1.1 * camera.far * Math.sin(direction)),
