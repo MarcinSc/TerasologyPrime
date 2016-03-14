@@ -83,13 +83,13 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         int generation = 6;
         int seed = 0;
         FastRandom rnd = new FastRandom();
-        PDist newSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
-        PDist newSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
+        PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
+        PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
 
         int maxBranchesPerSegment = 2;
-        PDist branchInitialAngleY = new PDist(180f, 180f, PDist.Type.uniform);
+        PDist branchInitialAngleAddY = new PDist(120f, 10f, PDist.Type.normal);
         PDist branchInitialAngleZ = new PDist(60, 20, PDist.Type.normal);
-        PDist branchInitialLength = new PDist(0.5f, 0.1f, PDist.Type.normal);
+        PDist branchInitialLength = new PDist(0.3f, 0.075f, PDist.Type.normal);
         PDist branchInitialRadius = new PDist(0.01f, 0.003f, PDist.Type.normal);
 
         PDist segmentRotateX = new PDist(0, 15, PDist.Type.normal);
@@ -101,11 +101,13 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         TreeDefinition tree = new TreeDefinition(trunkRotation);
         for (int i = 0; i < generation; i++) {
+            float lastBranchAngle = 0;
             // Grow existing segments and their branches
             for (TrunkSegmentDefinition segment : tree.segments) {
                 segment.length += 0.2f;
                 segment.radius += 0.03f;
                 for (BranchDefinition branch : segment.branches) {
+                    lastBranchAngle += branch.angleY;
                     for (BranchSegmentDefinition branchSegment : branch.branchSegments) {
                         branchSegment.length += 0.08f;
                         branchSegment.radius += 0.01f;
@@ -120,8 +122,9 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             List<BranchDefinition> branches = new LinkedList<>();
             for (int branch = 0; branch < branchCount; branch++) {
+                lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
                 BranchDefinition branchDef = new BranchDefinition(
-                        branchInitialAngleY.getValue(rnd), branchInitialAngleZ.getValue(rnd));
+                        lastBranchAngle, branchInitialAngleZ.getValue(rnd));
                 branchDef.branchSegments.add(
                         new BranchSegmentDefinition(
                                 branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0));
@@ -130,7 +133,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             // Add new segment
             TrunkSegmentDefinition segment = new TrunkSegmentDefinition(branches,
-                    newSegmentLength.getValue(rnd), newSegmentRadius.getValue(rnd),
+                    newTrunkSegmentLength.getValue(rnd), newTrunkSegmentRadius.getValue(rnd),
                     segmentRotateX.getValue(rnd), segmentRotateZ.getValue(rnd));
             tree.addSegment(segment);
         }
