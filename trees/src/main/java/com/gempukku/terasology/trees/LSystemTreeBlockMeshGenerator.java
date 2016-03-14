@@ -16,6 +16,8 @@ import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
 import com.gempukku.terasology.graphics.environment.BlockMeshGeneratorRegistry;
 import com.gempukku.terasology.graphics.environment.ChunkMeshGeneratorCallback;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
+import com.gempukku.terasology.graphics.shape.ShapePartDef;
+import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.procedural.FastRandom;
 import com.gempukku.terasology.procedural.PDist;
 import com.gempukku.terasology.world.WorldStorage;
@@ -36,6 +38,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     private TextureAtlasProvider textureAtlasProvider;
     @In
     private WorldStorage worldStorage;
+    @In
+    private ShapeProvider shapeProvider;
 
     private TextureRegion oakBarkTexture;
     private TextureRegion oakLeafTexture;
@@ -48,6 +52,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                         "blockTiles/plant/Tree/OakBark.png",
                         "blockTiles/plant/leaf/GreenLeaf.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
+        cubeShape = shapeProvider.getShapeById("cube");
     }
 
     @Override
@@ -64,7 +69,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         BranchDefinition branchDefinition = createTreeDefinition(entityAndBlockId.entityRef);
 
         if (texture == oakBarkTexture.getTexture()) {
-            int vertexIndex = (short) (vertices.size / 8);
+            short vertexIndex = (short) (vertices.size / 8);
 
             Matrix4 movingMatrix = new Matrix4().translate(
                     chunkBlocks.x * ChunkSize.X + xInChunk + 0.5f,
@@ -76,10 +81,16 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             generateTree(branchCallback, branchDefinition, movingMatrix);
         }
         if (texture == oakLeafTexture.getTexture()) {
-            generateLeaves(branchDefinition, vertices, indices,
-                    chunkBlocks.x * ChunkSize.X + xInChunk,
+            short vertexIndex = (short) (vertices.size / 8);
+
+            Matrix4 movingMatrix = new Matrix4().translate(
+                    chunkBlocks.x * ChunkSize.X + xInChunk + 0.5f,
                     chunkBlocks.y * ChunkSize.Y + yInChunk,
-                    chunkBlocks.z * ChunkSize.Z + zInChunk);
+                    chunkBlocks.z * ChunkSize.Z + zInChunk + 0.5f);
+
+            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexIndex, vertices, indices);
+
+            generateTree(branchCallback, branchDefinition, movingMatrix);
         }
     }
 
@@ -154,6 +165,81 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         return tree;
     }
 
+    private class LeavesDrawingCallback implements LSystemCallback {
+        private short vertexIndex;
+        private FloatArray vertices;
+        private ShortArray indices;
+
+        private Vector3 tempVector = new Vector3();
+        private Vector3 origin = new Vector3();
+
+        public LeavesDrawingCallback(short vertexIndex, FloatArray vertices, ShortArray indices) {
+            this.vertexIndex = vertexIndex;
+            this.vertices = vertices;
+            this.indices = indices;
+        }
+
+        @Override
+        public void branchStart(BranchDefinition branch, Matrix4 movingMatrix) {
+
+        }
+
+        @Override
+        public void segmentStart(BranchSegmentDefinition segment, Matrix4 movingMatrix) {
+
+        }
+
+        @Override
+        public void segmentEnd(BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4 movingMatrix) {
+
+        }
+
+        @Override
+        public void branchEnd(BranchDefinition branch, Matrix4 movingMatrix) {
+            int segmentCount = branch.segments.size();
+
+            origin.set(0, 0, 0).mul(movingMatrix);
+
+            for (ShapePartDef shapePart : cubeShape.getShapeParts()) {
+                int vertexCount = shapePart.getVertices().size();
+
+                // This array will store indexes of vertices in the resulting Mesh
+                short[] vertexMapping = new short[vertexCount];
+
+                // Trunk
+                for (int vertex = 0; vertex < vertexCount; vertex++) {
+                    vertexMapping[vertex] = vertexIndex++;
+
+                    Float[] vertexCoords = shapePart.getVertices().get(vertex);
+                    Float[] normalValues = shapePart.getNormals().get(vertex);
+                    Float[] textureCoords = shapePart.getUvs().get(vertex);
+
+                    float horizontalScale = (float) Math.pow(segmentCount, 2) / 10f;
+                    float verticalScale = horizontalScale / 2f;
+
+                    tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
+                            .scl(horizontalScale, verticalScale, horizontalScale).add(origin);
+
+                    vertices.add(tempVector.x);
+                    vertices.add(tempVector.y);
+                    vertices.add(tempVector.z);
+
+                    tempVector.set(normalValues[0], normalValues[1], normalValues[2]).mul(movingMatrix).sub(origin);
+
+                    vertices.add(normalValues[0]);
+                    vertices.add(normalValues[1]);
+                    vertices.add(normalValues[2]);
+
+                    vertices.add(oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()));
+                    vertices.add(oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
+                }
+                for (short index : shapePart.getIndices()) {
+                    indices.add(vertexMapping[index]);
+                }
+            }
+        }
+    }
+
     private class BranchDrawingCallback implements LSystemCallback {
         private Vector3 origin = new Vector3();
         private Vector3 normal = new Vector3();
@@ -168,11 +254,11 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         private Vector3 thirdTop = new Vector3();
         private Vector3 fourthTop = new Vector3();
 
-        private int vertexIndex;
+        private short vertexIndex;
         private FloatArray vertices;
         private ShortArray indices;
 
-        public BranchDrawingCallback(int vertexIndex, FloatArray vertices, ShortArray indices) {
+        public BranchDrawingCallback(short vertexIndex, FloatArray vertices, ShortArray indices) {
             this.vertexIndex = vertexIndex;
             this.vertices = vertices;
             this.indices = indices;
@@ -208,16 +294,16 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             normal.set(0, 0, 1).mul(movingMatrix).sub(origin);
             vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
-                    first, firstTop, secondTop, second);
+                    first, firstTop, secondTop, second, oakBarkTexture);
             normal.set(-1, 0, 0).mul(movingMatrix).sub(origin);
             vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
-                    second, secondTop, thirdTop, third);
+                    second, secondTop, thirdTop, third, oakBarkTexture);
             normal.set(0, 0, -1).mul(movingMatrix).sub(origin);
             vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
-                    third, thirdTop, fourthTop, fourth);
+                    third, thirdTop, fourthTop, fourth, oakBarkTexture);
             normal.set(1, 0, 0).mul(movingMatrix).sub(origin);
             vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
-                    fourth, fourthTop, firstTop, first);
+                    fourth, fourthTop, firstTop, first, oakBarkTexture);
         }
 
         @Override
@@ -258,17 +344,17 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         callback.branchEnd(branchDefinition, movingMatrix);
     }
 
-    private int addQuad(int vertexIndex, FloatArray vertices, ShortArray indices,
-                        Vector3 normal,
-                        Vector3 first, Vector3 second, Vector3 third, Vector3 fourth) {
+    private short addQuad(short vertexIndex, FloatArray vertices, ShortArray indices,
+                          Vector3 normal,
+                          Vector3 first, Vector3 second, Vector3 third, Vector3 fourth, TextureRegion texture) {
         vertices.add(first.x);
         vertices.add(first.y);
         vertices.add(first.z);
         vertices.add(normal.x);
         vertices.add(normal.y);
         vertices.add(normal.z);
-        vertices.add(oakBarkTexture.getU() + 1 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
-        vertices.add(oakBarkTexture.getV() + 0 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
+        vertices.add(texture.getU() + 1 * (texture.getU2() - texture.getU()));
+        vertices.add(texture.getV() + 0 * (texture.getV2() - texture.getV()));
 
         vertices.add(second.x);
         vertices.add(second.y);
@@ -276,8 +362,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         vertices.add(normal.x);
         vertices.add(normal.y);
         vertices.add(normal.z);
-        vertices.add(oakBarkTexture.getU() + 1 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
-        vertices.add(oakBarkTexture.getV() + 1 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
+        vertices.add(texture.getU() + 1 * (texture.getU2() - texture.getU()));
+        vertices.add(texture.getV() + 1 * (texture.getV2() - texture.getV()));
 
         vertices.add(third.x);
         vertices.add(third.y);
@@ -285,8 +371,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         vertices.add(normal.x);
         vertices.add(normal.y);
         vertices.add(normal.z);
-        vertices.add(oakBarkTexture.getU() + 0 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
-        vertices.add(oakBarkTexture.getV() + 1 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
+        vertices.add(texture.getU() + 0 * (texture.getU2() - texture.getU()));
+        vertices.add(texture.getV() + 1 * (texture.getV2() - texture.getV()));
 
         vertices.add(fourth.x);
         vertices.add(fourth.y);
@@ -294,8 +380,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         vertices.add(normal.x);
         vertices.add(normal.y);
         vertices.add(normal.z);
-        vertices.add(oakBarkTexture.getU() + 0 * (oakBarkTexture.getU2() - oakBarkTexture.getU()));
-        vertices.add(oakBarkTexture.getV() + 0 * (oakBarkTexture.getV2() - oakBarkTexture.getV()));
+        vertices.add(texture.getU() + 0 * (texture.getU2() - texture.getU()));
+        vertices.add(texture.getV() + 0 * (texture.getV2() - texture.getV()));
 
         indices.add(vertexIndex);
         indices.add(vertexIndex + 1);
@@ -304,7 +390,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         indices.add(vertexIndex + 3);
         indices.add(vertexIndex);
 
-        return vertexIndex + 4;
+        return (short) (vertexIndex + 4);
     }
 
     private void generateLeaves(BranchDefinition branchDefinition, FloatArray vertices, ShortArray indices, int x, int y, int z) {
