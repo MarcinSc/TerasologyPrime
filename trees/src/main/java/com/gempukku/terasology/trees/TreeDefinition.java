@@ -4,14 +4,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class TreeDefinition {
-    public final float trunkRotationY;
-    public final List<TrunkSegmentDefinition> segments = new LinkedList<>();
+    public final float rotationY;
+    public final float rotationZ;
+    public final List<TreeSegmentDefinition> segments = new LinkedList<>();
 
-    public TreeDefinition(float trunkRotationY) {
-        this.trunkRotationY = trunkRotationY;
-    }
-
-    public void addSegment(TrunkSegmentDefinition segment) {
-        segments.add(segment);
+    public TreeDefinition(float rotationY, float rotationZ) {
+        this.rotationY = rotationY;
+        this.rotationZ = rotationZ;
     }
 }
