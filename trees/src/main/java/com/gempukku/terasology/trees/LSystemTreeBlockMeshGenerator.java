@@ -101,9 +101,11 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     private BranchDefinition createTreeDefinition(EntityRef entity, int treeX, int treeY, int treeZ) {
-        int generation = 10;
         int seed = treeX + treeY * 173 + treeZ * 1543;
         FastRandom rnd = new FastRandom(seed);
+
+        int generation = 10;//rnd.nextInt(11)+1;
+
         PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
         PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
 
@@ -119,27 +121,24 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         PDist branchCurveAngleZ = new PDist(-8, 2, PDist.Type.normal);
 
+        float segmentLengthIncreasePerGeneration = 0.2f;
+        float segmentRadiusIncreasePerGeneration = 0.05f;
+
         float trunkRotation = rnd.nextFloat();
 
-        BranchDefinition tree = new BranchDefinition(0, trunkRotation, 0.2f, 0.15f);
+        BranchDefinition tree = new BranchDefinition(0, trunkRotation);
         for (int i = 0; i < generation; i++) {
-            tree.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 2) / 10f;
-            tree.verticalLeavesScale = tree.horizontalLeavesScale * 0.75f;
-
             float lastBranchAngle = 0;
 
             // Grow existing segments and their branches
             for (BranchSegmentDefinition segment : tree.segments) {
-                segment.length += 0.2f;
-                segment.radius += 0.05f;
+                segment.length += segmentLengthIncreasePerGeneration;
+                segment.radius += segmentRadiusIncreasePerGeneration;
                 for (BranchDefinition branch : segment.branches) {
-                    branch.horizontalLeavesScale = (float) Math.pow(branch.segments.size(), 2) / 10f;
-                    branch.verticalLeavesScale = branch.horizontalLeavesScale * 0.75f;
-
                     lastBranchAngle += branch.rotationY;
                     for (BranchSegmentDefinition branchSegment : branch.segments) {
-                        branchSegment.length += 0.08f;
-                        branchSegment.radius += 0.01f;
+                        branchSegment.length += segmentLengthIncreasePerGeneration;
+                        branchSegment.radius += segmentRadiusIncreasePerGeneration;
                     }
 
                     branch.segments.add(new BranchSegmentDefinition(
@@ -157,10 +156,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 for (int branch = 0; branch < branchCount; branch++) {
                     lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
                     BranchDefinition branchDef = new BranchDefinition(
-                            lastBranchAngle, branchInitialAngleZ.getValue(rnd), 0.2f, 0.15f);
-                    branchDef.segments.add(
-                            new BranchSegmentDefinition(
-                                    branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0));
+                            lastBranchAngle, branchInitialAngleZ.getValue(rnd));
+                    BranchSegmentDefinition segment = new BranchSegmentDefinition(
+                            branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0);
+
+                    branchDef.segments.add(segment);
+
                     tree.segments.get(existingSegmentCount - 1).branches.add(branchDef);
                 }
             }
@@ -172,6 +173,21 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             tree.segments.add(segment);
         }
+
+        // Add leaves
+        BranchSegmentDefinition lastTrunkSegment = tree.segments.get(tree.segments.size() - 1);
+        lastTrunkSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
+        lastTrunkSegment.verticalLeavesScale = lastTrunkSegment.horizontalLeavesScale * 0.75f;
+
+        for (BranchSegmentDefinition segment : tree.segments) {
+            for (BranchDefinition branch : segment.branches) {
+                BranchSegmentDefinition lastBrunchSegment = branch.segments.get(branch.segments.size() - 1);
+
+                lastBrunchSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
+                lastBrunchSegment.verticalLeavesScale = lastBrunchSegment.horizontalLeavesScale * 0.75f;
+            }
+        }
+
 
         return tree;
     }
@@ -202,45 +218,47 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         @Override
         public void segmentEnd(BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
+            movingMatrix.transformPoint(origin.set(0, 0, 0));
 
+            if (segment.horizontalLeavesScale > 0.01f && segment.verticalLeavesScale > 0.01f) {
+                for (ShapePartDef shapePart : cubeShape.getShapeParts()) {
+                    int vertexCount = shapePart.getVertices().size();
+
+                    // This array will store indexes of vertices in the resulting Mesh
+                    short[] vertexMapping = new short[vertexCount];
+
+                    // Trunk
+                    for (int vertex = 0; vertex < vertexCount; vertex++) {
+                        vertexMapping[vertex] = vertexIndex++;
+
+                        Float[] vertexCoords = shapePart.getVertices().get(vertex);
+                        Float[] normalValues = shapePart.getNormals().get(vertex);
+                        Float[] textureCoords = shapePart.getUvs().get(vertex);
+
+                        tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 1f, vertexCoords[2] - 0.5f)
+                                .mul(segment.horizontalLeavesScale, segment.verticalLeavesScale, segment.horizontalLeavesScale).add(origin);
+
+                        vertices.add(tempVector.x);
+                        vertices.add(tempVector.y);
+                        vertices.add(tempVector.z);
+
+                        vertices.add(normalValues[0]);
+                        vertices.add(normalValues[1]);
+                        vertices.add(normalValues[2]);
+
+                        vertices.add(oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()));
+                        vertices.add(oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
+                    }
+                    for (short index : shapePart.getIndices()) {
+                        indices.add(vertexMapping[index]);
+                    }
+                }
+            }
         }
 
         @Override
         public void branchEnd(BranchDefinition branch, Matrix4f movingMatrix) {
-            movingMatrix.transformPoint(origin.set(0, 0, 0));
 
-            for (ShapePartDef shapePart : cubeShape.getShapeParts()) {
-                int vertexCount = shapePart.getVertices().size();
-
-                // This array will store indexes of vertices in the resulting Mesh
-                short[] vertexMapping = new short[vertexCount];
-
-                // Trunk
-                for (int vertex = 0; vertex < vertexCount; vertex++) {
-                    vertexMapping[vertex] = vertexIndex++;
-
-                    Float[] vertexCoords = shapePart.getVertices().get(vertex);
-                    Float[] normalValues = shapePart.getNormals().get(vertex);
-                    Float[] textureCoords = shapePart.getUvs().get(vertex);
-
-                    tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 1f, vertexCoords[2] - 0.5f)
-                            .mul(branch.horizontalLeavesScale, branch.verticalLeavesScale, branch.horizontalLeavesScale).add(origin);
-
-                    vertices.add(tempVector.x);
-                    vertices.add(tempVector.y);
-                    vertices.add(tempVector.z);
-
-                    vertices.add(normalValues[0]);
-                    vertices.add(normalValues[1]);
-                    vertices.add(normalValues[2]);
-
-                    vertices.add(oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()));
-                    vertices.add(oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
-                }
-                for (short index : shapePart.getIndices()) {
-                    indices.add(vertexMapping[index]);
-                }
-            }
         }
     }
 
@@ -356,10 +374,6 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         maxDist = Math.max(maxDist, first.distance(second));
         maxDist = Math.max(maxDist, first.distance(third));
         maxDist = Math.max(maxDist, first.distance(fourth));
-
-        if (maxDist > 50) {
-            System.out.println("Oups!");
-        }
 
         vertices.add(first.x);
         vertices.add(first.y);
