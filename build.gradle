@@ -25,6 +25,7 @@ allprojects {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "http://artifactory.terasology.org/artifactory/virtual-repo-live" }
     }
 }
 
@@ -60,6 +61,8 @@ project(":trees") {
 
     dependencies {
         compile project(":core")
+
+        compile "org.terasology:TeraMath:1.2.0"
     }
 }
 

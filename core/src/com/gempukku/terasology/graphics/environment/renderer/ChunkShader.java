@@ -54,7 +54,7 @@ public class ChunkShader extends DefaultShader {
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
         set(u_depthMap, 2);
-        set(u_ambientLighting, 0.2f);
+        set(u_ambientLighting, 0.5f);
 
         super.render(renderable, combinedAttributes);
     }
