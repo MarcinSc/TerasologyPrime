@@ -95,7 +95,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
             setupCamera(activeCameraEntity);
             setupLight(timeOfDay);
 
-            setupShaders();
+            setupShaders(timeOfDay);
 
             cleanBuffer();
 
@@ -108,8 +108,16 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         }
     }
 
-    private void setupShaders() {
-        myShaderProvider.setSkyColor(new Vector3(145f / 255, 186f / 255, 220f / 255));
+    private void setupShaders(float timeOfDay) {
+        Vector3 skyColor = new Vector3(145f / 255, 186f / 255, 220f / 255);
+        float dayComponent = (float) Math.cos(timeOfDay);
+        if (dayComponent < -0.3f) {
+            skyColor.scl(0);
+        } else if (dayComponent < 0.3) {
+            skyColor.scl((dayComponent + 0.3f) / (2f * 0.3f));
+        }
+
+        myShaderProvider.setSkyColor(skyColor);
         myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
         myShaderProvider.setLightTrans(lightCamera.combined);
         myShaderProvider.setLightCameraFar(lightCamera.far);
@@ -128,7 +136,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         modelBuilder.begin();
         Material material = new Material();
         MeshPartBuilder skyBuilder = modelBuilder.part("sky", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, material);
-        skyBuilder.sphere(1024, 1024, 1024, 64, 64);
+        skyBuilder.sphere(1024, 1024, 1024, 128, 128);
         Model model = modelBuilder.end();
         ModelInstance modelInstance = new ModelInstance(model);
         modelInstance.transform = new Matrix4().translate(

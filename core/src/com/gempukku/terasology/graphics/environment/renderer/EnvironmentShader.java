@@ -65,7 +65,7 @@ public class EnvironmentShader extends DefaultShader {
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
         set(u_depthMap, 2);
-        set(u_ambientLighting, 0.5f);
+        set(u_ambientLighting, 0.2f);
         set(u_fogColor, fogColor);
         set(u_time, time);
 //        set(u_fogColor, new Vector3(145f/255, 186f/255, 220f/255));

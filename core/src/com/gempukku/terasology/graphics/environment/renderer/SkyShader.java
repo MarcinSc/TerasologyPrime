@@ -7,7 +7,9 @@ import com.badlogic.gdx.math.Vector3;
 
 public class SkyShader extends DefaultShader {
     private final int u_skyColor = register("u_skyColor");
+    private final int u_lightDirection = register("u_lightDirection");
 
+    private Vector3 lightDirection;
     private Vector3 skyColor;
 
     public SkyShader(Renderable renderable, Config config) {
@@ -18,9 +20,14 @@ public class SkyShader extends DefaultShader {
         this.skyColor = skyColor;
     }
 
+    public void setLightDirection(Vector3 lightDirection) {
+        this.lightDirection = lightDirection;
+    }
+
     @Override
     public void render(Renderable renderable, Attributes combinedAttributes) {
         set(u_skyColor, skyColor);
+        set(u_lightDirection, lightDirection);
 
         super.render(renderable, combinedAttributes);
     }

@@ -84,6 +84,7 @@ public class MyShaderProvider implements ShaderProvider {
             if (skyShader == null)
                 skyShader = createSkyShader(renderable);
             skyShader.setSkyColor(skyColor);
+            skyShader.setLightDirection(lightDirection);
             return skyShader;
         } else {
             return null;
