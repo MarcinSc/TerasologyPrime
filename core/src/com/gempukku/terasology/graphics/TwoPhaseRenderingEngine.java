@@ -46,6 +46,11 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     }
 
     @Override
+    public void updateCamera() {
+        camera = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    @Override
     public void render() {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);

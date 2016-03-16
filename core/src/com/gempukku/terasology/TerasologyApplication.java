@@ -205,6 +205,11 @@ public class TerasologyApplication extends ApplicationAdapter {
     }
 
     @Override
+    public void resize(int width, int height) {
+        renderingEngine.updateCamera();
+    }
+
+    @Override
     public void dispose() {
         runningServer.stopServer();
         try {
