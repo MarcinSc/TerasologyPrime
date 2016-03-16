@@ -14,8 +14,8 @@ varying vec3 v_normal;
 varying vec2 v_texCoord0;
 varying float v_visibility;
 
-const float fogDensity = 0.006;
-const float fogGradient = 3.0;
+const float fogDensity = 0.008;
+const float fogGradient = 5.0;
 
 float smoothCurve(float x) {
   return x * x * (3.0 - 2.0 * x);
