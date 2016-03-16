@@ -76,11 +76,6 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
 
     @Override
     public void renderEnvironment(Camera camera, String worldId) {
-        renderLights(camera, worldId);
-        renderChunks(camera, worldId);
-    }
-
-    private void renderLights(Camera camera, String worldId) {
         int dayLengthInMs = 1 * 60 * 1000;
         float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
 
@@ -93,20 +88,30 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
         lightCamera.near = camera.near;
         lightCamera.update();
 
-        myShaderProvider.setShadowPass(true);
+        myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
+        myShaderProvider.setLightTrans(lightCamera.combined);
         myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
         myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
         myShaderProvider.setLightDirection(lightCamera.direction);
 
+        myShaderProvider.setShadowPass(true);
+        renderLights(lightCamera, worldId, direction < Math.PI / 2f || direction > 3 * Math.PI / 2f);
+
+        myShaderProvider.setShadowPass(false);
+        renderChunks(camera, worldId);
+    }
+
+    private void renderLights(Camera camera, String worldId, boolean day) {
+
         lightFrameBuffer.begin();
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         // If sun is over the horizon, just skip drawing anything in the light pass
-        if (direction < Math.PI / 2f || direction > 3 * Math.PI / 2f) {
-            modelBatch.begin(lightCamera);
+        if (day) {
+            modelBatch.begin(camera);
             for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-                if (renderableChunk.isRenderable() && renderableChunk.isVisible(lightCamera)) {
+                if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
                     modelBatch.render(renderableChunk.getRenderableProvider());
                 }
             }
@@ -116,13 +121,6 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
     }
 
     private void renderChunks(Camera camera, String worldId) {
-        myShaderProvider.setShadowPass(false);
-        myShaderProvider.setLightTrans(lightCamera.combined);
-        myShaderProvider.setLightCameraFar(lightCamera.far);
-        myShaderProvider.setLightPosition(lightCamera.position);
-        myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
-        myShaderProvider.setLightDirection(lightCamera.direction);
-
         lightFrameBuffer.getColorBufferTexture().bind(2);
 
         modelBatch.begin(camera);

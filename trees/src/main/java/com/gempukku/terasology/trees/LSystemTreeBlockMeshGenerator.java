@@ -231,6 +231,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                         vertexOutput.setTextureCoordinate(
                                 oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()),
                                 oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
+                        vertexOutput.setFlag(INFLUENCED_BY_WIND);
 
                         vertexMapping[vertex] = vertexOutput.finishVertex();
                     }

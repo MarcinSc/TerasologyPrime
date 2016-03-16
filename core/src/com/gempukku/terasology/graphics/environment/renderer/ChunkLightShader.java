@@ -10,14 +10,20 @@ public class ChunkLightShader extends DefaultShader {
     private final int u_lightPosition = register("u_lightPosition");
     private final int u_lightDirection = register("u_lightDirection");
     private final int u_lightPlaneDistance = register("u_lightPlaneDistance");
+    private final int u_time = register("u_time");
 
     private Vector3 lightPosition;
     private Vector3 lightDirection;
     private float lightPlaneDistance;
     private float cameraFar;
+    private float time;
 
     public ChunkLightShader(Renderable renderable, Config config) {
         super(renderable, config);
+    }
+
+    public void setTime(float time) {
+        this.time = time;
     }
 
     public void setCameraFar(float cameraFar) {
@@ -42,6 +48,7 @@ public class ChunkLightShader extends DefaultShader {
         set(u_lightPosition, lightPosition);
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
+        set(u_time, time);
 
         super.render(renderable, combinedAttributes);
     }

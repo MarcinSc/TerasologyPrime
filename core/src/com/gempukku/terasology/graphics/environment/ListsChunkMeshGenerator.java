@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.utils.Array;
@@ -165,8 +166,11 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             short[] indices = chunkMeshLists.indicesPerTexture[i];
 
             if (indices.length > 0) {
+                VertexAttribute customVertexInformation = new VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_flag");
+
                 Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length,
-                        VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
+                        VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0),
+                        customVertexInformation);
                 mesh.setVertices(vertices);
                 mesh.setIndices(indices);
 
@@ -305,6 +309,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         private float normalZ;
         private float textureCoordX;
         private float textureCoordY;
+        private int flag;
 
         public ArrayVertexOutput(FloatArray vertices, ShortArray indices) {
             this.vertices = vertices;
@@ -321,8 +326,9 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             vertices.add(normalZ);
             vertices.add(textureCoordX);
             vertices.add(textureCoordY);
+            vertices.add(flag);//Float.intBitsToFloat(flag));
 
-            x = y = z = normalX = normalY = normalZ = textureCoordX = textureCoordY = 0;
+            x = y = z = normalX = normalY = normalZ = textureCoordX = textureCoordY = flag = 0;
 
             return vertexIndex++;
         }
@@ -345,6 +351,11 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         public void setTextureCoordinate(float x, float y) {
             textureCoordX = x;
             textureCoordY = y;
+        }
+
+        @Override
+        public void setFlag(int flag) {
+            this.flag = flag;
         }
 
         @Override
