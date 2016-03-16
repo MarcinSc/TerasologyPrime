@@ -103,7 +103,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     @Override
     public boolean canPrepareChunkData(String worldId, int x, int y, int z) {
         for (int[] surroundingChunk : surroundingChunks) {
-            if (chunkBlocksProvider.getChunkBlocks(worldId, x+surroundingChunk[0], y+surroundingChunk[1], z+surroundingChunk[2]) == null)
+            if (chunkBlocksProvider.getChunkBlocks(worldId, x + surroundingChunk[0], y + surroundingChunk[1], z + surroundingChunk[2]) == null)
                 return false;
         }
         return true;
@@ -115,9 +115,9 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
         ChunkBlocks[] chunkSector = new ChunkBlocks[surroundingChunks.length];
 
-        for (int i=0; i<surroundingChunks.length; i++) {
+        for (int i = 0; i < surroundingChunks.length; i++) {
             chunkSector[i] = chunkBlocksProvider.getChunkBlocks(worldId,
-                    x+surroundingChunks[i][0], y+surroundingChunks[i][1], z+surroundingChunks[i][2]);
+                    x + surroundingChunks[i][0], y + surroundingChunks[i][1], z + surroundingChunks[i][2]);
         }
 
         int chunkX = x * ChunkSize.X;
@@ -138,10 +138,12 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             ShortArray indices = shorts.get();
             indices.clear();
 
+            BlockMeshGenerator.VertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
+
             for (int dx = 0; dx < ChunkSize.X; dx++) {
                 for (int dy = 0; dy < ChunkSize.Y; dy++) {
                     for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                        generateMeshForBlockFromAtlas(vertices, indices, texture, chunkSector,
+                        generateMeshForBlockFromAtlas(vertexOutput, texture, chunkSector,
                                 chunkX, chunkY, chunkZ,
                                 dx, dy, dz);
                     }
@@ -163,7 +165,8 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             short[] indices = chunkMeshLists.indicesPerTexture[i];
 
             if (indices.length > 0) {
-                Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length, VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
+                Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length,
+                        VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0));
                 mesh.setVertices(vertices);
                 mesh.setIndices(indices);
 
@@ -177,7 +180,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         return result;
     }
 
-    private void generateMeshForBlockFromAtlas(FloatArray vertices, ShortArray indices, Texture texture, ChunkBlocks[] chunkSector,
+    private void generateMeshForBlockFromAtlas(BlockMeshGenerator.VertexOutput vertexOutput, Texture texture, ChunkBlocks[] chunkSector,
                                                int chunkX, int chunkY, int chunkZ,
                                                int x, int y, int z) {
         short block = chunkSector[13].getCommonBlockAt(x, y, z);
@@ -206,29 +209,33 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
                     // This array will store indexes of vertices in the resulting Mesh
                     short[] vertexMapping = new short[vertexCount];
                     for (int i = 0; i < vertexCount; i++) {
-                        vertexMapping[i] = (short) (vertices.size / 8);
-
                         Float[] vertexCoords = shapePart.getVertices().get(i);
                         Float[] normalValues = shapePart.getNormals().get(i);
                         Float[] textureCoords = shapePart.getUvs().get(i);
 
-                        vertices.add(chunkX + x + vertexCoords[0]);
-                        vertices.add(chunkY + y + vertexCoords[1]);
-                        vertices.add(chunkZ + z + vertexCoords[2]);
-                        vertices.add(normalValues[0]);
-                        vertices.add(normalValues[1]);
-                        vertices.add(normalValues[2]);
-                        vertices.add(textureRegion.getU() + textureCoords[0] * (textureRegion.getU2() - textureRegion.getU()));
-                        vertices.add(textureRegion.getV() + textureCoords[1] * (textureRegion.getV2() - textureRegion.getV()));
+                        vertexOutput.setPosition(
+                                chunkX + x + vertexCoords[0],
+                                chunkY + y + vertexCoords[1],
+                                chunkZ + z + vertexCoords[2]);
+                        vertexOutput.setNormal(
+                                normalValues[0],
+                                normalValues[1],
+                                normalValues[2]);
+                        vertexOutput.setTextureCoordinate(
+                                textureRegion.getU() + textureCoords[0] * (textureRegion.getU2() - textureRegion.getU()),
+                                textureRegion.getV() + textureCoords[1] * (textureRegion.getV2() - textureRegion.getV()));
+
+                        vertexMapping[i] = vertexOutput.finishVertex();
+
                     }
                     for (short index : shapePart.getIndices()) {
-                        indices.add(vertexMapping[index]);
+                        vertexOutput.addVertexIndex(vertexMapping[index]);
                     }
                 }
             }
         } else if (blockMeshGenerators[block] != null) {
             BlockMeshGenerator blockMeshGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
-            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertices, indices, texture, chunkSector[13],
+            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertexOutput, texture, chunkSector[13],
                     x, y, z);
         }
     }
@@ -241,26 +248,26 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
         int chunkPositionInSector = 13;
 
-        if (resultX<0) {
-            chunkPositionInSector-=9;
-            resultX+=ChunkSize.X;
-        } else if (resultX>=ChunkSize.X) {
-            chunkPositionInSector+=9;
-            resultX-=ChunkSize.X;
+        if (resultX < 0) {
+            chunkPositionInSector -= 9;
+            resultX += ChunkSize.X;
+        } else if (resultX >= ChunkSize.X) {
+            chunkPositionInSector += 9;
+            resultX -= ChunkSize.X;
         }
-        if (resultY<0) {
-            chunkPositionInSector-=3;
-            resultY+=ChunkSize.Y;
-        } else if (resultY>=ChunkSize.Y) {
-            chunkPositionInSector+=3;
-            resultY-=ChunkSize.Y;
+        if (resultY < 0) {
+            chunkPositionInSector -= 3;
+            resultY += ChunkSize.Y;
+        } else if (resultY >= ChunkSize.Y) {
+            chunkPositionInSector += 3;
+            resultY -= ChunkSize.Y;
         }
-        if (resultZ<0) {
-            chunkPositionInSector-=1;
-            resultZ+=ChunkSize.Z;
-        } else if (resultZ>=ChunkSize.Z) {
-            chunkPositionInSector+=1;
-            resultZ-=ChunkSize.Z;
+        if (resultZ < 0) {
+            chunkPositionInSector -= 1;
+            resultZ += ChunkSize.Z;
+        } else if (resultZ >= ChunkSize.Z) {
+            chunkPositionInSector += 1;
+            resultZ -= ChunkSize.Z;
         }
 
         short neighbouringBlock = chunkSector[chunkPositionInSector].getCommonBlockAt(resultX, resultY, resultZ);
@@ -283,6 +290,67 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         }
 
         return null;
+    }
+
+    private static class ArrayVertexOutput implements BlockMeshGenerator.VertexOutput {
+        private FloatArray vertices;
+        private ShortArray indices;
+
+        private short vertexIndex;
+        private float x;
+        private float y;
+        private float z;
+        private float normalX;
+        private float normalY;
+        private float normalZ;
+        private float textureCoordX;
+        private float textureCoordY;
+
+        public ArrayVertexOutput(FloatArray vertices, ShortArray indices) {
+            this.vertices = vertices;
+            this.indices = indices;
+        }
+
+        @Override
+        public short finishVertex() {
+            vertices.add(x);
+            vertices.add(y);
+            vertices.add(z);
+            vertices.add(normalX);
+            vertices.add(normalY);
+            vertices.add(normalZ);
+            vertices.add(textureCoordX);
+            vertices.add(textureCoordY);
+
+            x = y = z = normalX = normalY = normalZ = textureCoordX = textureCoordY = 0;
+
+            return vertexIndex++;
+        }
+
+        @Override
+        public void setNormal(float x, float y, float z) {
+            normalX = x;
+            normalY = y;
+            normalZ = z;
+        }
+
+        @Override
+        public void setPosition(float x, float y, float z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        @Override
+        public void setTextureCoordinate(float x, float y) {
+            textureCoordX = x;
+            textureCoordY = y;
+        }
+
+        @Override
+        public void addVertexIndex(short vertexIndex) {
+            indices.add(vertexIndex);
+        }
     }
 
     private static class ShortArrayThreadLocal extends ThreadLocal<ShortArray> {

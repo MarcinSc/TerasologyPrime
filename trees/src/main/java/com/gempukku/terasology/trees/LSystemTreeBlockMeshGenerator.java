@@ -2,8 +2,6 @@ package com.gempukku.terasology.trees;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.FloatArray;
-import com.badlogic.gdx.utils.ShortArray;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
@@ -59,7 +57,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
     @Override
     public void generateMeshForBlockFromAtlas(ChunkMeshGeneratorCallback callback,
-                                              FloatArray vertices, ShortArray indices, Texture texture,
+                                              VertexOutput vertexOutput, Texture texture,
                                               ChunkBlocks chunkBlocks, int xInChunk, int yInChunk, int zInChunk) {
         init();
 
@@ -75,26 +73,22 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         BranchDefinition branchDefinition = createTreeDefinition(entityAndBlockId.entityRef, treeX, treeY, treeZ);
 
         if (texture == oakBarkTexture.getTexture()) {
-            short vertexIndex = (short) (vertices.size / 8);
-
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
                     treeX + 0.5f,
                     treeY,
                     treeZ + 0.5f), 1);
 
-            BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexIndex, vertices, indices);
+            BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexOutput);
 
             processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
         }
         if (texture == oakLeafTexture.getTexture()) {
-            short vertexIndex = (short) (vertices.size / 8);
-
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
                     treeX + 0.5f,
                     treeY,
                     treeZ + 0.5f), 1);
 
-            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexIndex, vertices, indices);
+            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput);
 
             processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
         }
@@ -193,17 +187,13 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     private class LeavesDrawingCallback implements LSystemCallback {
-        private short vertexIndex;
-        private FloatArray vertices;
-        private ShortArray indices;
+        private VertexOutput vertexOutput;
 
         private Vector3f tempVector = new Vector3f();
         private Vector3f origin = new Vector3f();
 
-        public LeavesDrawingCallback(short vertexIndex, FloatArray vertices, ShortArray indices) {
-            this.vertexIndex = vertexIndex;
-            this.vertices = vertices;
-            this.indices = indices;
+        public LeavesDrawingCallback(VertexOutput vertexOutput) {
+            this.vertexOutput = vertexOutput;
         }
 
         @Override
@@ -229,8 +219,6 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
                     // Trunk
                     for (int vertex = 0; vertex < vertexCount; vertex++) {
-                        vertexMapping[vertex] = vertexIndex++;
-
                         Float[] vertexCoords = shapePart.getVertices().get(vertex);
                         Float[] normalValues = shapePart.getNormals().get(vertex);
                         Float[] textureCoords = shapePart.getUvs().get(vertex);
@@ -238,19 +226,16 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                         tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 1f, vertexCoords[2] - 0.5f)
                                 .mul(segment.horizontalLeavesScale, segment.verticalLeavesScale, segment.horizontalLeavesScale).add(origin);
 
-                        vertices.add(tempVector.x);
-                        vertices.add(tempVector.y);
-                        vertices.add(tempVector.z);
+                        vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
+                        vertexOutput.setNormal(normalValues[0], normalValues[1], normalValues[2]);
+                        vertexOutput.setTextureCoordinate(
+                                oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()),
+                                oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
 
-                        vertices.add(normalValues[0]);
-                        vertices.add(normalValues[1]);
-                        vertices.add(normalValues[2]);
-
-                        vertices.add(oakLeafTexture.getU() + textureCoords[0] * (oakLeafTexture.getU2() - oakLeafTexture.getU()));
-                        vertices.add(oakLeafTexture.getV() + textureCoords[1] * (oakLeafTexture.getV2() - oakLeafTexture.getV()));
+                        vertexMapping[vertex] = vertexOutput.finishVertex();
                     }
                     for (short index : shapePart.getIndices()) {
-                        indices.add(vertexMapping[index]);
+                        vertexOutput.addVertexIndex(vertexMapping[index]);
                     }
                 }
             }
@@ -275,14 +260,10 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         private Vector3f thirdTop = new Vector3f();
         private Vector3f fourthTop = new Vector3f();
 
-        private short vertexIndex;
-        private FloatArray vertices;
-        private ShortArray indices;
+        private VertexOutput vertexOutput;
 
-        public BranchDrawingCallback(short vertexIndex, FloatArray vertices, ShortArray indices) {
-            this.vertexIndex = vertexIndex;
-            this.vertices = vertices;
-            this.indices = indices;
+        public BranchDrawingCallback(VertexOutput vertexOutput) {
+            this.vertexOutput = vertexOutput;
         }
 
         @Override
@@ -312,19 +293,19 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             movingMatrix.transformPoint(fourthTop.set(1, 0, -1).mul(radius));
 
             movingMatrix.transformVector(normal.set(0, 0, 1));
-            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+            addQuad(vertexOutput, normal,
                     first, firstTop, secondTop, second, oakBarkTexture);
 
             movingMatrix.transformVector(normal.set(-1, 0, 0));
-            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+            addQuad(vertexOutput, normal,
                     second, secondTop, thirdTop, third, oakBarkTexture);
 
             movingMatrix.transformVector(normal.set(0, 0, -1));
-            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+            addQuad(vertexOutput, normal,
                     third, thirdTop, fourthTop, fourth, oakBarkTexture);
 
             movingMatrix.transformVector(normal.set(1, 0, 0));
-            vertexIndex = addQuad(vertexIndex, vertices, indices, normal,
+            addQuad(vertexOutput, normal,
                     fourth, fourthTop, firstTop, first, oakBarkTexture);
         }
 
@@ -366,59 +347,44 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         callback.branchEnd(branchDefinition, movingMatrix);
     }
 
-    private short addQuad(short vertexIndex, FloatArray vertices, ShortArray indices,
-                          Vector3f normal,
-                          Vector3f first, Vector3f second, Vector3f third, Vector3f fourth, TextureRegion texture) {
+    private void addQuad(VertexOutput vertexOutput,
+                         Vector3f normal,
+                         Vector3f first, Vector3f second, Vector3f third, Vector3f fourth, TextureRegion texture) {
 
-        float maxDist = 0;
-        maxDist = Math.max(maxDist, first.distance(second));
-        maxDist = Math.max(maxDist, first.distance(third));
-        maxDist = Math.max(maxDist, first.distance(fourth));
+        vertexOutput.setPosition(first.x, first.y, first.z);
+        vertexOutput.setNormal(normal.x, normal.y, normal.z);
+        vertexOutput.setTextureCoordinate(
+                texture.getU() + 1 * (texture.getU2() - texture.getU()),
+                texture.getV() + 0 * (texture.getV2() - texture.getV()));
+        short firstIndex = vertexOutput.finishVertex();
 
-        vertices.add(first.x);
-        vertices.add(first.y);
-        vertices.add(first.z);
-        vertices.add(normal.x);
-        vertices.add(normal.y);
-        vertices.add(normal.z);
-        vertices.add(texture.getU() + 1 * (texture.getU2() - texture.getU()));
-        vertices.add(texture.getV() + 0 * (texture.getV2() - texture.getV()));
+        vertexOutput.setPosition(second.x, second.y, second.z);
+        vertexOutput.setNormal(normal.x, normal.y, normal.z);
+        vertexOutput.setTextureCoordinate(
+                texture.getU() + 1 * (texture.getU2() - texture.getU()),
+                texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        short secondIndex = vertexOutput.finishVertex();
 
-        vertices.add(second.x);
-        vertices.add(second.y);
-        vertices.add(second.z);
-        vertices.add(normal.x);
-        vertices.add(normal.y);
-        vertices.add(normal.z);
-        vertices.add(texture.getU() + 1 * (texture.getU2() - texture.getU()));
-        vertices.add(texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        vertexOutput.setPosition(third.x, third.y, third.z);
+        vertexOutput.setNormal(normal.x, normal.y, normal.z);
+        vertexOutput.setTextureCoordinate(
+                texture.getU() + 0 * (texture.getU2() - texture.getU()),
+                texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        short thirdIndex = vertexOutput.finishVertex();
 
-        vertices.add(third.x);
-        vertices.add(third.y);
-        vertices.add(third.z);
-        vertices.add(normal.x);
-        vertices.add(normal.y);
-        vertices.add(normal.z);
-        vertices.add(texture.getU() + 0 * (texture.getU2() - texture.getU()));
-        vertices.add(texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        vertexOutput.setPosition(fourth.x, fourth.y, fourth.z);
+        vertexOutput.setNormal(normal.x, normal.y, normal.z);
+        vertexOutput.setTextureCoordinate(
+                texture.getU() + 0 * (texture.getU2() - texture.getU()),
+                texture.getV() + 0 * (texture.getV2() - texture.getV()));
+        short fourthIndex = vertexOutput.finishVertex();
 
-        vertices.add(fourth.x);
-        vertices.add(fourth.y);
-        vertices.add(fourth.z);
-        vertices.add(normal.x);
-        vertices.add(normal.y);
-        vertices.add(normal.z);
-        vertices.add(texture.getU() + 0 * (texture.getU2() - texture.getU()));
-        vertices.add(texture.getV() + 0 * (texture.getV2() - texture.getV()));
-
-        indices.add(vertexIndex);
-        indices.add(vertexIndex + 1);
-        indices.add(vertexIndex + 2);
-        indices.add(vertexIndex + 2);
-        indices.add(vertexIndex + 3);
-        indices.add(vertexIndex);
-
-        return (short) (vertexIndex + 4);
+        vertexOutput.addVertexIndex(firstIndex);
+        vertexOutput.addVertexIndex(secondIndex);
+        vertexOutput.addVertexIndex(thirdIndex);
+        vertexOutput.addVertexIndex(thirdIndex);
+        vertexOutput.addVertexIndex(fourthIndex);
+        vertexOutput.addVertexIndex(firstIndex);
     }
 
     private void init() {
