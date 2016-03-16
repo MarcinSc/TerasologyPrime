@@ -7,6 +7,8 @@ import com.badlogic.gdx.utils.Array;
 import java.util.List;
 
 public interface ChunkMeshGenerator<T> {
+    boolean canPrepareChunkData(String worldId, int x, int y, int z);
+
     /**
      * This method will be called off the main thread, as it is usually time consuming to generate mesh lists.
      *

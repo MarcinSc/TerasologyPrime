@@ -35,11 +35,15 @@ public class RenderableChunk {
     }
 
     public boolean isVisible(Camera camera) {
+        boolean result = camera.frustum.boundsInFrustum(boundingBox);
+        if (result)
+            return true;
+
         // Move camera back one chunk
         camera.position.sub(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));
         camera.update();
 
-        boolean result = camera.frustum.boundsInFrustum(boundingBox);
+        result = camera.frustum.boundsInFrustum(boundingBox);
 
         // Move the camera to its original position
         camera.position.add(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));

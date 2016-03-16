@@ -102,13 +102,16 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
         lightFrameBuffer.begin();
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        modelBatch.begin(lightCamera);
-        for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-            if (renderableChunk.isRenderable()) {// && renderableChunk.isVisible(camera)) {
-                modelBatch.render(renderableChunk.getRenderableProvider());
+        // If sun is over the horizon, just skip drawing anything in the light pass
+        if (direction < Math.PI / 2f || direction > 3 * Math.PI / 2f) {
+            modelBatch.begin(lightCamera);
+            for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
+                if (renderableChunk.isRenderable() && renderableChunk.isVisible(lightCamera)) {
+                    modelBatch.render(renderableChunk.getRenderableProvider());
+                }
             }
+            modelBatch.end();
         }
-        modelBatch.end();
         lightFrameBuffer.end();
     }
 
@@ -166,36 +169,6 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
                 return renderableChunk;
         }
         return null;
-    }
-
-    private final int[][] surroundingChunks = new int[][]
-            {
-                    {-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1},
-                    {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1},
-                    {-1, 1, -1}, {-1, 1, 0}, {-1, 1, 1},
-                    {0, -1, -1}, {0, -1, 0}, {0, -1, 1},
-                    {0, 0, -1}, /*{0, 0, 0},*/ {0, 0, 1},
-                    {0, 1, -1}, {0, 1, 0}, {0, 1, 1},
-                    {1, -1, -1}, {1, -1, 0}, {1, -1, 1},
-                    {1, 0, -1}, {1, 0, 0}, {1, 0, 1},
-                    {1, 1, -1}, {1, 1, 0}, {1, 1, 1}
-            };
-
-    /**
-     * Checks if all the chunks around it are loaded
-     *
-     * @param worldId
-     * @param x
-     * @param y
-     * @param z
-     * @return
-     */
-    private boolean canBeRenderedNow(String worldId, int x, int y, int z) {
-        for (int[] surroundingChunk : surroundingChunks) {
-            if (!worldStorage.hasChunk(worldId, x + surroundingChunk[0], y + surroundingChunk[1], z + surroundingChunk[2]))
-                return false;
-        }
-        return true;
     }
 
     @Override

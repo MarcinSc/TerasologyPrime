@@ -17,38 +17,40 @@ varying vec2 v_texCoord0;
 varying vec3 v_normal;
 varying vec3 v_position;
 
-void main()
-{
-    vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
-    vec3 depth = (v_positionLightTrans.xyz / v_positionLightTrans.w) * 0.5 + 0.5;
-    vec4 distanceFromDepthMap = texture2D(u_depthMap, depth.xy);
-    float distanceFromShadowMap =
-        distanceFromDepthMap.r*255.0*255.0
+float getLightTravelingDistance() {
+    vec2 depth = (v_positionLightTrans.xy / v_positionLightTrans.w) * 0.5 + 0.5;
+    vec4 distanceFromDepthMap = texture2D(u_depthMap, depth);
+    return distanceFromDepthMap.r*65025.0
         +distanceFromDepthMap.g*255.0
         +distanceFromDepthMap.b
         +distanceFromDepthMap.a/255.0;
+}
 
+void main()
+{
+    vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
+
+    float lightTravelingDistance = getLightTravelingDistance();
     float distanceToLight = dot(v_position.xyz, u_lightDirection) + u_lightPlaneDistance;
 
-    vec3 lightToPointVector = normalize(u_lightPosition-v_position);
-    float cosTheta = clamp(dot(v_normal, lightToPointVector), 0.0, 1.0);
+    float cosTheta = clamp(dot(v_normal, normalize(u_lightPosition-v_position)), 0.0, 1.0);
 
-    float bias = clamp(1.0*tan(acos(cosTheta)), 0.05, 1.0);
-    if (distanceFromShadowMap < distanceToLight - bias) {
+    float bias = 0.5;
+    //float bias = clamp(tan(acos(cosTheta)), 0.05, 1.0);
+    if (lightTravelingDistance < distanceToLight - bias) {
         // Not lighted by directional lighting (star)
         finalColor.rgb *= u_ambientLighting;
     } else {
-        float totalLighting = clamp(u_ambientLighting+cosTheta, 0.0, 1.0);
-        finalColor.rgb *= totalLighting;
+        finalColor.rgb *= clamp(u_ambientLighting + cosTheta, 0.0, 1.0);
     }
 
-    vec3 mistColor=vec3(0.0);
+    // Objects far into the distance (close to far plane) are fading into background
     float mistDistance = 0.9995;
     if (gl_FragCoord.z > mistDistance) {
         float multiplier = (gl_FragCoord.z-mistDistance)/(1.0-mistDistance);
 
         finalColor = vec4(
-            mix(finalColor.rgb, mistColor, multiplier), finalColor.a);
+            mix(finalColor.rgb, vec3(0.0), multiplier), finalColor.a);
     }
 
     gl_FragColor = finalColor;

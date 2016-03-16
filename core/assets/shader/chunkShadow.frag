@@ -1,5 +1,3 @@
-uniform float u_cameraFar;
-uniform vec3 u_lightPosition;
 uniform vec3 u_lightDirection;
 uniform float u_lightPlaneDistance;
 

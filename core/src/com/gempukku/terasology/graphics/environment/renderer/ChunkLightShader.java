@@ -1,11 +1,8 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
-import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.Attributes;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
-import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.math.Vector3;
 
 public class ChunkLightShader extends DefaultShader {
@@ -37,13 +34,6 @@ public class ChunkLightShader extends DefaultShader {
 
     public void setLightPlaneDistance(float lightPlaneDistance) {
         this.lightPlaneDistance = lightPlaneDistance;
-    }
-
-    @Override
-    public void begin(Camera camera, RenderContext context) {
-        super.begin(camera, context);
-        context.setDepthTest(GL20.GL_LEQUAL);
-        context.setCullFace(GL20.GL_BACK);
     }
 
     @Override

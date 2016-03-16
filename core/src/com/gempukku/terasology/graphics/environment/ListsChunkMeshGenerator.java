@@ -55,6 +55,19 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
     private Map<String, BlockMeshGenerator> registeredBlockMeshGenerators = new HashMap<>();
 
+    private final int[][] surroundingChunks = new int[][]
+            {
+                    {-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1},
+                    {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1},
+                    {-1, 1, -1}, {-1, 1, 0}, {-1, 1, 1},
+                    {0, -1, -1}, {0, -1, 0}, {0, -1, 1},
+                    {0, 0, -1}, {0, 0, 0}, {0, 0, 1},
+                    {0, 1, -1}, {0, 1, 0}, {0, 1, 1},
+                    {1, -1, -1}, {1, -1, 0}, {1, -1, 1},
+                    {1, 0, -1}, {1, 0, 0}, {1, 0, 1},
+                    {1, 1, -1}, {1, 1, 0}, {1, 1, 1}
+            };
+
     @Override
     public void registerBlockMeshGenerator(String generatorType, BlockMeshGenerator generator) {
         registeredBlockMeshGenerators.put(generatorType, generator);
@@ -88,13 +101,28 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     }
 
     @Override
+    public boolean canPrepareChunkData(String worldId, int x, int y, int z) {
+        for (int[] surroundingChunk : surroundingChunks) {
+            if (chunkBlocksProvider.getChunkBlocks(worldId, x+surroundingChunk[0], y+surroundingChunk[1], z+surroundingChunk[2]) == null)
+                return false;
+        }
+        return true;
+    }
+
+    @Override
     public ChunkMeshLists prepareChunkDataOffThread(List<Texture> textures, String worldId, int x, int y, int z) {
         init();
-        
-        ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, x, y, z);
-        int chunkX = chunkBlocks.x * ChunkSize.X;
-        int chunkY = chunkBlocks.y * ChunkSize.Y;
-        int chunkZ = chunkBlocks.z * ChunkSize.Z;
+
+        ChunkBlocks[] chunkSector = new ChunkBlocks[surroundingChunks.length];
+
+        for (int i=0; i<surroundingChunks.length; i++) {
+            chunkSector[i] = chunkBlocksProvider.getChunkBlocks(worldId,
+                    x+surroundingChunks[i][0], y+surroundingChunks[i][1], z+surroundingChunks[i][2]);
+        }
+
+        int chunkX = x * ChunkSize.X;
+        int chunkY = y * ChunkSize.Y;
+        int chunkZ = z * ChunkSize.Z;
 
         int textureCount = textures.size();
 
@@ -113,7 +141,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             for (int dx = 0; dx < ChunkSize.X; dx++) {
                 for (int dy = 0; dy < ChunkSize.Y; dy++) {
                     for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                        generateMeshForBlockFromAtlas(vertices, indices, texture, chunkBlocks,
+                        generateMeshForBlockFromAtlas(vertices, indices, texture, chunkSector,
                                 chunkX, chunkY, chunkZ,
                                 dx, dy, dz);
                     }
@@ -149,10 +177,10 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         return result;
     }
 
-    private void generateMeshForBlockFromAtlas(FloatArray vertices, ShortArray indices, Texture texture, ChunkBlocks chunkBlocks,
+    private void generateMeshForBlockFromAtlas(FloatArray vertices, ShortArray indices, Texture texture, ChunkBlocks[] chunkSector,
                                                int chunkX, int chunkY, int chunkZ,
                                                int x, int y, int z) {
-        short block = chunkBlocks.getCommonBlockAt(x, y, z);
+        short block = chunkSector[13].getCommonBlockAt(x, y, z);
 
         if (shapesByBlockId[block] != null && texturesByBlockId[block] != null) {
             Map<String, String> availableTextures = texturesByBlockId[block];
@@ -164,7 +192,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
                 BlockSide blockSide = BlockSide.valueOf(side);
                 if (blockSide != null) {
                     // We need to check if block next to it is full (covers whole block side)
-                    if (isNeighbourBlockCoveringSide(chunkBlocks, x, y, z, blockSide))
+                    if (isNeighbourBlockCoveringSide(chunkSector, x, y, z, blockSide))
                         continue;
                 }
 
@@ -200,23 +228,42 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             }
         } else if (blockMeshGenerators[block] != null) {
             BlockMeshGenerator blockMeshGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
-            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertices, indices, texture, chunkBlocks,
+            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertices, indices, texture, chunkSector[13],
                     x, y, z);
         }
     }
 
     @Override
-    public boolean isNeighbourBlockCoveringSide(ChunkBlocks chunkBlocks, int x, int y, int z, BlockSide blockSide) {
+    public boolean isNeighbourBlockCoveringSide(ChunkBlocks[] chunkSector, int x, int y, int z, BlockSide blockSide) {
         int resultX = x + blockSide.getNormalX();
         int resultY = y + blockSide.getNormalY();
         int resultZ = z + blockSide.getNormalZ();
 
-        // If it's outside of chunk, we don't bother checking
-        if (isOutsideOfChunk(resultX, resultY, resultZ)) {
-            return false;
+        int chunkPositionInSector = 13;
+
+        if (resultX<0) {
+            chunkPositionInSector-=9;
+            resultX+=ChunkSize.X;
+        } else if (resultX>=ChunkSize.X) {
+            chunkPositionInSector+=9;
+            resultX-=ChunkSize.X;
+        }
+        if (resultY<0) {
+            chunkPositionInSector-=3;
+            resultY+=ChunkSize.Y;
+        } else if (resultY>=ChunkSize.Y) {
+            chunkPositionInSector+=3;
+            resultY-=ChunkSize.Y;
+        }
+        if (resultZ<0) {
+            chunkPositionInSector-=1;
+            resultZ+=ChunkSize.Z;
+        } else if (resultZ>=ChunkSize.Z) {
+            chunkPositionInSector+=1;
+            resultZ-=ChunkSize.Z;
         }
 
-        short neighbouringBlock = chunkBlocks.getCommonBlockAt(resultX, resultY, resultZ);
+        short neighbouringBlock = chunkSector[chunkPositionInSector].getCommonBlockAt(resultX, resultY, resultZ);
         if (shapesByBlockId[neighbouringBlock] != null) {
             if (opaqueByBlockId[neighbouringBlock]) {
                 ShapeDef neighbourShapeDef = shapesByBlockId[neighbouringBlock];
@@ -226,12 +273,6 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             }
         }
         return false;
-    }
-
-    private boolean isOutsideOfChunk(int resultX, int resultY, int resultZ) {
-        return resultX < 0 || resultX >= ChunkSize.X
-                || resultY < 0 || resultY >= ChunkSize.Y
-                || resultZ < 0 || resultZ >= ChunkSize.Z;
     }
 
     private String findFirstTexture(List<String> textureIds, Map<String, String> availableTextures) {

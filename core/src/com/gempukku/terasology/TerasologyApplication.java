@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class TerasologyApplication extends ApplicationAdapter {
-    private static final boolean PROFILE = false;
+    private static final boolean PROFILE = true;
 
     private SECSyContext serverContext;
     private SECSyContext clientContext;
@@ -118,7 +118,7 @@ public class TerasologyApplication extends ApplicationAdapter {
 
         CameraComponent playerCamera = player.createComponent(CameraComponent.class);
         playerCamera.setNear(0.1f);
-        playerCamera.setFar(150f);
+        playerCamera.setFar(200f);
         playerCamera.setActive(true);
         playerCamera.setDirectionX(0);
         playerCamera.setDirectionY(0);
@@ -134,7 +134,6 @@ public class TerasologyApplication extends ApplicationAdapter {
 
     @Override
     public void render() {
-        long start = System.currentTimeMillis();
         fpsLogger.log();
 
         clientInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
@@ -148,7 +147,6 @@ public class TerasologyApplication extends ApplicationAdapter {
 
             GLProfiler.reset();
         }
-        System.out.println("Frame length: " + (System.currentTimeMillis() - start));
     }
 
     private void updatePlayerPosition() {

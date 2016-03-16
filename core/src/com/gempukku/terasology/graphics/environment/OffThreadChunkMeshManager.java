@@ -22,6 +22,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes",
@@ -51,6 +54,8 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     private Multimap<String, ChunkMesh> chunkMeshesInWorld = HashMultimap.create();
     private OfflineProcessingThread[] offlineProcessingThread;
 
+    private List<ChunkMesh> notReadyChunks = new LinkedList<>();
+
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
@@ -66,27 +71,35 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
 
     @Override
     public ChunkMesh getChunkMesh(String worldId, int x, int y, int z) {
-//        synchronized (chunkMeshesInWorld) {
-            for (ChunkMesh chunkMesh : chunkMeshesInWorld.get(worldId)) {
-                if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z)
-                    return chunkMesh;
-            }
-//        }
+        for (ChunkMesh chunkMesh : chunkMeshesInWorld.get(worldId)) {
+            if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z)
+                return chunkMesh;
+        }
         return null;
     }
 
     @Override
     public void update(long delta) {
-//        synchronized (chunkMeshesInWorld) {
-            for (ChunkMesh renderableChunk : chunkMeshesInWorld.values()) {
-                boolean updated = renderableChunk.updateModelIfNeeded(chunkMeshGenerator);
-                if (updated) {
-                    EntityRef worldEntity = findWorldEntity(renderableChunk.worldId);
-                    worldEntity.send(new AfterChunkMeshCreated(
-                            renderableChunk.worldId, renderableChunk.x, renderableChunk.y, renderableChunk.z));
+        Iterator<ChunkMesh> notReadyMeshes = notReadyChunks.iterator();
+        while (notReadyMeshes.hasNext()) {
+            ChunkMesh notReadyMesh = notReadyMeshes.next();
+            if (chunkMeshGenerator.canPrepareChunkData(notReadyMesh.worldId,
+                    notReadyMesh.x, notReadyMesh.y, notReadyMesh.z)) {
+                notReadyMeshes.remove();
+                synchronized (chunkMeshesInWorld) {
+                    chunkMeshesInWorld.put(notReadyMesh.worldId, notReadyMesh);
                 }
             }
-//        }
+        }
+
+        for (ChunkMesh renderableChunk : chunkMeshesInWorld.values()) {
+            boolean updated = renderableChunk.updateModelIfNeeded(chunkMeshGenerator);
+            if (updated) {
+                EntityRef worldEntity = findWorldEntity(renderableChunk.worldId);
+                worldEntity.send(new AfterChunkMeshCreated(
+                        renderableChunk.worldId, renderableChunk.x, renderableChunk.y, renderableChunk.z));
+            }
+        }
     }
 
     private EntityRef findWorldEntity(String worldId) {
@@ -104,10 +117,8 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
         int y = event.y;
         int z = event.z;
 
-        synchronized (chunkMeshesInWorld) {
-            ChunkMesh chunkMesh = new ChunkMesh(worldId, x, y, z);
-            chunkMeshesInWorld.put(worldId, chunkMesh);
-        }
+        ChunkMesh chunkMesh = new ChunkMesh(worldId, x, y, z);
+        notReadyChunks.add(chunkMesh);
     }
 
     @ReceiveEvent
@@ -116,6 +127,14 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
         int x = event.x;
         int y = event.y;
         int z = event.z;
+
+        Iterator<ChunkMesh> notReadyMeshes = notReadyChunks.iterator();
+        while (notReadyMeshes.hasNext()) {
+            ChunkMesh notReadyMesh = notReadyMeshes.next();
+            if (notReadyMesh.worldId.equals(worldId)
+                    && notReadyMesh.x == x && notReadyMesh.y == y && notReadyMesh.z == z)
+                notReadyMeshes.remove();
+        }
 
         synchronized (chunkMeshesInWorld) {
             Collection<ChunkMesh> chunkMeshes = chunkMeshesInWorld.get(worldId);
