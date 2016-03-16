@@ -34,9 +34,9 @@ void main()
     v_position = u_worldTrans * vec4(a_position, 1.0);
 
     if (checkFlag(0, a_flag)) {
-        v_position.x += (smoothTriangleWave(u_time * 0.1 + v_position.x * 0.01 + v_position.z * 0.01) * 2.0 - 1.0) * 0.01;
+        v_position.x += (smoothTriangleWave(u_time * 0.1 + v_position.x * 0.01 + v_position.z * 0.01) * 2.0 - 1.0) * 0.03;
         v_position.y += (smoothTriangleWave(u_time * 0.2 + v_position.x * -0.01 + v_position.z * -0.01) * 2.0 - 1.0) * 0.05;
-        v_position.z += (smoothTriangleWave(u_time * 0.1 + v_position.x * -0.01 + v_position.z * -0.01) * 2.0 - 1.0) * 0.01;
+        v_position.z += (smoothTriangleWave(u_time * 0.1 + v_position.x * -0.01 + v_position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
 
     gl_Position = u_projViewTrans * v_position;

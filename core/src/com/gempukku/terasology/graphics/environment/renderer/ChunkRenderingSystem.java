@@ -1,12 +1,7 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -50,87 +45,18 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
 
     private Multimap<String, RenderableChunk> renderableChunksInWorld = HashMultimap.create();
 
-    private ModelBatch modelBatch;
-    private MyShaderProvider myShaderProvider;
-    private FrameBuffer lightFrameBuffer;
-    private Camera lightCamera;
-
-    private static int shadowFidelity = 4;
-
-    @Override
-    public void preInitialize() {
-        myShaderProvider = new MyShaderProvider();
-        modelBatch = new ModelBatch(myShaderProvider);
-        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, shadowFidelity * 1024, shadowFidelity * 1024, true);
-        lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-    }
-
     @Override
     public void initialize() {
         environmentRendererRegistry.registerEnvironmentRendered(this);
     }
 
     @Override
-    public void postInitialize() {
-    }
-
-    @Override
-    public void renderEnvironment(Camera camera, String worldId) {
-        int dayLengthInMs = 1 * 60 * 1000;
-        float direction = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
-
-        lightCamera.position.set(
-                (float) (camera.position.x + 1.1 * camera.far * Math.sin(direction)),
-                (float) (camera.position.y + 1.1 * camera.far * Math.cos(direction)),
-                camera.position.z);
-        lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
-        lightCamera.far = camera.far * 2.2f;
-        lightCamera.near = camera.near;
-        lightCamera.update();
-
-        myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
-        myShaderProvider.setLightTrans(lightCamera.combined);
-        myShaderProvider.setLightCameraFar(lightCamera.far);
-        myShaderProvider.setLightPosition(lightCamera.position);
-        myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
-        myShaderProvider.setLightDirection(lightCamera.direction);
-
-        myShaderProvider.setShadowPass(true);
-        renderLights(lightCamera, worldId, direction < Math.PI / 2f || direction > 3 * Math.PI / 2f);
-
-        myShaderProvider.setShadowPass(false);
-        renderChunks(camera, worldId);
-    }
-
-    private void renderLights(Camera camera, String worldId, boolean day) {
-
-        lightFrameBuffer.begin();
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        // If sun is over the horizon, just skip drawing anything in the light pass
-        if (day) {
-            modelBatch.begin(camera);
-            for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
-                if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
-                    modelBatch.render(renderableChunk.getRenderableProvider());
-                }
-            }
-            modelBatch.end();
-        }
-        lightFrameBuffer.end();
-    }
-
-    private void renderChunks(Camera camera, String worldId) {
-        lightFrameBuffer.getColorBufferTexture().bind(2);
-
-        modelBatch.begin(camera);
-
+    public void renderEnvironment(Camera camera, String worldId, ModelBatch modelBatch) {
         for (RenderableChunk renderableChunk : renderableChunksInWorld.get(worldId)) {
             if (renderableChunk.isRenderable() && renderableChunk.isVisible(camera)) {
                 modelBatch.render(renderableChunk.getRenderableProvider());
             }
         }
-        modelBatch.end();
     }
 
     @ReceiveEvent
@@ -167,10 +93,5 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
                 return renderableChunk;
         }
         return null;
-    }
-
-    @Override
-    public void postDestroy() {
-        modelBatch.dispose();
     }
 }

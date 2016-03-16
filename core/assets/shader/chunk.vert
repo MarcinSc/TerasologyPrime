@@ -45,9 +45,9 @@ void main() {
     vec4 position = u_worldTrans * vec4(a_position, 1.0);
 
     if (checkFlag(0, a_flag)) {
-        position.x += (smoothTriangleWave(u_time * 0.1 + position.x * 0.01 + position.z * 0.01) * 2.0 - 1.0) * 0.01;
+        position.x += (smoothTriangleWave(u_time * 0.1 + position.x * 0.01 + position.z * 0.01) * 2.0 - 1.0) * 0.03;
         position.y += (smoothTriangleWave(u_time * 0.2 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.05;
-        position.z += (smoothTriangleWave(u_time * 0.1 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.01;
+        position.z += (smoothTriangleWave(u_time * 0.1 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
 
     v_positionLightTrans = u_lightTrans * position;

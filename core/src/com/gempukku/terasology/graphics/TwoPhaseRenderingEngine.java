@@ -1,8 +1,12 @@
 package com.gempukku.terasology.graphics;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -14,6 +18,7 @@ import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
 import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
+import com.gempukku.terasology.graphics.environment.renderer.MyShaderProvider;
 import com.gempukku.terasology.graphics.ui.UiRenderer;
 import com.gempukku.terasology.graphics.ui.UiRendererRegistry;
 
@@ -29,6 +34,12 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     private PriorityCollection<UiRenderer> uiRenderers = new PriorityCollection<>();
 
     private PerspectiveCamera camera;
+    private MyShaderProvider myShaderProvider;
+    private ModelBatch modelBatch;
+    private FrameBuffer lightFrameBuffer;
+    private Camera lightCamera;
+
+    private static int shadowFidelity = 4;
 
     @Override
     public void registerEnvironmentRendered(EnvironmentRenderer environmentRenderer) {
@@ -43,6 +54,16 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     @Override
     public void preInitialize() {
         camera = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        myShaderProvider = new MyShaderProvider();
+        modelBatch = new ModelBatch(myShaderProvider);
+        lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, shadowFidelity * 1024, shadowFidelity * 1024, true);
+        lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    @Override
+    public void postDestroy() {
+        lightFrameBuffer.dispose();
+        modelBatch.dispose();
     }
 
     @Override
@@ -84,13 +105,69 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         }
 
         if (hasActiveCamera) {
-            for (EnvironmentRenderer environmentRenderer : environmentRenderers) {
-                environmentRenderer.renderEnvironment(camera, worldId);
-            }
+            renderEnvironment(worldId);
         }
 
         for (UiRenderer uiRenderer : uiRenderers) {
             uiRenderer.renderUi();
         }
+    }
+
+    private void renderEnvironment(String worldId) {
+        // Number between 0-2*PI, where 0 is "midday", PI is midnight
+        float timeOfDay = setupLight();
+
+        myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
+        myShaderProvider.setLightTrans(lightCamera.combined);
+        myShaderProvider.setLightCameraFar(lightCamera.far);
+        myShaderProvider.setLightPosition(lightCamera.position);
+        myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
+        myShaderProvider.setLightDirection(lightCamera.direction);
+
+        lightRenderPass(worldId, timeOfDay);
+
+        normalRenderPass(worldId);
+    }
+
+    private float setupLight() {
+        int dayLengthInMs = 1 * 60 * 1000;
+        float timeOfDay = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
+
+        lightCamera.position.set(
+                (float) (camera.position.x + 1.1 * camera.far * Math.sin(timeOfDay)),
+                (float) (camera.position.y + 1.1 * camera.far * Math.cos(timeOfDay)),
+                camera.position.z);
+        lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
+        lightCamera.far = camera.far * 2.2f;
+        lightCamera.near = camera.near;
+        lightCamera.update();
+        return timeOfDay;
+    }
+
+    private void lightRenderPass(String worldId, float timeOfDay) {
+        lightFrameBuffer.begin();
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        // If sun is over the horizon, just skip drawing anything in the light pass
+        boolean day = timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
+        if (day) {
+            myShaderProvider.setShadowPass(true);
+            modelBatch.begin(lightCamera);
+            for (EnvironmentRenderer environmentRenderer : environmentRenderers) {
+                environmentRenderer.renderEnvironment(lightCamera, worldId, modelBatch);
+            }
+            modelBatch.end();
+        }
+        lightFrameBuffer.end();
+    }
+
+    private void normalRenderPass(String worldId) {
+        myShaderProvider.setShadowPass(false);
+        lightFrameBuffer.getColorBufferTexture().bind(2);
+        modelBatch.begin(camera);
+        for (EnvironmentRenderer environmentRenderer : environmentRenderers) {
+            environmentRenderer.renderEnvironment(camera, worldId, modelBatch);
+        }
+        modelBatch.end();
     }
 }
