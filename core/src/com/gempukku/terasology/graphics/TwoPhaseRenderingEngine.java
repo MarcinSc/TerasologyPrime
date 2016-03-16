@@ -47,6 +47,8 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     private FrameBuffer lightFrameBuffer;
     private Camera lightCamera;
 
+    private ModelInstance skySphere;
+
     private static int shadowFidelity = 4;
 
     @Override
@@ -70,6 +72,8 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
     @Override
     public void postDestroy() {
+        if (skySphere != null)
+            skySphere.model.dispose();
         lightFrameBuffer.dispose();
         modelBatch.dispose();
     }
@@ -132,30 +136,30 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     }
 
     private void renderSky() {
+        if (skySphere == null)
+            initSkySphere();
+
+        skySphere.transform = new Matrix4().translate(
+                camera.position.x, camera.position.y, camera.position.z).scale(-1, -1, -1);
+
+        myShaderProvider.setMode(MyShaderProvider.Mode.SKY);
+        modelBatch.begin(camera);
+        modelBatch.render(skySphere);
+        modelBatch.end();
+    }
+
+    private void initSkySphere() {
         ModelBuilder modelBuilder = new ModelBuilder();
         modelBuilder.begin();
         Material material = new Material();
         MeshPartBuilder skyBuilder = modelBuilder.part("sky", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, material);
-        skyBuilder.sphere(1024, 1024, 1024, 128, 128);
+
+        // The diameter is 2 * maximum camera view distance, we have to decrement it a bit, otherwise we might
+        // be seeing some see-through artifacts on the sphere due to far distance culling
+        float skyDiameter = 2 * camera.far - 0.1f;
+        skyBuilder.sphere(skyDiameter, skyDiameter, skyDiameter, 128, 128);
         Model model = modelBuilder.end();
-        ModelInstance modelInstance = new ModelInstance(model);
-        modelInstance.transform = new Matrix4().translate(
-                camera.position.x, camera.position.y, camera.position.z).scale(-1, -1, -1);
-
-        float oldFar = camera.far;
-
-        camera.far = 2000;
-        camera.update();
-
-        myShaderProvider.setMode(MyShaderProvider.Mode.SKY);
-        modelBatch.begin(camera);
-        modelBatch.render(modelInstance);
-        modelBatch.end();
-
-        model.dispose();
-
-        camera.far = oldFar;
-        camera.update();
+        skySphere = new ModelInstance(model);
     }
 
     private EntityRef getActiveCameraEntity() {
