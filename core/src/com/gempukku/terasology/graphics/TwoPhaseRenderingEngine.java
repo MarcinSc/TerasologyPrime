@@ -73,9 +73,6 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
     @Override
     public void render() {
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
         String worldId = null;
         boolean hasActiveCamera = false;
 
@@ -146,9 +143,12 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
     private void lightRenderPass(String worldId, float timeOfDay) {
         lightFrameBuffer.begin();
+
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        // If sun is over the horizon, just skip drawing anything in the light pass
+
+        // If sun is over the horizon, just skip drawing anything in the light pass to save time
+        // (and avoid artifacts created due to light shining through from beneath the chunks)
         boolean day = timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
         if (day) {
             myShaderProvider.setShadowPass(true);
@@ -162,6 +162,9 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     }
 
     private void normalRenderPass(String worldId) {
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
         myShaderProvider.setShadowPass(false);
         lightFrameBuffer.getColorBufferTexture().bind(2);
         modelBatch.begin(camera);
