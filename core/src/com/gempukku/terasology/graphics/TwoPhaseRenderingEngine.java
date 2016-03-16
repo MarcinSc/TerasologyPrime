@@ -74,35 +74,12 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
     @Override
     public void render() {
         String worldId = null;
-        boolean hasActiveCamera = false;
 
         //noinspection unchecked
-        for (EntityRef entity : entityManager.getEntitiesWithComponents(CameraComponent.class, LocationComponent.class)) {
-            CameraComponent cameraComponent = entity.getComponent(CameraComponent.class);
-            if (cameraComponent.isActive()) {
-                camera.near = cameraComponent.getNear();
-                camera.far = cameraComponent.getFar();
+        EntityRef activeCameraEntity = getActiveCameraEntity();
 
-                LocationComponent location = entity.getComponent(LocationComponent.class);
-                camera.position.set(
-                        location.getX() + cameraComponent.getTranslateFromLocationX(),
-                        location.getY() + cameraComponent.getTranslateFromLocationY(),
-                        location.getZ() + cameraComponent.getTranslateFromLocationZ());
-
-                camera.direction.set(cameraComponent.getDirectionX(), cameraComponent.getDirectionY(), cameraComponent.getDirectionZ());
-                camera.up.set(0, 1, 0);
-
-                camera.update();
-
-                worldId = location.getWorldId();
-                hasActiveCamera = true;
-
-                break;
-            }
-        }
-
-        if (hasActiveCamera) {
-            renderEnvironment(worldId);
+        if (activeCameraEntity != null) {
+            renderEnvironment(activeCameraEntity);
         }
 
         for (UiRenderer uiRenderer : uiRenderers) {
@@ -110,9 +87,28 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         }
     }
 
-    private void renderEnvironment(String worldId) {
-        // Number between 0-2*PI, where 0 is "midday", PI is midnight
-        float timeOfDay = setupLight();
+    private EntityRef getActiveCameraEntity() {
+        EntityRef activeCameraEntity = null;
+        for (EntityRef entity : entityManager.getEntitiesWithComponents(CameraComponent.class, LocationComponent.class)) {
+            CameraComponent cameraComponent = entity.getComponent(CameraComponent.class);
+            if (cameraComponent.isActive()) {
+                activeCameraEntity = entity;
+                break;
+            }
+        }
+        return activeCameraEntity;
+    }
+
+    private void renderEnvironment(EntityRef activeCameraEntity) {
+        int dayLengthInMs = 1 * 60 * 1000;
+
+        // Number between 0 and 2*PI, where 0 is "midday", PI is midnight
+        float timeOfDay = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
+
+        String worldId = activeCameraEntity.getComponent(LocationComponent.class).getWorldId();
+
+        setupCamera(activeCameraEntity);
+        setupLight(timeOfDay);
 
         myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
         myShaderProvider.setLightTrans(lightCamera.combined);
@@ -126,10 +122,25 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         normalRenderPass(worldId);
     }
 
-    private float setupLight() {
-        int dayLengthInMs = 1 * 60 * 1000;
-        float timeOfDay = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
+    private void setupCamera(EntityRef activeCameraEntity) {
+        CameraComponent cameraComponent = activeCameraEntity.getComponent(CameraComponent.class);
 
+        camera.near = cameraComponent.getNear();
+        camera.far = cameraComponent.getFar();
+
+        LocationComponent location = activeCameraEntity.getComponent(LocationComponent.class);
+        camera.position.set(
+                location.getX() + cameraComponent.getTranslateFromLocationX(),
+                location.getY() + cameraComponent.getTranslateFromLocationY(),
+                location.getZ() + cameraComponent.getTranslateFromLocationZ());
+
+        camera.direction.set(cameraComponent.getDirectionX(), cameraComponent.getDirectionY(), cameraComponent.getDirectionZ());
+        camera.up.set(0, 1, 0);
+
+        camera.update();
+    }
+
+    private void setupLight(float timeOfDay) {
         lightCamera.position.set(
                 (float) (camera.position.x + 1.1 * camera.far * Math.sin(timeOfDay)),
                 (float) (camera.position.y + 1.1 * camera.far * Math.cos(timeOfDay)),
@@ -138,7 +149,6 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         lightCamera.far = camera.far * 2.2f;
         lightCamera.near = camera.near;
         lightCamera.update();
-        return timeOfDay;
     }
 
     private void lightRenderPass(String worldId, float timeOfDay) {
