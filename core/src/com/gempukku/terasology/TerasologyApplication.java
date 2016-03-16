@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class TerasologyApplication extends ApplicationAdapter {
-    private static final boolean PROFILE = true;
+    private static final boolean PROFILE = false;
 
     private SECSyContext serverContext;
     private SECSyContext clientContext;
