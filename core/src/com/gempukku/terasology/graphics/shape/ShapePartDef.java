@@ -1,9 +1,11 @@
 package com.gempukku.terasology.graphics.shape;
 
+import com.gempukku.terasology.graphics.environment.BlockSide;
+
 import java.util.List;
 
 public class ShapePartDef {
-    private String side;
+    private BlockSide side;
     private List<String> textures;
     private List<Float[]> vertices;
     private List<Short> indices;
@@ -26,11 +28,11 @@ public class ShapePartDef {
         this.normals = normals;
     }
 
-    public String getSide() {
+    public BlockSide getSide() {
         return side;
     }
 
-    public void setSide(String side) {
+    public void setSide(BlockSide side) {
         this.side = side;
     }
 

@@ -68,7 +68,6 @@ public class EnvironmentShader extends DefaultShader {
         set(u_ambientLighting, 0.2f);
         set(u_fogColor, fogColor);
         set(u_time, time);
-//        set(u_fogColor, new Vector3(145f/255, 186f/255, 220f/255));
 
         super.render(renderable, combinedAttributes);
     }

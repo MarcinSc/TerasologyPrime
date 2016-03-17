@@ -98,7 +98,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         int seed = treeX + treeY * 173 + treeZ * 1543;
         FastRandom rnd = new FastRandom(seed);
 
-        int generation = rnd.nextInt(15) + 1;
+        int generation = rnd.nextInt(20) + 1;
 
         PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
         PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
@@ -118,6 +118,9 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         float segmentLengthIncreasePerGeneration = 0.2f;
         float segmentRadiusIncreasePerGeneration = 0.05f;
 
+        float branchSegmentLengthIncreasePerGeneration = 0.1f;
+        float branchSegmentRadiusIncreasePerGeneration = 0.05f;
+
         float trunkRotation = rnd.nextFloat();
 
         BranchDefinition tree = new BranchDefinition(0, trunkRotation);
@@ -131,8 +134,8 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 for (BranchDefinition branch : segment.branches) {
                     lastBranchAngle += branch.rotationY;
                     for (BranchSegmentDefinition branchSegment : branch.segments) {
-                        branchSegment.length += segmentLengthIncreasePerGeneration;
-                        branchSegment.radius += segmentRadiusIncreasePerGeneration;
+                        branchSegment.length += branchSegmentLengthIncreasePerGeneration;
+                        branchSegment.radius += branchSegmentRadiusIncreasePerGeneration;
                     }
 
                     branch.segments.add(new BranchSegmentDefinition(

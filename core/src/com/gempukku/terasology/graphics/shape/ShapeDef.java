@@ -1,10 +1,12 @@
 package com.gempukku.terasology.graphics.shape;
 
+import com.gempukku.terasology.graphics.environment.BlockSide;
+
 import java.util.List;
 
 public class ShapeDef {
     private List<ShapePartDef> shapeParts;
-    private List<String> fullParts;
+    private List<BlockSide> fullParts;
 
     public List<ShapePartDef> getShapeParts() {
         return shapeParts;
@@ -14,11 +16,11 @@ public class ShapeDef {
         this.shapeParts = shapeParts;
     }
 
-    public List<String> getFullParts() {
+    public List<BlockSide> getFullParts() {
         return fullParts;
     }
 
-    public void setFullParts(List<String> fullParts) {
+    public void setFullParts(List<BlockSide> fullParts) {
         this.fullParts = fullParts;
     }
 }

@@ -31,25 +31,13 @@ public class RenderableChunk {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.boundingBox = new BoundingBox(new Vector3(x * ChunkSize.X, y * ChunkSize.Y, z * ChunkSize.Z), new Vector3((x + 1) * ChunkSize.X, (y + 1) * ChunkSize.Y, (z + 1) * ChunkSize.Z));
+        // Bounding box also spreads to all the chunks around it, because blocks in this chunk can generate a geometry
+        // that extends max 1 chunk away
+        this.boundingBox = new BoundingBox(new Vector3((x - 1) * ChunkSize.X, (y - 1) * ChunkSize.Y, (z - 1) * ChunkSize.Z), new Vector3((x + 2) * ChunkSize.X, (y + 2) * ChunkSize.Y, (z + 2) * ChunkSize.Z));
     }
 
     public boolean isVisible(Camera camera) {
-        boolean result = camera.frustum.boundsInFrustum(boundingBox);
-        if (result)
-            return true;
-
-        // Move camera back one chunk
-        camera.position.sub(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));
-        camera.update();
-
-        result = camera.frustum.boundsInFrustum(boundingBox);
-
-        // Move the camera to its original position
-        camera.position.add(camera.direction.cpy().scl(ChunkSize.X, ChunkSize.Y, ChunkSize.Z));
-        camera.update();
-
-        return result;
+        return camera.frustum.boundsInFrustum(boundingBox);
     }
 
     public void updateChunkMesh(ChunkMesh chunkMesh, List<Texture> textures) {

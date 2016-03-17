@@ -56,7 +56,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
     private Map<String, BlockMeshGenerator> registeredBlockMeshGenerators = new HashMap<>();
 
-    private final int[][] surroundingChunks = new int[][]
+    private final int[][] blockSector = new int[][]
             {
                     {-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1},
                     {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1},
@@ -103,7 +103,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
     @Override
     public boolean canPrepareChunkData(String worldId, int x, int y, int z) {
-        for (int[] surroundingChunk : surroundingChunks) {
+        for (int[] surroundingChunk : blockSector) {
             if (chunkBlocksProvider.getChunkBlocks(worldId, x + surroundingChunk[0], y + surroundingChunk[1], z + surroundingChunk[2]) == null)
                 return false;
         }
@@ -114,11 +114,11 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     public ChunkMeshLists prepareChunkDataOffThread(List<Texture> textures, String worldId, int x, int y, int z) {
         init();
 
-        ChunkBlocks[] chunkSector = new ChunkBlocks[surroundingChunks.length];
+        ChunkBlocks[] chunkSector = new ChunkBlocks[blockSector.length];
 
-        for (int i = 0; i < surroundingChunks.length; i++) {
+        for (int i = 0; i < blockSector.length; i++) {
             chunkSector[i] = chunkBlocksProvider.getChunkBlocks(worldId,
-                    x + surroundingChunks[i][0], y + surroundingChunks[i][1], z + surroundingChunks[i][2]);
+                    x + blockSector[i][0], y + blockSector[i][1], z + blockSector[i][2]);
         }
 
         int chunkX = x * ChunkSize.X;
@@ -194,9 +194,8 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
             ShapeDef shape = shapesByBlockId[block];
             for (ShapePartDef shapePart : shape.getShapeParts()) {
-                String side = shapePart.getSide();
+                BlockSide blockSide = shapePart.getSide();
 
-                BlockSide blockSide = BlockSide.valueOf(side);
                 if (blockSide != null) {
                     // We need to check if block next to it is full (covers whole block side)
                     if (isNeighbourBlockCoveringSide(chunkSector, x, y, z, blockSide))
@@ -278,7 +277,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
         if (shapesByBlockId[neighbouringBlock] != null) {
             if (opaqueByBlockId[neighbouringBlock]) {
                 ShapeDef neighbourShapeDef = shapesByBlockId[neighbouringBlock];
-                if (neighbourShapeDef.getFullParts().contains(blockSide.getOpposite().name())) {
+                if (neighbourShapeDef.getFullParts().contains(blockSide.getOpposite())) {
                     return true;
                 }
             }
