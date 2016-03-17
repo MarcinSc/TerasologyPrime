@@ -42,8 +42,6 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
-        compile "com.gempukku.secsy:secsy-context:1.0"
-        compile "com.gempukku.secsy:secsy-entity:1.0"
         compile "com.googlecode.json-simple:json-simple:1.1"
     }
 }

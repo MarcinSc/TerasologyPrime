@@ -98,7 +98,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         int seed = treeX + treeY * 173 + treeZ * 1543;
         FastRandom rnd = new FastRandom(seed);
 
-        int generation = 10;//rnd.nextInt(11)+1;
+        int generation = rnd.nextInt(15) + 1;
 
         PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
         PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
@@ -223,7 +223,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                         Float[] normalValues = shapePart.getNormals().get(vertex);
                         Float[] textureCoords = shapePart.getUvs().get(vertex);
 
-                        tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 1f, vertexCoords[2] - 0.5f)
+                        tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
                                 .mul(segment.horizontalLeavesScale, segment.verticalLeavesScale, segment.horizontalLeavesScale).add(origin);
 
                         vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
