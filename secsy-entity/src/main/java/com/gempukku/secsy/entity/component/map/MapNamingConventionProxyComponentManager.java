@@ -138,17 +138,14 @@ public class MapNamingConventionProxyComponentManager implements ComponentManage
                 String methodName = method.getName();
                 if (methodName.startsWith("get")) {
                     addGetMethod(method, getFieldName(methodName, 3));
-                }
-                if (methodName.startsWith("is")) {
+                } else if (methodName.startsWith("is")) {
                     addGetMethod(method, getFieldName(methodName, 2));
-                }
-
-                if (methodName.startsWith("set")) {
-                    final Class<?> fieldType = method.getParameterTypes()[0];
-
+                } else if (methodName.startsWith("set")) {
                     String fieldName = getFieldName(methodName, 3);
-                    addFieldType(fieldName, fieldType);
+                    addFieldType(fieldName, method.getParameterTypes()[0]);
                     handlerMap.put(methodName, new SetMethodHandler(fieldName));
+                } else {
+                    throw new IllegalStateException("Invalid component definition, component uses unrecognized method name: " + methodName);
                 }
             }
         }
