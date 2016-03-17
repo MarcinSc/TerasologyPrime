@@ -31,6 +31,7 @@ import com.gempukku.terasology.graphics.environment.ChunkMeshManager;
 import com.gempukku.terasology.graphics.environment.event.AfterChunkMeshCreated;
 import com.gempukku.terasology.graphics.environment.event.BeforeChunkMeshRemoved;
 import com.gempukku.terasology.physics.component.PhysicsObjectComponent;
+import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.gempukku.terasology.world.event.AfterPlayerCreatedEvent;
@@ -54,6 +55,8 @@ public class BulletPhysicsEngine implements LifeCycleSystem, GameLoopListener {
     private EntityManager entityManager;
     @In
     private GameLoop gameLoop;
+    @In
+    private TimeManager timeManager;
 
     private Map<String, btCollisionObject> worldGroundCollisionObjects = new HashMap<>();
     private Map<String, btCompoundShape> worldGroundShapes = new HashMap<>();
@@ -69,8 +72,6 @@ public class BulletPhysicsEngine implements LifeCycleSystem, GameLoopListener {
 
     private int itemIndex = 0;
     private Map<String, MovingObjectHolder> movingCollisionShapes = new HashMap<>();
-
-    private long lastProcessing;
 
     @Override
     public void preInitialize() {
@@ -89,33 +90,27 @@ public class BulletPhysicsEngine implements LifeCycleSystem, GameLoopListener {
     }
 
     @Override
-    public void update(long delta) {
-        if (lastProcessing == 0) {
-            lastProcessing = delta;
-        } else {
-            float deltaInSeconds = (delta - lastProcessing) / 1000f;
-            for (btDiscreteDynamicsWorld dynamicsWorld : dynamicsWorlds.values()) {
-                dynamicsWorld.stepSimulation(deltaInSeconds, 5, 1f / 60f);
-            }
+    public void update() {
+        float deltaInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
+        for (btDiscreteDynamicsWorld dynamicsWorld : dynamicsWorlds.values()) {
+            dynamicsWorld.stepSimulation(deltaInSeconds, 5, 1f / 60f);
+        }
 
-            // Update location of all objects
-            Matrix4 transformMatrix = new Matrix4();
-            Vector3 vector = new Vector3();
-            for (MovingObjectHolder movingObjectHolder : movingCollisionShapes.values()) {
-                movingObjectHolder.rigidBody.getWorldTransform(transformMatrix);
-                vector.set(0, 0, 0);
-                Vector3 position = transformMatrix.getTranslation(vector);
+        // Update location of all objects
+        Matrix4 transformMatrix = new Matrix4();
+        Vector3 vector = new Vector3();
+        for (MovingObjectHolder movingObjectHolder : movingCollisionShapes.values()) {
+            movingObjectHolder.rigidBody.getWorldTransform(transformMatrix);
+            vector.set(0, 0, 0);
+            Vector3 position = transformMatrix.getTranslation(vector);
 
-                LocationComponent location = movingObjectHolder.entityRef.getComponent(LocationComponent.class);
-                PhysicsObjectComponent physicsObject = movingObjectHolder.entityRef.getComponent(PhysicsObjectComponent.class);
-                location.setX(position.x - physicsObject.getTranslateFromLocationX());
-                location.setY(position.y - physicsObject.getTranslateFromLocationY());
-                location.setZ(position.z - physicsObject.getTranslateFromLocationZ());
+            LocationComponent location = movingObjectHolder.entityRef.getComponent(LocationComponent.class);
+            PhysicsObjectComponent physicsObject = movingObjectHolder.entityRef.getComponent(PhysicsObjectComponent.class);
+            location.setX(position.x - physicsObject.getTranslateFromLocationX());
+            location.setY(position.y - physicsObject.getTranslateFromLocationY());
+            location.setZ(position.z - physicsObject.getTranslateFromLocationZ());
 
-                movingObjectHolder.entityRef.saveComponents(location);
-            }
-
-            lastProcessing = delta;
+            movingObjectHolder.entityRef.saveComponents(location);
         }
     }
 

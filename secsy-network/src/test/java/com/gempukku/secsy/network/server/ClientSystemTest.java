@@ -248,7 +248,7 @@ public class ClientSystemTest {
         }
 
         @Override
-        public void processUpdate(long delta) {
+        public void processUpdate() {
 
         }
     }

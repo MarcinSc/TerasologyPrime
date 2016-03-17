@@ -29,13 +29,13 @@ public class SimpleGameLoop implements GameLoop, InternalGameLoop {
     }
 
     @Override
-    public void processUpdate(long delta) {
+    public void processUpdate() {
         for (InternalGameLoopListener internalGameLoopListener : internalGameLoopListeners) {
             internalGameLoopListener.preUpdate();
         }
 
         for (GameLoopListener gameLoopListener : gameLoopListeners) {
-            gameLoopListener.update(delta);
+            gameLoopListener.update();
         }
 
         for (InternalGameLoopListener internalGameLoopListener : internalGameLoopListeners) {

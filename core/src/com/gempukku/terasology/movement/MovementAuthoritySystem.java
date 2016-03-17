@@ -11,6 +11,7 @@ import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.game.GameLoop;
 import com.gempukku.secsy.entity.game.GameLoopListener;
 import com.gempukku.terasology.graphics.component.CameraComponent;
+import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.LocationComponent;
 
 @RegisterSystem(
@@ -20,6 +21,8 @@ public class MovementAuthoritySystem implements LifeCycleSystem, GameLoopListene
     private EntityManager entityManager;
     @In
     private GameLoop gameLoop;
+    @In
+    private TimeManager timeManager;
 
     @Override
     public void initialize() {
@@ -27,9 +30,8 @@ public class MovementAuthoritySystem implements LifeCycleSystem, GameLoopListene
     }
 
     @Override
-    public void update(long delta) {
-        // TODO for now just assume this
-        float timeSinceLastUpdateInSeconds = 0.1f;
+    public void update() {
+        float timeSinceLastUpdateInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
 
         for (EntityRef movingEntity : entityManager.getEntitiesWithComponents(MovementComponent.class, LocationComponent.class)) {
             MovementComponent movement = movingEntity.getComponent(MovementComponent.class);

@@ -79,7 +79,7 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     }
 
     @Override
-    public void update(long delta) {
+    public void update() {
         Iterator<ChunkMesh> notReadyMeshes = notReadyChunks.iterator();
         while (notReadyMeshes.hasNext()) {
             ChunkMesh notReadyMesh = notReadyMeshes.next();

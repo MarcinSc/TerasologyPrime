@@ -4,5 +4,5 @@ public interface InternalGameLoop {
     void addInternalGameLoopListener(InternalGameLoopListener internalGameLoopListener);
     void removeInternalGameLooplListener(InternalGameLoopListener internalGameLoopListener);
 
-    void processUpdate(long delta);
+    void processUpdate();
 }

@@ -7,5 +7,7 @@ public interface MultiverseManager {
 
     EntityRef getWorldEntity(String worldId);
 
+    EntityRef getMultiverseEntity();
+
     boolean hasWorld(String worldId);
 }

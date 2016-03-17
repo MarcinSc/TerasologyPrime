@@ -5,4 +5,7 @@ import com.gempukku.terasology.communication.SharedComponent;
 
 @SharedComponent
 public interface MultiverseComponent extends Component {
+    void setTime(long time);
+
+    long getTime();
 }

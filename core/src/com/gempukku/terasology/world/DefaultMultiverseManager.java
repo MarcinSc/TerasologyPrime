@@ -31,6 +31,7 @@ public class DefaultMultiverseManager implements MultiverseManager {
     private void createMultiverseEntity() {
         EntityRef multiverseEntity = entityManager.createEntity();
         MultiverseComponent multiverseComponent = multiverseEntity.createComponent(MultiverseComponent.class);
+        multiverseComponent.setTime(0);
         multiverseEntity.saveComponents(multiverseComponent);
     }
 
@@ -42,6 +43,14 @@ public class DefaultMultiverseManager implements MultiverseManager {
                 return entityRef;
         }
 
+        return null;
+    }
+
+    @Override
+    public EntityRef getMultiverseEntity() {
+        for (EntityRef entityRef : entityManager.getEntitiesWithComponents(MultiverseComponent.class)) {
+            return entityRef;
+        }
         return null;
     }
 

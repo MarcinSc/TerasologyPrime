@@ -28,6 +28,7 @@ import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.environment.renderer.MyShaderProvider;
 import com.gempukku.terasology.graphics.ui.UiRenderer;
 import com.gempukku.terasology.graphics.ui.UiRendererRegistry;
+import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.LocationComponent;
 
 @RegisterSystem(
@@ -37,6 +38,8 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         LifeCycleSystem {
     @In
     private EntityManager entityManager;
+    @In
+    private TimeManager timeManager;
 
     private PriorityCollection<EnvironmentRenderer> environmentRenderers = new PriorityCollection<>();
     private PriorityCollection<UiRenderer> uiRenderers = new PriorityCollection<>();
@@ -94,7 +97,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
             int dayLengthInMs = 1 * 60 * 1000;
 
             // Number between 0 and 2*PI, where 0 is "midday", PI is midnight
-            float timeOfDay = (float) (2 * Math.PI * (System.currentTimeMillis() % dayLengthInMs) / (1f * dayLengthInMs));
+            float timeOfDay = (float) (2 * Math.PI * (timeManager.getMultiverseTime() % dayLengthInMs) / (1f * dayLengthInMs));
 
             setupCamera(activeCameraEntity);
             setupLight(timeOfDay);
@@ -122,6 +125,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         }
 
         myShaderProvider.setSkyColor(skyColor);
+        // Time used in shading depends on real time, not multiverse time
         myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
         myShaderProvider.setLightTrans(lightCamera.combined);
         myShaderProvider.setLightCameraFar(lightCamera.far);

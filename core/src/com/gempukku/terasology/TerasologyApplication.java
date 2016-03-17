@@ -14,6 +14,7 @@ import com.gempukku.secsy.network.client.RemoteEntityManager;
 import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.graphics.RenderingEngine;
 import com.gempukku.terasology.graphics.component.CameraComponent;
+import com.gempukku.terasology.time.InternalTimeManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.component.LocationComponent;
 import org.reflections.Configuration;
@@ -60,7 +61,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         serverContext.getSystem(ClientManager.class).addClient("clientId", playerEntity, localCommunication);
         ((RemoteEntityManager) clientContext.getSystem(EntityManager.class)).setServerCommunication(localCommunication);
 
-        runningServer = new RunningServer(serverContext.getSystem(InternalGameLoop.class));
+        runningServer = new RunningServer(
+                serverContext.getSystem(InternalGameLoop.class),
+                serverContext.getSystem(InternalTimeManager.class));
         runningServer.start();
 
         if (PROFILE)
@@ -136,7 +139,7 @@ public class TerasologyApplication extends ApplicationAdapter {
     public void render() {
         fpsLogger.log();
 
-        clientInternalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
+        clientInternalGameLoop.processUpdate();
 
         renderingEngine.render();
         if (PROFILE) {
@@ -169,11 +172,13 @@ public class TerasologyApplication extends ApplicationAdapter {
 
     private class RunningServer extends Thread {
         private volatile boolean running = true;
+        private InternalTimeManager internalTimeManager;
         private InternalGameLoop internalGameLoop;
         private LinkedList<Runnable> tasksToExecute = new LinkedList<>();
 
-        public RunningServer(InternalGameLoop internalGameLoop) {
+        public RunningServer(InternalGameLoop internalGameLoop, InternalTimeManager internalTimeManager) {
             this.internalGameLoop = internalGameLoop;
+            this.internalTimeManager = internalTimeManager;
         }
 
         public void executeInServerThread(Runnable runnable) {
@@ -185,6 +190,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         }
 
         public void run() {
+            long lastUpdate = System.currentTimeMillis();
             while (running) {
                 while (true) {
                     Runnable task = tasksToExecute.poll();
@@ -193,7 +199,14 @@ public class TerasologyApplication extends ApplicationAdapter {
                     else
                         task.run();
                 }
-                internalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
+
+                long newTime = System.currentTimeMillis();
+                // The biggest difference between two ticks can be 1000
+                long timeDiff = Math.min(1000, newTime - lastUpdate);
+                lastUpdate = newTime;
+
+                internalTimeManager.updateMultiverseTime(timeDiff);
+                internalGameLoop.processUpdate();
                 try {
                     Thread.sleep(20);
                 } catch (InterruptedException exp) {

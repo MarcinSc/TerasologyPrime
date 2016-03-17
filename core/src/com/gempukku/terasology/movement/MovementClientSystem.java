@@ -13,6 +13,7 @@ import com.gempukku.secsy.entity.game.GameLoop;
 import com.gempukku.secsy.entity.game.GameLoopListener;
 import com.gempukku.secsy.network.client.ServerEventBus;
 import com.gempukku.terasology.graphics.component.CameraComponent;
+import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.ClientComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 
@@ -25,6 +26,8 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     private GameLoop gameLoop;
     @In
     private ServerEventBus serverEventBus;
+    @In
+    private TimeManager timeManager;
 
     private float maxSpeed;
     private float jumpSpeed;
@@ -89,9 +92,8 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     }
 
     @Override
-    public void update(long delta) {
-        // TODO for now just assume this
-        float timeSinceLastUpdateInSeconds = 0.1f;
+    public void update() {
+        float timeSinceLastUpdateInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
 
         for (EntityRef movingEntity : entityManager.getEntitiesWithComponents(MovementComponent.class, LocationComponent.class)) {
             if (!movingEntity.hasComponent(ClientComponent.class)) {

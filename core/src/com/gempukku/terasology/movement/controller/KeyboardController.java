@@ -24,7 +24,7 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
     }
 
     @Override
-    public void update(long delta) {
+    public void update() {
         float rotateStep = 0.1f;
 
         float speed = 0;
