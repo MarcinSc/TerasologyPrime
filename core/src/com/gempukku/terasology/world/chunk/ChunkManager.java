@@ -12,7 +12,6 @@ import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
 import com.gempukku.secsy.network.serialize.EntityInformation;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.WorldBlock;
@@ -20,6 +19,7 @@ import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.component.BlockComponent;
 import com.gempukku.terasology.world.component.ClientComponent;
+import com.gempukku.terasology.world.component.LocationComponent;
 import com.google.common.collect.Iterables;
 
 import java.util.Collections;

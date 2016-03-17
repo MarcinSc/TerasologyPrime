@@ -1,11 +1,8 @@
 package com.gempukku.terasology;
 
 import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.profiling.GLProfiler;
-import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.SECSyContext;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.entity.EntityManager;
@@ -15,10 +12,10 @@ import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.network.LocalCommunication;
 import com.gempukku.secsy.network.client.RemoteEntityManager;
 import com.gempukku.secsy.network.server.ClientManager;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.graphics.RenderingEngine;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.world.MultiverseManager;
+import com.gempukku.terasology.world.component.LocationComponent;
 import org.reflections.Configuration;
 import org.reflections.Reflections;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -74,9 +71,12 @@ public class TerasologyApplication extends ApplicationAdapter {
         Set<String> clientProfiles = new HashSet<>();
         // This is a client context
         clientProfiles.add(NetProfiles.CLIENT);
-        // We use components created in map
-        clientProfiles.add("mapComponent");
+        // We use components with naming convention
+        clientProfiles.add("nameConventionComponents");
+        // Client should generate chunk meshes
         clientProfiles.add("generateChunkMeshes");
+        // Player controls movement with keyboard
+        clientProfiles.add("keyboardController");
 
         clientContext = new SECSyContext(clientProfiles, new Reflections(scanBasedOnAnnotations));
         clientContext.startup();
@@ -91,8 +91,8 @@ public class TerasologyApplication extends ApplicationAdapter {
         Set<String> serverProfiles = new HashSet<>();
         // This is server context
         serverProfiles.add(NetProfiles.AUTHORITY);
-        // We use components created in map
-        serverProfiles.add("mapComponent");
+        // We use components with naming convention
+        serverProfiles.add("nameConventionComponents");
         // World generator
         serverProfiles.add("hillsWorld");
 
@@ -149,61 +149,6 @@ public class TerasologyApplication extends ApplicationAdapter {
         }
     }
 
-    private void updatePlayerPosition() {
-        EntityRef playerEntity = serverContext.getSystem(PlayerManager.class).getPlayer("clientId");
-        CameraComponent camera = playerEntity.getComponent(CameraComponent.class);
-        LocationComponent location = playerEntity.getComponent(LocationComponent.class);
-
-        float rotateStep = 0.1f;
-        float stepLength = 2f;
-
-        boolean changed = false;
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            location.setX(location.getX() + camera.getDirectionX() * stepLength);
-            location.setY(location.getY() + camera.getDirectionY() * stepLength);
-            location.setZ(location.getZ() + camera.getDirectionZ() * stepLength);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            location.setX(location.getX() - camera.getDirectionX() * stepLength);
-            location.setY(location.getY() - camera.getDirectionY() * stepLength);
-            location.setZ(location.getZ() - camera.getDirectionZ() * stepLength);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            location.setY(location.getY() + stepLength);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
-            location.setY(location.getY() - stepLength);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            location.setX(location.getX() - camera.getDirectionX() * stepLength);
-            location.setY(location.getY() - camera.getDirectionY() * stepLength);
-            location.setZ(location.getZ() - camera.getDirectionZ() * stepLength);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            Vector3 direction = new Vector3(camera.getDirectionX(), camera.getDirectionY(), camera.getDirectionZ());
-            direction.rotateRad(new Vector3(0, 1, 0), rotateStep);
-            camera.setDirectionX(direction.x);
-            camera.setDirectionY(direction.y);
-            camera.setDirectionZ(direction.z);
-            changed = true;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            Vector3 direction = new Vector3(camera.getDirectionX(), camera.getDirectionY(), camera.getDirectionZ());
-            direction.rotateRad(new Vector3(0, 1, 0), -rotateStep);
-            camera.setDirectionX(direction.x);
-            camera.setDirectionY(direction.y);
-            camera.setDirectionZ(direction.z);
-            changed = true;
-        }
-        if (changed)
-            playerEntity.saveComponents(camera, location);
-    }
-
     @Override
     public void resize(int width, int height) {
         renderingEngine.updateCamera();
@@ -248,7 +193,6 @@ public class TerasologyApplication extends ApplicationAdapter {
                     else
                         task.run();
                 }
-                updatePlayerPosition();
                 internalGameLoop.processUpdate(System.currentTimeMillis() - startTime);
                 try {
                     Thread.sleep(20);

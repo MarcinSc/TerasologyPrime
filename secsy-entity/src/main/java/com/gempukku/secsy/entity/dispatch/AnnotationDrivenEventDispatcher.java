@@ -9,6 +9,7 @@ import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.EntityEventListener;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.InternalEntityManager;
+import com.gempukku.secsy.entity.event.ComponentEvent;
 import com.gempukku.secsy.entity.event.Event;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -16,6 +17,7 @@ import com.google.common.collect.Multimap;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 
 @RegisterSystem
 public class AnnotationDrivenEventDispatcher implements ContextAwareSystem<Object>, LifeCycleSystem, EntityEventListener {
@@ -78,10 +80,19 @@ public class AnnotationDrivenEventDispatcher implements ContextAwareSystem<Objec
 
     @Override
     public void eventSent(EntityRef entity, Event event) {
+        Collection<Class<? extends Component>> eventComponents;
+        // If an event implements ComponentEvent, then it should be fired to listeners that require only components
+        // defined by the event.
+        if (event instanceof ComponentEvent) {
+            eventComponents = ((ComponentEvent) event).getComponents();
+        } else {
+            eventComponents = entity.listComponents();
+        }
+
         for (EventListenerDefinition eventListenerDefinition : eventListenerDefinitions.get(event.getClass())) {
             boolean valid = true;
             for (Class<? extends Component> componentRequired : eventListenerDefinition.getComponentParameters()) {
-                if (!entity.hasComponent(componentRequired)) {
+                if (!eventComponents.contains(componentRequired)) {
                     valid = false;
                     break;
                 }

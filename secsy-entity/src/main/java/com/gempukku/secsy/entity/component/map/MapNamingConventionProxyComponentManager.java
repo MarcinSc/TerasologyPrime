@@ -13,19 +13,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@RegisterSystem(profiles = {"annotationComponents"}, shared = {ComponentManager.class, InternalComponentManager.class})
-public class MapAnnotationDrivenProxyComponentManager implements ComponentManager, InternalComponentManager {
+@RegisterSystem(profiles = {"nameConventionComponents"}, shared = {ComponentManager.class, InternalComponentManager.class})
+public class MapNamingConventionProxyComponentManager implements ComponentManager, InternalComponentManager {
     private static final Object NULL_VALUE = new Object();
     private Map<Class<? extends Component>, ComponentDef> componentDefinitions = new HashMap<>();
 
     @Override
     public <T extends Component> T createComponent(EntityRef entity, Class<T> clazz) {
-        if (componentDefinitions.get(clazz) == null) {
-            componentDefinitions.put(clazz, new ComponentDef(clazz));
+        ComponentDef componentDef = componentDefinitions.get(clazz);
+        if (componentDef == null) {
+            componentDef = new ComponentDef(clazz);
+            componentDefinitions.put(clazz, componentDef);
         }
         //noinspection unchecked
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
-                new ComponentView(entity, clazz, new HashMap<>(), false));
+                new ComponentView(entity, clazz, new HashMap<>(), false, componentDef.handlerMap));
     }
 
     @Override
@@ -48,7 +50,7 @@ public class MapAnnotationDrivenProxyComponentManager implements ComponentManage
 
         //noinspection unchecked
         return (T) Proxy.newProxyInstance(componentView.clazz.getClassLoader(), new Class[]{componentView.clazz},
-                new ComponentView(entity, componentView.clazz, values, readOnly));
+                new ComponentView(entity, componentView.clazz, values, readOnly, componentView.handlers));
     }
 
     @Override
@@ -123,40 +125,49 @@ public class MapAnnotationDrivenProxyComponentManager implements ComponentManage
         return (ComponentView) Proxy.getInvocationHandler(originalComponent);
     }
 
+    private String getFieldName(String methodName, int startIndex) {
+        return methodName.substring(startIndex, startIndex + 1).toLowerCase() + methodName.substring(startIndex + 1);
+    }
+
     private class ComponentDef {
         private Map<String, Class<?>> fieldTypes = new HashMap<>();
+        private Map<String, MethodHandler> handlerMap = new HashMap<>();
 
         private ComponentDef(Class<? extends Component> clazz) {
             for (Method method : clazz.getDeclaredMethods()) {
-                final GetProperty get = method.getAnnotation(GetProperty.class);
-                if (get != null) {
-                    final String fieldName = get.value();
-                    final Class<?> fieldType = method.getReturnType();
-
-                    final Class<?> existingType = fieldTypes.get(fieldName);
-                    if (existingType != null) {
-                        if (existingType != fieldType) {
-                            throw new IllegalStateException("Invalid component definition, field " + fieldName + " uses different value types");
-                        }
-                    } else {
-                        fieldTypes.put(fieldName, fieldType);
-                    }
+                String methodName = method.getName();
+                if (methodName.startsWith("get")) {
+                    addGetMethod(method, getFieldName(methodName, 3));
+                }
+                if (methodName.startsWith("is")) {
+                    addGetMethod(method, getFieldName(methodName, 2));
                 }
 
-                final SetProperty set = method.getAnnotation(SetProperty.class);
-                if (set != null) {
-                    final String fieldName = set.value();
+                if (methodName.startsWith("set")) {
                     final Class<?> fieldType = method.getParameterTypes()[0];
 
-                    final Class<?> existingType = fieldTypes.get(fieldName);
-                    if (existingType != null) {
-                        if (existingType != fieldType) {
-                            throw new IllegalStateException("Invalid component definition, field " + fieldName + " uses different value types");
-                        }
-                    } else {
-                        fieldTypes.put(fieldName, fieldType);
-                    }
+                    String fieldName = getFieldName(methodName, 3);
+                    addFieldType(fieldName, fieldType);
+                    handlerMap.put(methodName, new SetMethodHandler(fieldName));
                 }
+            }
+        }
+
+        private void addGetMethod(Method method, String fieldName) {
+            final Class<?> fieldType = method.getReturnType();
+
+            addFieldType(fieldName, fieldType);
+            handlerMap.put(method.getName(), new GetMethodHandler(fieldName));
+        }
+
+        private void addFieldType(String fieldName, Class<?> fieldType) {
+            final Class<?> existingType = fieldTypes.get(fieldName);
+            if (existingType != null) {
+                if (existingType != fieldType) {
+                    throw new IllegalStateException("Invalid component definition, field " + fieldName + " uses different value types");
+                }
+            } else {
+                fieldTypes.put(fieldName, fieldType);
             }
         }
 
@@ -170,41 +181,36 @@ public class MapAnnotationDrivenProxyComponentManager implements ComponentManage
         private Class<? extends Component> clazz;
         private Map<String, Object> storedValues;
         private Map<String, Object> changes = new HashMap<>();
+        private Map<String, MethodHandler> handlers = new HashMap<>();
         private boolean readOnly;
 
         private ComponentView(EntityRef entity, Class<? extends Component> clazz, Map<String, Object> storedValues,
-                              boolean readOnly) {
+                              boolean readOnly, Map<String, MethodHandler> handlers) {
             this.entity = entity;
             this.clazz = clazz;
             this.storedValues = storedValues;
             this.readOnly = readOnly;
+            this.handlers = handlers;
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            final GetProperty get = method.getAnnotation(GetProperty.class);
-            if (get != null) {
-                return handleGet(get.value());
-            }
-            final SetProperty set = method.getAnnotation(SetProperty.class);
-            if (set != null) {
-                return handleSet(args[0], set.value());
-            }
-            throw new UnsupportedOperationException("Component method invoked without property defined");
+            MethodHandler methodHandler = handlers.get(method.getName());
+            if (methodHandler != null)
+                return methodHandler.handleInvocation(storedValues, changes, readOnly, args);
+            throw new UnsupportedOperationException("Component method invoked without property defined: " + clazz.getName() + ":" + method.getName());
+        }
+    }
+
+    private static class GetMethodHandler implements MethodHandler {
+        private String fieldName;
+
+        public GetMethodHandler(String fieldName) {
+            this.fieldName = fieldName;
         }
 
-        private Object handleSet(Object arg, String fieldName) {
-            if (readOnly)
-                throw new UnsupportedOperationException("This is a read only component");
-            if (arg == null) {
-                arg = NULL_VALUE;
-            }
-            changes.put(fieldName, arg);
-
-            return null;
-        }
-
-        private Object handleGet(String fieldName) {
+        @Override
+        public Object handleInvocation(Map<String, Object> storedValues, Map<String, Object> changes, boolean readOnly, Object[] args) {
             final Object changedValue = changes.get(fieldName);
             if (changedValue != null) {
                 if (changedValue == NULL_VALUE) {
@@ -216,5 +222,28 @@ public class MapAnnotationDrivenProxyComponentManager implements ComponentManage
                 return storedValues.get(fieldName);
             }
         }
+    }
+
+    private static class SetMethodHandler implements MethodHandler {
+        private String fieldName;
+
+        public SetMethodHandler(String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public Object handleInvocation(Map<String, Object> storedValues, Map<String, Object> changes, boolean readOnly, Object[] args) {
+            if (readOnly)
+                throw new UnsupportedOperationException("This is a read only component");
+            if (args[0] == null) {
+                args[0] = NULL_VALUE;
+            }
+            changes.put(fieldName, args[0]);
+            return null;
+        }
+    }
+
+    private interface MethodHandler {
+        Object handleInvocation(Map<String, Object> storedValues, Map<String, Object> changes, boolean readOnly, Object[] args);
     }
 }

@@ -5,8 +5,8 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.world.component.BlockComponent;
+import com.gempukku.terasology.world.component.LocationComponent;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

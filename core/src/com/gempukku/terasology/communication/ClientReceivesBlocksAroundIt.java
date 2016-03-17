@@ -13,7 +13,6 @@ import com.gempukku.secsy.network.server.ClientConnectedEvent;
 import com.gempukku.secsy.network.server.ClientEntityRelevanceRule;
 import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
 import com.gempukku.secsy.network.server.ClientManager;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
@@ -21,6 +20,7 @@ import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.component.BlockComponent;
 import com.gempukku.terasology.world.component.ClientComponent;
+import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
@@ -169,10 +169,12 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         LocationComponent oldLocation = event.getOldComponent(LocationComponent.class);
         LocationComponent newLocation = event.getNewComponent(LocationComponent.class);
 
-        if (!oldLocation.getWorldId().equals(newLocation.getWorldId())) {
-            processMovedBetweenWorlds(entity, client, oldLocation, newLocation);
-        } else {
-            processMovedWithinWorld(entity, client, oldLocation, newLocation);
+        if (oldLocation != null && newLocation != null) {
+            if (!oldLocation.getWorldId().equals(newLocation.getWorldId())) {
+                processMovedBetweenWorlds(entity, client, oldLocation, newLocation);
+            } else {
+                processMovedWithinWorld(entity, client, oldLocation, newLocation);
+            }
         }
     }
 

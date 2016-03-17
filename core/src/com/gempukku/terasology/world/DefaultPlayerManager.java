@@ -6,6 +6,7 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.PlayerManager;
+import com.gempukku.terasology.movement.MovementComponent;
 import com.gempukku.terasology.world.component.ClientComponent;
 import com.gempukku.terasology.world.event.AfterPlayerCreatedEvent;
 
@@ -18,12 +19,21 @@ public class DefaultPlayerManager implements PlayerManager {
     @Override
     public EntityRef createPlayer(String id) {
         EntityRef entity = entityManager.createEntity();
+
         ClientComponent player = entity.createComponent(ClientComponent.class);
         player.setClientId(id);
         player.setChunkDistanceX(7);
-        player.setChunkDistanceY(2);
+        player.setChunkDistanceY(3);
         player.setChunkDistanceZ(7);
-        entity.saveComponents(player);
+
+        MovementComponent movement = entity.createComponent(MovementComponent.class);
+        movement.setMaxSpeed(10f);
+        movement.setJumpSpeed(10f);
+        movement.setYaw(0);
+        movement.setSpeed(0);
+        movement.setVerticalSpeed(0);
+
+        entity.saveComponents(player, movement);
 
         entity.send(new AfterPlayerCreatedEvent());
         return entity;

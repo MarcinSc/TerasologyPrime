@@ -7,9 +7,9 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.world.chunk.ChunkSize;
+import com.gempukku.terasology.world.component.LocationComponent;
 
 import java.util.Collection;
 

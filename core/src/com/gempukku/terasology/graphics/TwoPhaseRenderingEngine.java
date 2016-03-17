@@ -22,13 +22,13 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.terasology.component.LocationComponent;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
 import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.environment.renderer.MyShaderProvider;
 import com.gempukku.terasology.graphics.ui.UiRenderer;
 import com.gempukku.terasology.graphics.ui.UiRendererRegistry;
+import com.gempukku.terasology.world.component.LocationComponent;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT,
@@ -156,7 +156,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
         // The diameter is 2 * maximum camera view distance, we have to decrement it a bit, otherwise we might
         // be seeing some see-through artifacts on the sphere due to far distance culling
-        float skyDiameter = 2 * camera.far - 0.1f;
+        float skyDiameter = 2 * camera.far - 0.2f;
         skyBuilder.sphere(skyDiameter, skyDiameter, skyDiameter, 128, 128);
         Model model = modelBuilder.end();
         skySphere = new ModelInstance(model);
