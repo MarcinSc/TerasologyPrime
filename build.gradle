@@ -35,7 +35,7 @@ project(":desktop") {
 
     dependencies {
         compile project(":physics")
-        compile project(":trees")
+        compile project(":test")
 
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
@@ -59,6 +59,16 @@ project(":trees") {
 
     dependencies {
         compile project(":core")
+
+        compile "org.terasology:TeraMath:1.2.0"
+    }
+}
+
+project(":test") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":trees")
 
         compile "org.terasology:TeraMath:1.2.0"
     }

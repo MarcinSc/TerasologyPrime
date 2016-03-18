@@ -5,17 +5,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
-import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.terasology.graphics.TextureAtlasProvider;
-import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
 import com.gempukku.terasology.graphics.environment.BlockMeshGeneratorRegistry;
 import com.gempukku.terasology.graphics.environment.ChunkMeshGeneratorCallback;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
-import com.gempukku.terasology.graphics.shape.ShapeProvider;
-import com.gempukku.terasology.procedural.FastRandom;
-import com.gempukku.terasology.procedural.PDist;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkSize;
@@ -24,30 +18,28 @@ import org.terasology.math.geom.Matrix4f;
 import org.terasology.math.geom.Quat4f;
 import org.terasology.math.geom.Vector3f;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes")
-public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSystem {
+        profiles = "generateChunkMeshes", shared = TreeGenerationRegistry.class)
+public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, TreeGenerationRegistry, LifeCycleSystem {
     @In
     private BlockMeshGeneratorRegistry blockMeshGeneratorRegistry;
     @In
-    private TextureAtlasRegistry textureAtlasRegistry;
-    @In
-    private TextureAtlasProvider textureAtlasProvider;
-    @In
     private WorldStorage worldStorage;
-    @In
-    private ShapeProvider shapeProvider;
+
+    private Map<String, TreeGenerator> treeGenerators = new HashMap<>();
 
     @Override
     public void initialize() {
-        textureAtlasRegistry.registerTextures(
-                Arrays.asList(
-                        "blockTiles/trees/OakBark.png",
-                        "blockTiles/plant/leaf/GreenLeaf.png"));
         blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
+    }
+
+    @Override
+    public void registerTreeGenerator(String generatorName, TreeGenerator treeGenerator) {
+        treeGenerators.put(generatorName, treeGenerator);
     }
 
     @Override
@@ -63,126 +55,31 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 treeY,
                 treeZ);
 
-        TreeDefinition treeDefinition = createTreeDefinition(entityAndBlockId.entityRef, treeX, treeY, treeZ);
+        TreeGenerationComponent treeGeneration = entityAndBlockId.entityRef.getComponent(TreeGenerationComponent.class);
+        TreeDefinition treeDefinition = treeGenerators.get(treeGeneration.getGenerationType()).generateTreeDefinition(entityAndBlockId.entityRef);
 
-        TextureRegion barkTexture = textureAtlasProvider.getTexture(treeDefinition.barkTexture);
-        if (texture == barkTexture.getTexture()) {
+        if (texture == treeDefinition.barkTexture.getTexture()) {
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
                     treeX + 0.5f,
                     treeY,
                     treeZ + 0.5f), 1);
 
             BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexOutput,
-                    barkTexture);
+                    treeDefinition.barkTexture);
 
-            processBranchWithCallback(branchCallback, treeDefinition.trunkDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
         }
-        TextureRegion leavesTexture = textureAtlasProvider.getTexture(treeDefinition.leavesTexture);
-        if (texture == leavesTexture.getTexture()) {
+        if (texture == treeDefinition.leavesTexture.getTexture()) {
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
                     treeX + 0.5f,
                     treeY,
                     treeZ + 0.5f), 1);
 
-            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput, shapeProvider.getShapeById(treeDefinition.leavesShape),
-                    leavesTexture);
+            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput, treeDefinition.leavesShape,
+                    treeDefinition.leavesTexture);
 
-            processBranchWithCallback(branchCallback, treeDefinition.trunkDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
         }
-    }
-
-    private TreeDefinition createTreeDefinition(EntityRef entity, int treeX, int treeY, int treeZ) {
-        int seed = treeX + treeY * 173 + treeZ * 1543;
-        FastRandom rnd = new FastRandom(seed);
-
-        int generation = rnd.nextInt(20) + 1;
-
-        PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
-        PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
-
-        int maxBranchesPerSegment = 2;
-        // 137.5 is a golden angle, which is incidentally the angle between two consecutive branches grown by many plants
-        PDist branchInitialAngleAddY = new PDist(137.5f, 10f, PDist.Type.normal);
-        PDist branchInitialAngleZ = new PDist(60, 20, PDist.Type.normal);
-        PDist branchInitialLength = new PDist(0.3f, 0.075f, PDist.Type.normal);
-        PDist branchInitialRadius = new PDist(0.01f, 0.003f, PDist.Type.normal);
-
-        PDist segmentRotateX = new PDist(0, 15, PDist.Type.normal);
-        PDist segmentRotateZ = new PDist(0, 15, PDist.Type.normal);
-
-        PDist branchCurveAngleZ = new PDist(-8, 2, PDist.Type.normal);
-
-        float segmentLengthIncreasePerGeneration = 0.2f;
-        float segmentRadiusIncreasePerGeneration = 0.05f;
-
-        float branchSegmentLengthIncreasePerGeneration = 0.1f;
-        float branchSegmentRadiusIncreasePerGeneration = 0.05f;
-
-        float trunkRotation = rnd.nextFloat();
-
-        BranchDefinition tree = new BranchDefinition(0, trunkRotation);
-        for (int i = 0; i < generation; i++) {
-            float lastBranchAngle = 0;
-
-            // Grow existing segments and their branches
-            for (BranchSegmentDefinition segment : tree.segments) {
-                segment.length += segmentLengthIncreasePerGeneration;
-                segment.radius += segmentRadiusIncreasePerGeneration;
-                for (BranchDefinition branch : segment.branches) {
-                    lastBranchAngle += branch.rotationY;
-                    for (BranchSegmentDefinition branchSegment : branch.segments) {
-                        branchSegment.length += branchSegmentLengthIncreasePerGeneration;
-                        branchSegment.radius += branchSegmentRadiusIncreasePerGeneration;
-                    }
-
-                    branch.segments.add(new BranchSegmentDefinition(
-                            branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0,
-                            branchCurveAngleZ.getValue(rnd)));
-                }
-            }
-
-            int existingSegmentCount = tree.segments.size();
-
-            if (existingSegmentCount > 2) {
-                // Add branches to last existing segment
-                int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
-
-                for (int branch = 0; branch < branchCount; branch++) {
-                    lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
-                    BranchDefinition branchDef = new BranchDefinition(
-                            lastBranchAngle, branchInitialAngleZ.getValue(rnd));
-                    BranchSegmentDefinition segment = new BranchSegmentDefinition(
-                            branchInitialLength.getValue(rnd), branchInitialRadius.getValue(rnd), 0, 0);
-
-                    branchDef.segments.add(segment);
-
-                    tree.segments.get(existingSegmentCount - 1).branches.add(branchDef);
-                }
-            }
-
-            // Add new segment
-            BranchSegmentDefinition segment = new BranchSegmentDefinition(
-                    newTrunkSegmentLength.getValue(rnd), newTrunkSegmentRadius.getValue(rnd),
-                    segmentRotateX.getValue(rnd), segmentRotateZ.getValue(rnd));
-
-            tree.segments.add(segment);
-        }
-
-        // Add leaves
-        BranchSegmentDefinition lastTrunkSegment = tree.segments.get(tree.segments.size() - 1);
-        lastTrunkSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
-        lastTrunkSegment.verticalLeavesScale = lastTrunkSegment.horizontalLeavesScale * 0.75f;
-
-        for (BranchSegmentDefinition segment : tree.segments) {
-            for (BranchDefinition branch : segment.branches) {
-                BranchSegmentDefinition lastBrunchSegment = branch.segments.get(branch.segments.size() - 1);
-
-                lastBrunchSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
-                lastBrunchSegment.verticalLeavesScale = lastBrunchSegment.horizontalLeavesScale * 0.75f;
-            }
-        }
-
-        return new TreeDefinition("cube", "trees/blockTiles/trees/OakBark", "core/blockTiles/plant/leaf/GreenLeaf", tree);
     }
 
     private class LeavesDrawingCallback implements LSystemCallback {
@@ -200,17 +97,17 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchStart(BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentStart(BranchSegmentDefinition segment, Matrix4f movingMatrix) {
+        public void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentEnd(BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
+        public void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
             movingMatrix.transformPoint(origin.set(0, 0, 0));
 
             if (segment.horizontalLeavesScale > 0.01f && segment.verticalLeavesScale > 0.01f) {
@@ -246,7 +143,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchEnd(BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
     }
@@ -273,12 +170,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchStart(BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentStart(BranchSegmentDefinition segment, Matrix4f movingMatrix) {
+        public void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
             movingMatrix.transformPoint(first.set(1, 0, 1).mul(segment.radius));
             movingMatrix.transformPoint(second.set(-1, 0, 1).mul(segment.radius));
             movingMatrix.transformPoint(third.set(-1, 0, -1).mul(segment.radius));
@@ -286,7 +183,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void segmentEnd(BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
+        public void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
             float radius;
             if (nextSegment != null)
                 radius = nextSegment.radius;
@@ -316,41 +213,41 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchEnd(BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
     }
 
-    private void processBranchWithCallback(LSystemCallback callback, BranchDefinition branchDefinition, Matrix4f movingMatrix) {
+    private void processBranchWithCallback(LSystemCallback callback, boolean trunk, BranchDefinition branchDefinition, Matrix4f movingMatrix) {
         movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 1, 0), TeraMath.DEG_TO_RAD * branchDefinition.rotationY), new Vector3f(), 1));
         movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 0, 1), TeraMath.DEG_TO_RAD * branchDefinition.rotationZ), new Vector3f(), 1));
 
-        callback.branchStart(branchDefinition, movingMatrix);
+        callback.branchStart(trunk, branchDefinition, movingMatrix);
 
         Iterator<BranchSegmentDefinition> segmentIterator = branchDefinition.segments.iterator();
         BranchSegmentDefinition currentSegment = segmentIterator.next();
         do {
             BranchSegmentDefinition nextSegment = segmentIterator.hasNext() ? segmentIterator.next() : null;
 
-            callback.segmentStart(currentSegment, movingMatrix);
+            callback.segmentStart(trunk, currentSegment, movingMatrix);
             movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 0, 1), TeraMath.DEG_TO_RAD * currentSegment.rotateZ), new Vector3f(), 1));
             movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(1, 0, 0), TeraMath.DEG_TO_RAD * currentSegment.rotateX), new Vector3f(), 1));
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, currentSegment.length, 0), 1));
-            callback.segmentEnd(currentSegment, nextSegment, movingMatrix);
+            callback.segmentEnd(trunk, currentSegment, nextSegment, movingMatrix);
 
             // Get back half of the segment to create branches
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, -currentSegment.length / 2, 0), 1));
 
             for (BranchDefinition branch : currentSegment.branches) {
                 Matrix4f branchMatrix = new Matrix4f(movingMatrix);
-                processBranchWithCallback(callback, branch, branchMatrix);
+                processBranchWithCallback(callback, false, branch, branchMatrix);
             }
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, currentSegment.length / 2, 0), 1));
 
             currentSegment = nextSegment;
         } while (currentSegment != null);
 
-        callback.branchEnd(branchDefinition, movingMatrix);
+        callback.branchEnd(trunk, branchDefinition, movingMatrix);
     }
 
     private void addQuad(VertexOutput vertexOutput,
@@ -394,12 +291,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     private interface LSystemCallback {
-        void branchStart(BranchDefinition branch, Matrix4f movingMatrix);
+        void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix);
 
-        void segmentStart(BranchSegmentDefinition segment, Matrix4f movingMatrix);
+        void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix);
 
-        void segmentEnd(BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix);
+        void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix);
 
-        void branchEnd(BranchDefinition branch, Matrix4f movingMatrix);
+        void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix);
     }
 }

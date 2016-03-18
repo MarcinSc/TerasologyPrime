@@ -1,14 +1,19 @@
-package com.gempukku.terasology.world.chunk;
+package com.gempukku.terasology.test;
 
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
+import com.gempukku.secsy.network.serialize.ComponentInformation;
+import com.gempukku.secsy.network.serialize.EntityInformation;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.Noise;
 import com.gempukku.terasology.procedural.SimplexNoise;
+import com.gempukku.terasology.trees.TreeGenerationComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
+import com.gempukku.terasology.world.chunk.ChunkGenerator;
+import com.gempukku.terasology.world.chunk.ChunkSize;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +58,11 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
                     if (blockLevel == groundLevel + 1 && dx%(ChunkSize.X/2) == 0 && dz%(ChunkSize.Z/2) == 0) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(tree));
+                        EntityInformation entityInformation = new EntityInformation();
+                        ComponentInformation componentInformation = new ComponentInformation(TreeGenerationComponent.class);
+                        componentInformation.addField("generationType", "simple");
+                        entityInformation.addComponent(componentInformation);
+                        entities.add(EntityDataOrCommonBlock.entityData(tree, entityInformation));
                     } else if (blockLevel > groundLevel) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(air));
                     } else if (blockLevel > groundLevel - 1) {

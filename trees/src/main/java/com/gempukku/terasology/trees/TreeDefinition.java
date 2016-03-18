@@ -1,13 +1,16 @@
 package com.gempukku.terasology.trees;
 
-public class TreeDefinition {
-    public final String leavesShape;
-    public final BranchDefinition trunkDefinition;
-    public final String barkTexture;
-    public final String leavesTexture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.gempukku.terasology.graphics.shape.ShapeDef;
 
-    public TreeDefinition(String leavesShape,
-                          String barkTexture, String leavesTexture,
+public class TreeDefinition {
+    public final ShapeDef leavesShape;
+    public final BranchDefinition trunkDefinition;
+    public final TextureRegion barkTexture;
+    public final TextureRegion leavesTexture;
+
+    public TreeDefinition(ShapeDef leavesShape,
+                          TextureRegion barkTexture, TextureRegion leavesTexture,
                           BranchDefinition trunkDefinition) {
         this.leavesShape = leavesShape;
         this.barkTexture = barkTexture;
