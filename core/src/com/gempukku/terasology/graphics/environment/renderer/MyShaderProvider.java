@@ -22,7 +22,6 @@ public class MyShaderProvider implements ShaderProvider {
     private Vector3 lightPosition;
     private Vector3 lightDirection;
     private float lightPlaneDistance;
-    private float cameraFar;
     private float time;
     private Vector3 skyColor;
 
@@ -36,10 +35,6 @@ public class MyShaderProvider implements ShaderProvider {
 
     public void setTime(float time) {
         this.time = time;
-    }
-
-    public void setLightCameraFar(float cameraFar) {
-        this.cameraFar = cameraFar;
     }
 
     public void setLightTrans(Matrix4 lightTrans) {
@@ -63,8 +58,6 @@ public class MyShaderProvider implements ShaderProvider {
         if (mode == Mode.ENVIRONMENT_SHADOW) {
             if (environmentShadowShader == null)
                 environmentShadowShader = createEnvironmentShadowShader(renderable);
-            environmentShadowShader.setCameraFar(cameraFar);
-            environmentShadowShader.setLightPosition(lightPosition);
             environmentShadowShader.setLightDirection(lightDirection);
             environmentShadowShader.setLightPlaneDistance(lightPlaneDistance);
             environmentShadowShader.setTime(time);
@@ -73,7 +66,6 @@ public class MyShaderProvider implements ShaderProvider {
             if (environmentShader == null)
                 environmentShader = createEnvironmentShader(renderable);
             environmentShader.setLightTrans(lightTrans);
-            environmentShader.setCameraFar(cameraFar);
             environmentShader.setLightPosition(lightPosition);
             environmentShader.setLightDirection(lightDirection);
             environmentShader.setLightPlaneDistance(lightPlaneDistance);

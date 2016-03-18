@@ -3,9 +3,10 @@ attribute vec3 a_normal;
 attribute vec2 a_texCoord0;
 attribute float a_flag;
 
-uniform mat4 u_worldTrans;
 uniform mat4 u_projViewTrans;
 uniform mat4 u_lightTrans;
+uniform vec3 u_lightDirection;
+uniform float u_lightPlaneDistance;
 uniform float u_time;
 
 varying vec4 v_positionLightTrans;
@@ -13,6 +14,7 @@ varying vec3 v_position;
 varying vec3 v_normal;
 varying vec2 v_texCoord0;
 varying float v_visibility;
+varying float v_distanceToLight;
 
 const float fogDensity = 0.008;
 const float fogGradient = 5.0;
@@ -42,13 +44,15 @@ bool checkFlag(int flag, float val) {
 void main() {
     v_texCoord0 = a_texCoord0;
     v_normal = a_normal;
-    vec4 position = u_worldTrans * vec4(a_position, 1.0);
+    vec4 position = vec4(a_position, 1.0);
 
     if (checkFlag(0, a_flag)) {
         position.x += (smoothTriangleWave(u_time * 0.1 + position.x * 0.01 + position.z * 0.01) * 2.0 - 1.0) * 0.03;
         position.y += (smoothTriangleWave(u_time * 0.2 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.05;
         position.z += (smoothTriangleWave(u_time * 0.1 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
+
+    v_distanceToLight = dot(position.xyz, u_lightDirection) + u_lightPlaneDistance;
 
     v_positionLightTrans = u_lightTrans * position;
     v_position = position.xyz;

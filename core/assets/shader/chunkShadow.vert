@@ -1,7 +1,6 @@
 attribute vec3 a_position;
 attribute float a_flag;
 
-uniform mat4 u_worldTrans;
 uniform mat4 u_projViewTrans;
 uniform float u_time;
 
@@ -31,7 +30,7 @@ bool checkFlag(int flag, float val) {
 
 void main()
 {
-    v_position = u_worldTrans * vec4(a_position, 1.0);
+    v_position = vec4(a_position, 1.0);
 
     if (checkFlag(0, a_flag)) {
         v_position.x += (smoothTriangleWave(u_time * 0.1 + v_position.x * 0.01 + v_position.z * 0.01) * 2.0 - 1.0) * 0.03;

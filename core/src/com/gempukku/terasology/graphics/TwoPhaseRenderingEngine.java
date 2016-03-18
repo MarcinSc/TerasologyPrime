@@ -128,7 +128,6 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         // Time used in shading depends on real time, not multiverse time
         myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
         myShaderProvider.setLightTrans(lightCamera.combined);
-        myShaderProvider.setLightCameraFar(lightCamera.far);
         myShaderProvider.setLightPosition(lightCamera.position);
         myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
         myShaderProvider.setLightDirection(lightCamera.direction);
@@ -209,6 +208,11 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
                 (float) (camera.position.x + 1.1 * camera.far * Math.sin(timeOfDay)),
                 (float) (camera.position.y + 1.1 * camera.far * Math.cos(timeOfDay)),
                 camera.position.z);
+        if (timeOfDay == 0) {
+            lightCamera.up.set(1, 0, 0);
+        } else {
+            lightCamera.up.set(0, 1, 0);
+        }
         lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
         lightCamera.far = camera.far * 2.2f;
         lightCamera.near = camera.near;

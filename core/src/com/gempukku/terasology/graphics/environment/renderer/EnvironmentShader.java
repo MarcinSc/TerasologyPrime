@@ -1,15 +1,15 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
-import com.badlogic.gdx.graphics.g3d.Attributes;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
+import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 public class EnvironmentShader extends DefaultShader {
     private final int u_depthMap = register("u_depthMap");
     private final int u_lightTrans = register("u_lightTrans");
-    private final int u_cameraFar = register("u_cameraFar");
     private final int u_lightDirection = register("u_lightDirection");
     private final int u_lightPosition = register("u_lightPosition");
     private final int u_lightPlaneDistance = register("u_lightPlaneDistance");
@@ -22,7 +22,6 @@ public class EnvironmentShader extends DefaultShader {
     private Vector3 lightPosition;
     private Vector3 fogColor;
     private float lightPlaneDistance;
-    private float cameraFar;
     private float time;
 
     public EnvironmentShader(Renderable renderable, Config config) {
@@ -41,10 +40,6 @@ public class EnvironmentShader extends DefaultShader {
         this.lightTrans = lightTrans;
     }
 
-    public void setCameraFar(float cameraFar) {
-        this.cameraFar = cameraFar;
-    }
-
     public void setLightDirection(Vector3 lightDirection) {
         this.lightDirection = lightDirection;
     }
@@ -58,9 +53,10 @@ public class EnvironmentShader extends DefaultShader {
     }
 
     @Override
-    public void render(Renderable renderable, Attributes combinedAttributes) {
+    public void begin(Camera camera, RenderContext context) {
+        super.begin(camera, context);
+
         set(u_lightTrans, lightTrans);
-        set(u_cameraFar, cameraFar);
         set(u_lightPosition, lightPosition);
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
@@ -68,7 +64,5 @@ public class EnvironmentShader extends DefaultShader {
         set(u_ambientLighting, 0.2f);
         set(u_fogColor, fogColor);
         set(u_time, time);
-
-        super.render(renderable, combinedAttributes);
     }
 }

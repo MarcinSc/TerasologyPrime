@@ -2,10 +2,7 @@
 precision mediump float;
 #endif
 
-uniform float u_cameraFar;
 uniform vec3 u_lightPosition;
-uniform vec3 u_lightDirection;
-uniform float u_lightPlaneDistance;
 uniform sampler2D u_depthMap;
 uniform sampler2D u_diffuseTexture;
 uniform float u_ambientLighting;
@@ -18,6 +15,7 @@ varying vec2 v_texCoord0;
 varying vec3 v_normal;
 varying vec3 v_position;
 varying float v_visibility;
+varying float v_distanceToLight;
 
 float getLightTravelingDistance() {
     vec2 depth = (v_positionLightTrans.xy / v_positionLightTrans.w) * 0.5 + 0.5;
@@ -33,11 +31,10 @@ void main()
     vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
 
     float lightTravelingDistance = getLightTravelingDistance();
-    float distanceToLight = dot(v_position.xyz, u_lightDirection) + u_lightPlaneDistance;
 
     float bias = 0.5;
     //float bias = clamp(tan(acos(cosTheta)), 0.05, 1.0);
-    if (lightTravelingDistance < distanceToLight - bias) {
+    if (lightTravelingDistance < v_distanceToLight - bias) {
         // Not lighted by directional light (star)
         finalColor.rgb *= u_ambientLighting;
     } else {
