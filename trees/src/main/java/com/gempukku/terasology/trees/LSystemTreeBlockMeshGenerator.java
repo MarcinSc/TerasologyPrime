@@ -70,7 +70,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 treeY,
                 treeZ);
 
-        BranchDefinition branchDefinition = createTreeDefinition(entityAndBlockId.entityRef, treeX, treeY, treeZ);
+        TreeDefinition treeDefinition = createTreeDefinition(entityAndBlockId.entityRef, treeX, treeY, treeZ);
 
         if (texture == oakBarkTexture.getTexture()) {
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
@@ -80,7 +80,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
             BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexOutput);
 
-            processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, treeDefinition.trunkDefinition, movingMatrix);
         }
         if (texture == oakLeafTexture.getTexture()) {
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
@@ -88,13 +88,13 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                     treeY,
                     treeZ + 0.5f), 1);
 
-            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput);
+            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput, shapeProvider.getShapeById(treeDefinition.leavesShape));
 
-            processBranchWithCallback(branchCallback, branchDefinition, movingMatrix);
+            processBranchWithCallback(branchCallback, treeDefinition.trunkDefinition, movingMatrix);
         }
     }
 
-    private BranchDefinition createTreeDefinition(EntityRef entity, int treeX, int treeY, int treeZ) {
+    private TreeDefinition createTreeDefinition(EntityRef entity, int treeX, int treeY, int treeZ) {
         int seed = treeX + treeY * 173 + treeZ * 1543;
         FastRandom rnd = new FastRandom(seed);
 
@@ -185,8 +185,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             }
         }
 
-
-        return tree;
+        return new TreeDefinition("cube", tree);
     }
 
     private class LeavesDrawingCallback implements LSystemCallback {
@@ -194,9 +193,11 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
         private Vector3f tempVector = new Vector3f();
         private Vector3f origin = new Vector3f();
+        private ShapeDef leavesShape;
 
-        public LeavesDrawingCallback(VertexOutput vertexOutput) {
+        public LeavesDrawingCallback(VertexOutput vertexOutput, ShapeDef leavesShape) {
             this.vertexOutput = vertexOutput;
+            this.leavesShape = leavesShape;
         }
 
         @Override
@@ -214,7 +215,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             movingMatrix.transformPoint(origin.set(0, 0, 0));
 
             if (segment.horizontalLeavesScale > 0.01f && segment.verticalLeavesScale > 0.01f) {
-                for (ShapePartDef shapePart : cubeShape.getShapeParts()) {
+                for (ShapePartDef shapePart : leavesShape.getShapeParts()) {
                     int vertexCount = shapePart.getVertices().size();
 
                     // This array will store indexes of vertices in the resulting Mesh
