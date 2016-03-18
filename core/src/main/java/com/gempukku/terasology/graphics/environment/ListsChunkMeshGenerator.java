@@ -13,14 +13,13 @@ import com.badlogic.gdx.utils.ShortArray;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
-import com.gempukku.terasology.component.TerasologyComponentManager;
+import com.gempukku.secsy.entity.io.ComponentData;
+import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.component.GeneratedBlockMeshComponent;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
-import com.gempukku.terasology.prefab.PrefabComponentData;
-import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
@@ -43,8 +42,6 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     private TextureAtlasProvider textureAtlasProvider;
     @In
     private ShapeProvider shapeProvider;
-    @In
-    private TerasologyComponentManager terasologyComponentManager;
 
     private ShortArrayThreadLocal shorts = new ShortArrayThreadLocal();
     private FloatArrayThreadLocal floats = new FloatArrayThreadLocal();
@@ -76,24 +73,20 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
 
     private void init() {
         if (shapesByBlockId == null) {
-            String shapeAndTextureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
-            String generatedBlockMeshComponentName = terasologyComponentManager.getNameByComponent(GeneratedBlockMeshComponent.class);
-
             int commonBlockCount = commonBlockManager.getCommonBlockCount();
             shapesByBlockId = new ShapeDef[commonBlockCount];
             texturesByBlockId = new Map[commonBlockCount];
             opaqueByBlockId = new boolean[commonBlockCount];
             blockMeshGenerators = new String[commonBlockCount];
             for (short i = 0; i < commonBlockCount; i++) {
-                PrefabData commonBlockData = commonBlockManager.getCommonBlockById(i);
-                PrefabComponentData shapeAndTextureComponent = commonBlockData.getComponents().
-                        get(shapeAndTextureComponentName);
+                EntityData commonBlockData = commonBlockManager.getCommonBlockById(i);
+                ComponentData shapeAndTextureComponent = commonBlockData.getComponent(ShapeAndTextureComponent.class);
                 if (shapeAndTextureComponent != null) {
                     shapesByBlockId[i] = shapeProvider.getShapeById((String) shapeAndTextureComponent.getFields().get("shapeId"));
                     texturesByBlockId[i] = (Map<String, String>) shapeAndTextureComponent.getFields().get("parts");
                     opaqueByBlockId[i] = (Boolean) shapeAndTextureComponent.getFields().get("opaque");
                 }
-                PrefabComponentData generatedBlockMeshComponent = commonBlockData.getComponents().get(generatedBlockMeshComponentName);
+                ComponentData generatedBlockMeshComponent = commonBlockData.getComponent(GeneratedBlockMeshComponent.class);
                 if (generatedBlockMeshComponent != null) {
                     blockMeshGenerators[i] = (String) generatedBlockMeshComponent.getFields().get("generatorType");
                 }

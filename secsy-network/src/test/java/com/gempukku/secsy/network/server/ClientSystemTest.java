@@ -1,7 +1,7 @@
 package com.gempukku.secsy.network.server;
 
-import com.gempukku.secsy.context.ClassSystemProducer;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
+import com.gempukku.secsy.context.system.ClassSystemProducer;
 import com.gempukku.secsy.context.system.ShareSystemInitializer;
 import com.gempukku.secsy.context.system.SimpleContext;
 import com.gempukku.secsy.entity.EntityEventListener;

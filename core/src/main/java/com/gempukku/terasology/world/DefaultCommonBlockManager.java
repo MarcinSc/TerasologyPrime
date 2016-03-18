@@ -7,9 +7,8 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.AfterEntityLoaded;
-import com.gempukku.terasology.component.TerasologyComponentManager;
+import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
-import com.gempukku.terasology.prefab.PrefabData;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
 import com.gempukku.terasology.world.component.CommonBlockConfigComponent;
@@ -26,12 +25,10 @@ import java.util.Set;
 public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;
-    @In
-    private TerasologyComponentManager terasologyComponentManager;
     @In(optional = true)
     private TextureAtlasRegistry textureAtlasRegistry;
 
-    private volatile Map<String, PrefabData> commonBlockPrefabsById;
+    private volatile Map<String, EntityData> commonBlockPrefabsById;
     private volatile String[] commonBlockIds;
 
     @Override
@@ -39,9 +36,8 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
         if (textureAtlasRegistry != null) {
             Set<String> texturePaths = new HashSet<>();
 
-            String textureComponentName = terasologyComponentManager.getNameByComponent(ShapeAndTextureComponent.class);
-            for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
-                for (String partTexture : ((Map<String, String>) prefabData.getComponents().get(textureComponentName).getFields().get("parts")).values()) {
+            for (EntityData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
+                for (String partTexture : ((Map<String, String>) prefabData.getComponent(ShapeAndTextureComponent.class).getFields().get("parts")).values()) {
                     texturePaths.add(partTexture);
                 }
             }
@@ -73,7 +69,7 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
         commonBlockIds = config.getCommonBlocks();
     }
 
-    private PrefabData getCommonBlockById(String id) {
+    private EntityData getCommonBlockById(String id) {
         init();
 
         if (id == null)
@@ -83,7 +79,7 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
     }
 
     @Override
-    public PrefabData getCommonBlockById(short id) {
+    public EntityData getCommonBlockById(short id) {
         return getCommonBlockById(commonBlockIds[id]);
     }
 
@@ -110,9 +106,8 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
     private void populateMap() {
         commonBlockPrefabsById = new HashMap<>();
 
-        for (PrefabData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class)) {
-            String simpleName = terasologyComponentManager.getNameByComponent(CommonBlockComponent.class);
-            String blockId = (String) prefabData.getComponents().get(simpleName).getFields().get("id");
+        for (EntityData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class)) {
+            String blockId = (String) prefabData.getComponent(CommonBlockComponent.class).getFields().get("id");
             commonBlockPrefabsById.put(blockId, prefabData);
         }
     }

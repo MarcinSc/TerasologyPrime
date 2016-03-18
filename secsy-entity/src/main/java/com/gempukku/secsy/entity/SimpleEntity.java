@@ -27,23 +27,35 @@ public class SimpleEntity implements EntityData {
     @Override
     public Iterable<ComponentData> getComponents() {
         return entityValues.entrySet().stream().map(
-                componentEntry -> new ComponentData() {
-                    @Override
-                    public Class<? extends Component> getComponentClass() {
-                        return componentEntry.getKey();
-                    }
+                componentEntry -> convertToComponentData(componentEntry.getKey(), componentEntry.getValue())).collect(Collectors.toList());
+    }
 
-                    @Override
-                    public Map<String, Object> getFields() {
-                        Map<String, Object> result = new HashMap<String, Object>();
-                        internalComponentManager.getComponentFieldTypes(componentEntry.getValue()).entrySet().stream().forEach(
-                                fieldDef -> {
-                                    String fieldName = fieldDef.getKey();
-                                    Object fieldValue = internalComponentManager.getComponentFieldValue(componentEntry.getValue(), fieldName, componentEntry.getKey());
-                                    result.put(fieldName, fieldValue);
-                                });
-                        return result;
-                    }
-                }).collect(Collectors.toList());
+    @Override
+    public ComponentData getComponent(Class<? extends Component> componentClass) {
+        Component component = entityValues.get(componentClass);
+        if (component == null)
+            return null;
+        return convertToComponentData(componentClass, component);
+    }
+
+    private ComponentData convertToComponentData(Class<? extends Component> componentClass, Component component) {
+        return new ComponentData() {
+            @Override
+            public Class<? extends Component> getComponentClass() {
+                return componentClass;
+            }
+
+            @Override
+            public Map<String, Object> getFields() {
+                Map<String, Object> result = new HashMap<String, Object>();
+                internalComponentManager.getComponentFieldTypes(component).entrySet().stream().forEach(
+                        fieldDef -> {
+                            String fieldName = fieldDef.getKey();
+                            Object fieldValue = internalComponentManager.getComponentFieldValue(component, fieldName, componentClass);
+                            result.put(fieldName, fieldValue);
+                        });
+                return result;
+            }
+        };
     }
 }

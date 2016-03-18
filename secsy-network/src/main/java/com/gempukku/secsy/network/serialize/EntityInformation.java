@@ -1,5 +1,6 @@
 package com.gempukku.secsy.network.serialize;
 
+import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 
@@ -24,6 +25,15 @@ public class EntityInformation implements EntityData {
 
     public Iterable<ComponentInformation> getComponents() {
         return components;
+    }
+
+    @Override
+    public ComponentData getComponent(Class<? extends Component> componentClass) {
+        for (ComponentInformation component : components) {
+            if (component.getComponentClass() == componentClass)
+                return component;
+        }
+        return null;
     }
 
     public void addComponent(ComponentInformation componentInformation) {

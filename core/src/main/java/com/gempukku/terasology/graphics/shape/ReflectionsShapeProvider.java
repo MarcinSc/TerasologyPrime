@@ -32,6 +32,8 @@ public class ReflectionsShapeProvider implements ShapeProvider, LifeCycleSystem 
         Reflections reflections = new Reflections(scanPrefabs);
         Multimap<String, String> resources = reflections.getStore().get(ShapeScanner.class);
 
+        ObjectMapper objectMapper = new ObjectMapper();
+
         for (String shapeId : resources.keySet()) {
             Collection<String> paths = resources.get(shapeId);
             if (paths.size()>1)
@@ -40,7 +42,6 @@ public class ReflectionsShapeProvider implements ShapeProvider, LifeCycleSystem 
             try {
                 InputStream shapeDefInputStream = ReflectionsShapeProvider.class.getResourceAsStream("/"+paths.iterator().next());
                 try {
-                    ObjectMapper objectMapper = new ObjectMapper();
                     ShapeDef shapeDef = objectMapper.readValue(shapeDefInputStream, ShapeDef.class);
                     shapesById.put(shapeId, shapeDef);
                 } finally {
@@ -56,68 +57,6 @@ public class ReflectionsShapeProvider implements ShapeProvider, LifeCycleSystem 
     public ShapeDef getShapeById(String shapeId) {
         return shapesById.get(shapeId);
     }
-//
-//    public static void main(String[] args) throws IOException {
-//        ObjectMapper mapper = new ObjectMapper();
-//        ShapeDef source = mapper.readValue(new File("/Users/marcin.sciesinski/git/libgdx-test/core/assets/shape/cube.shape"), ShapeDef.class);
-//
-//        ShapeDef cube = new ShapeDef();
-//        List<ShapePartDef> parts = new LinkedList<>();
-//        for (ShapePartDef blockSide : source.getShapeParts()) {
-//            ShapePartDef part = new ShapePartDef();
-//
-//            List<Float[]> vertices = new LinkedList<>();
-//            List<Float[]> normals = new LinkedList<>();
-//            List<Float[]> uvs = new LinkedList<>();
-//            List<Short> indices = new LinkedList<>();
-//
-//            for (int i=0; i<blockSide.getVertices().size(); i+=6) {
-//                vertices.add(blockSide.getVertices().get(i));
-//                vertices.add(blockSide.getVertices().get(i+1));
-//                vertices.add(blockSide.getVertices().get(i+2));
-//                vertices.add(blockSide.getVertices().get(i+4));
-//
-//                normals.add(blockSide.getNormals().get(i));
-//                normals.add(blockSide.getNormals().get(i+1));
-//                normals.add(blockSide.getNormals().get(i+2));
-//                normals.add(blockSide.getNormals().get(i+4));
-//
-//                uvs.add(blockSide.getUvs().get(i));
-//                uvs.add(blockSide.getUvs().get(i+1));
-//                uvs.add(blockSide.getUvs().get(i+2));
-//                uvs.add(blockSide.getUvs().get(i+4));
-//
-//                indices.add((short) 0);
-//                indices.add((short) 1);
-//                indices.add((short) 2);
-//                indices.add((short) 2);
-//                indices.add((short) 3);
-//                indices.add((short) 0);
-//            }
-//
-//            part.setVertices(vertices);
-//            part.setNormals(normals);
-//            part.setUvs(uvs);
-//            part.setIndices(indices);
-//            part.setTextures(blockSide.getTextures());
-//            part.setSide(blockSide.getSide());
-//
-//            parts.add(part);
-//        }
-//        cube.setShapeParts(parts);
-//
-//        cube.setFullParts(Arrays.asList("top", "bottom", "front", "back", "left", "right"));
-//
-//        mapper.writeValue(new File("/Users/marcin.sciesinski/git/libgdx-test/core/assets/shape/cube2.shape"), cube);
-//    }
-//
-//    private static void addPosition(List<Float[]> array, Vector2 position) {
-//        array.add(new Float[] {position.x, position.y});
-//    }
-//
-//    private static void addVertex(List<Float[]> array, Vector3 vertex) {
-//        array.add(new Float[] {vertex.x, vertex.y, vertex.z});
-//    }
 
     private static class ShapeScanner extends ResourcesScanner {
         private String extension = ".shape";

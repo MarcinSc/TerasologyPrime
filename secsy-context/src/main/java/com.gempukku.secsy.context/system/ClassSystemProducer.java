@@ -1,6 +1,4 @@
-package com.gempukku.secsy.context;
-
-import com.gempukku.secsy.context.system.SystemProducer;
+package com.gempukku.secsy.context.system;
 
 import java.util.Collection;
 import java.util.Collections;

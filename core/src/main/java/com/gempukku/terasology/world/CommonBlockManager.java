@@ -1,9 +1,9 @@
 package com.gempukku.terasology.world;
 
-import com.gempukku.terasology.prefab.PrefabData;
+import com.gempukku.secsy.entity.io.EntityData;
 
 public interface CommonBlockManager {
-    PrefabData getCommonBlockById(short id);
+    EntityData getCommonBlockById(short id);
 
     short getCommonBlockId(String commonBlockId);
 
