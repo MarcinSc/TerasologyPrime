@@ -24,6 +24,7 @@ public class MyShaderProvider implements ShaderProvider {
     private float lightPlaneDistance;
     private float time;
     private Vector3 skyColor;
+    private boolean night;
 
     public void setMode(Mode mode) {
         this.mode = mode;
@@ -53,6 +54,10 @@ public class MyShaderProvider implements ShaderProvider {
         this.lightPlaneDistance = lightPlaneDistance;
     }
 
+    public void setNight(boolean night) {
+        this.night = night;
+    }
+
     @Override
     public Shader getShader(Renderable renderable) {
         if (mode == Mode.ENVIRONMENT_SHADOW) {
@@ -71,6 +76,7 @@ public class MyShaderProvider implements ShaderProvider {
             environmentShader.setLightPlaneDistance(lightPlaneDistance);
             environmentShader.setTime(time);
             environmentShader.setFogColor(skyColor);
+            environmentShader.setNoDirectionalLight(night);
             return environmentShader;
         } else if (mode == Mode.SKY) {
             if (skyShader == null)

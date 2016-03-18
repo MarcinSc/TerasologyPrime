@@ -16,6 +16,7 @@ public class EnvironmentShader extends DefaultShader {
     private final int u_ambientLighting = register("u_ambientLighting");
     private final int u_fogColor = register("u_fogColor");
     private final int u_time = register("u_time");
+    private final int u_noDirectionalLight = register("u_noDirectionalLight");
 
     private Matrix4 lightTrans;
     private Vector3 lightDirection;
@@ -23,6 +24,7 @@ public class EnvironmentShader extends DefaultShader {
     private Vector3 fogColor;
     private float lightPlaneDistance;
     private float time;
+    private boolean noDirectionalLight;
 
     public EnvironmentShader(Renderable renderable, Config config) {
         super(renderable, config);
@@ -52,6 +54,10 @@ public class EnvironmentShader extends DefaultShader {
         this.lightPosition = lightPosition;
     }
 
+    public void setNoDirectionalLight(boolean noDirectionalLight) {
+        this.noDirectionalLight = noDirectionalLight;
+    }
+
     @Override
     public void begin(Camera camera, RenderContext context) {
         super.begin(camera, context);
@@ -64,5 +70,6 @@ public class EnvironmentShader extends DefaultShader {
         set(u_ambientLighting, 0.2f);
         set(u_fogColor, fogColor);
         set(u_time, time);
+        set(u_noDirectionalLight, noDirectionalLight ? 1 : 0);
     }
 }

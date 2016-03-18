@@ -7,6 +7,7 @@ uniform mat4 u_projViewTrans;
 uniform mat4 u_lightTrans;
 uniform vec3 u_lightDirection;
 uniform float u_lightPlaneDistance;
+uniform vec3 u_lightPosition;
 uniform float u_time;
 
 varying vec4 v_positionLightTrans;
@@ -15,6 +16,7 @@ varying vec3 v_normal;
 varying vec2 v_texCoord0;
 varying float v_visibility;
 varying float v_distanceToLight;
+varying float v_lightingComponent;
 
 const float fogDensity = 0.008;
 const float fogGradient = 5.0;
@@ -53,6 +55,7 @@ void main() {
     }
 
     v_distanceToLight = dot(position.xyz, u_lightDirection) + u_lightPlaneDistance;
+    v_lightingComponent = clamp(dot(a_normal, normalize(u_lightPosition-position.xyz)), 0.0, 1.0);
 
     v_positionLightTrans = u_lightTrans * position;
     v_position = position.xyz;

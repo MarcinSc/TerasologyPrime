@@ -131,6 +131,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
         myShaderProvider.setLightPosition(lightCamera.position);
         myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
         myShaderProvider.setLightDirection(lightCamera.direction);
+        myShaderProvider.setNight(!isDay(timeOfDay));
     }
 
     private void cleanBuffer() {
@@ -227,8 +228,7 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
 
         // If sun is over the horizon, just skip drawing anything in the light pass to save time
         // (and avoid artifacts created due to light shining through from beneath the chunks)
-        boolean day = timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
-        if (day) {
+        if (isDay(timeOfDay)) {
             myShaderProvider.setMode(MyShaderProvider.Mode.ENVIRONMENT_SHADOW);
             modelBatch.begin(lightCamera);
             for (EnvironmentRenderer environmentRenderer : environmentRenderers) {
@@ -237,6 +237,10 @@ public class TwoPhaseRenderingEngine implements RenderingEngine, EnvironmentRend
             modelBatch.end();
         }
         lightFrameBuffer.end();
+    }
+
+    private boolean isDay(float timeOfDay) {
+        return timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
     }
 
     private void normalRenderPass(String worldId) {
