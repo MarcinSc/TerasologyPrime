@@ -1,9 +1,11 @@
 package com.gempukku.terasology.movement;
 
 public interface MovementController {
-    void updateMovement(float yawDiff, float speed, float verticalSpeed);
+    void updateMovement(float yaw, float pitch, float speed, float verticalSpeed);
 
     float getYaw();
+
+    float getPitch();
 
     float getHorizontalSpeed();
 

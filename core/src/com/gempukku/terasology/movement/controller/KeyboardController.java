@@ -18,6 +18,13 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
     @In
     private MovementController movementController;
 
+    private int[] forward = {Input.Keys.UP, Input.Keys.W};
+    private int[] backward = {Input.Keys.DOWN, Input.Keys.S};
+    private int[] left = {Input.Keys.LEFT, Input.Keys.A};
+    private int[] right = {Input.Keys.RIGHT, Input.Keys.D};
+    private int[] jump = {Input.Keys.SPACE};
+    private int[] down = {Input.Keys.SHIFT_LEFT};
+
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
@@ -25,28 +32,36 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
 
     @Override
     public void update() {
-        float rotateStep = 0.1f;
+        float rotateStep = 0.05f;
 
         float speed = 0;
         float verticalSpeed = 0;
         float yaw = movementController.getYaw();
 
-        if (Gdx.input.isKeyPressed(Input.Keys.UP) && !Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        if (isPressed(forward) && !isPressed(backward)) {
             speed = movementController.getMaximumSpeed();
-        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && !Gdx.input.isKeyPressed(Input.Keys.UP)) {
+        } else if (isPressed(backward) && !isPressed(forward)) {
             speed = -movementController.getMaximumSpeed();
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) && !Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
-            verticalSpeed = movementController.getJumpSpeed();
-        } else if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) && !Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            verticalSpeed = -movementController.getJumpSpeed();
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && !Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        if (isPressed(left) && !isPressed(right)) {
             yaw -= rotateStep;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        } else if (isPressed(right) && !isPressed(left)) {
             yaw += rotateStep;
         }
+        if (isPressed(jump) && !isPressed(down)) {
+            verticalSpeed = movementController.getJumpSpeed();
+        } else if (isPressed(down) && !isPressed(jump)) {
+            verticalSpeed = -movementController.getJumpSpeed();
+        }
 
-        movementController.updateMovement(yaw, speed, verticalSpeed);
+        movementController.updateMovement(yaw, movementController.getPitch(), speed, verticalSpeed);
+    }
+
+    private boolean isPressed(int[] keys) {
+        for (int key : keys) {
+            if (Gdx.input.isKeyPressed(key))
+                return true;
+        }
+        return false;
     }
 }

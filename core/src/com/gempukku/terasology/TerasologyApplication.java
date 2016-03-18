@@ -1,6 +1,8 @@
 package com.gempukku.terasology;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.gempukku.secsy.context.SECSyContext;
@@ -80,6 +82,8 @@ public class TerasologyApplication extends ApplicationAdapter {
         clientProfiles.add("generateChunkMeshes");
         // Player controls movement with keyboard
         clientProfiles.add("keyboardController");
+        // Player controls direction with mouse
+        clientProfiles.add("mouseController");
 
         clientContext = new SECSyContext(clientProfiles, new Reflections(scanBasedOnAnnotations));
         clientContext.startup();
@@ -133,10 +137,16 @@ public class TerasologyApplication extends ApplicationAdapter {
         player.saveComponents(playerLocation, playerCamera);
 
         startTime = System.currentTimeMillis();
+
+        Gdx.input.setCursorCatched(true);
     }
 
     @Override
     public void render() {
+        if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
+            Gdx.app.exit();
+        }
+
         fpsLogger.log();
 
         clientInternalGameLoop.processUpdate();

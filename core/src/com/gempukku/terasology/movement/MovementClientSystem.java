@@ -1,5 +1,6 @@
 package com.gempukku.terasology.movement;
 
+import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -37,6 +38,7 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     private float positionZ;
 
     private float yaw;
+    private float pitch;
     private float horizontalSpeed;
     private float verticalSpeed;
 
@@ -46,8 +48,9 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     }
 
     @Override
-    public void updateMovement(float yaw, float speed, float verticalSpeed) {
+    public void updateMovement(float yaw, float pitch, float speed, float verticalSpeed) {
         this.yaw = yaw;
+        this.pitch = pitch;
         this.horizontalSpeed = speed;
         this.verticalSpeed = verticalSpeed;
 
@@ -77,6 +80,11 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     }
 
     @Override
+    public float getPitch() {
+        return pitch;
+    }
+
+    @Override
     public float getVerticalSpeed() {
         return verticalSpeed;
     }
@@ -90,6 +98,8 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     public float getMaximumSpeed() {
         return maxSpeed;
     }
+
+    private Vector3 tmp = new Vector3();
 
     @Override
     public void update() {
@@ -131,9 +141,10 @@ public class MovementClientSystem implements MovementController, GameLoopListene
                 positionY = location.getY();
                 positionZ = location.getZ();
 
-                camera.setDirectionX((float) Math.cos(yaw));
-                camera.setDirectionY(0);
-                camera.setDirectionZ((float) Math.sin(yaw));
+                tmp.set((float) Math.cos(yaw), (float) Math.sin(pitch), (float) Math.sin(yaw)).nor();
+                camera.setDirectionX(tmp.x);
+                camera.setDirectionY(tmp.y);
+                camera.setDirectionZ(tmp.z);
 
                 movingEntity.saveComponents(location, camera);
                 serverEventBus.sendEventToServer(new MovementRequestEvent(positionX, positionY, positionZ, verticalSpeed, horizontalSpeed, yaw));
