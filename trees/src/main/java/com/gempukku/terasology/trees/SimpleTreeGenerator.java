@@ -125,8 +125,8 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
         }
 
         return new TreeDefinition(shapeProvider.getShapeById("cube"),
-                textureAtlasProvider.getTexture("trees/blockTiles/trees/OakBark"),
-                textureAtlasProvider.getTexture("core/blockTiles/plant/leaf/GreenLeaf"), tree);
+                textureAtlasProvider.getTexture("blockTiles/trees/OakBark.png"),
+                textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf.png"), tree);
 
     }
 }

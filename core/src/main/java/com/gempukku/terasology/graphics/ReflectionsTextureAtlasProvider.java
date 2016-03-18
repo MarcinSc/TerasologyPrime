@@ -75,7 +75,8 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Te
         textureAtlas = new TextureAtlas(atlasFileHandle);
 
         for (TextureAtlas.AtlasRegion atlasRegion : textureAtlas.getRegions()) {
-            textures.put(atlasRegion.name, atlasRegion);
+            String name = atlasRegion.name;
+            textures.put(name.substring(name.indexOf('/') + 1), atlasRegion);
         }
 
         textureList = new ArrayList<>();
@@ -91,6 +92,6 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Te
 
     @Override
     public TextureRegion getTexture(String name) {
-        return textures.get(name);
+        return textures.get(name.substring(0, name.lastIndexOf('.')));
     }
 }
