@@ -1,0 +1,11 @@
+{
+  "TreeGenerationComponent": {
+    "generationType": "simple"
+  },
+  "SimpleTreeDefinitionComponent": {
+    "barkTexture": "blockTiles/trees/OakBark.png",
+    "leavesTexture": "blockTiles/plant/leaf/GreenLeaf.png",
+    "leavesShape": "cube",
+    "maxGenerations": 15
+  }
+}

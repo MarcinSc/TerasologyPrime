@@ -4,13 +4,22 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityRef;
+import com.gempukku.secsy.entity.io.ComponentData;
+import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
+import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastRandom;
 import com.gempukku.terasology.procedural.PDist;
+import com.gempukku.terasology.trees.component.IndividualTreeComponent;
+import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
+import com.gempukku.terasology.trees.model.BranchDefinition;
+import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
+import com.gempukku.terasology.trees.model.TreeDefinition;
 
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes")
@@ -23,21 +32,30 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
     private TextureAtlasProvider textureAtlasProvider;
     @In
     private TreeGenerationRegistry treeGenerationRegistry;
+    @In
+    private PrefabManager prefabManager;
 
     @Override
     public void initialize() {
-        textureAtlasRegistry.registerTextures(
-                Arrays.asList(
-                        "blockTiles/trees/OakBark.png",
-                        "blockTiles/plant/leaf/GreenLeaf.png"));
         treeGenerationRegistry.registerTreeGenerator("simple", this);
+
+        Set<String> texturesToLoad = new HashSet<>();
+        for (EntityData entityData : prefabManager.findPrefabsWithComponents(SimpleTreeDefinitionComponent.class)) {
+            ComponentData component = entityData.getComponent(SimpleTreeDefinitionComponent.class);
+            texturesToLoad.add((String) component.getFields().get("barkTexture"));
+            texturesToLoad.add((String) component.getFields().get("leavesTexture"));
+        }
+        textureAtlasRegistry.registerTextures(texturesToLoad);
     }
 
     @Override
     public TreeDefinition generateTreeDefinition(EntityRef entityRef) {
-        FastRandom rnd = new FastRandom(0);
+        SimpleTreeDefinitionComponent simpleTreeDefinition = entityRef.getComponent(SimpleTreeDefinitionComponent.class);
+        IndividualTreeComponent individualTree = entityRef.getComponent(IndividualTreeComponent.class);
 
-        int generation = 5;
+        FastRandom rnd = new FastRandom(individualTree.getSeed());
+
+        int generation = individualTree.getGeneration();
 
         PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
         PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
@@ -124,9 +142,9 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
             }
         }
 
-        return new TreeDefinition(shapeProvider.getShapeById("cube"),
-                textureAtlasProvider.getTexture("blockTiles/trees/OakBark.png"),
-                textureAtlasProvider.getTexture("blockTiles/plant/leaf/GreenLeaf.png"), tree);
+        return new TreeDefinition(shapeProvider.getShapeById(simpleTreeDefinition.getLeavesShape()),
+                textureAtlasProvider.getTexture(simpleTreeDefinition.getBarkTexture()),
+                textureAtlasProvider.getTexture(simpleTreeDefinition.getLeavesTexture()), tree);
 
     }
 }

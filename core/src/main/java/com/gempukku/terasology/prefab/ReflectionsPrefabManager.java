@@ -91,7 +91,10 @@ public class ReflectionsPrefabManager implements PrefabManager {
 
         EntityInformation entityInformation = new EntityInformation();
         for (String componentName : (Iterable<String>) entity.keySet()) {
-            ComponentInformation componentInformation = new ComponentInformation(terasologyComponentManager.getComponentByName(componentName));
+            Class<? extends Component> componentByName = terasologyComponentManager.getComponentByName(componentName);
+            if (componentByName == null)
+                throw new IllegalStateException("Unable to find component with name (found in prefab): " + componentName);
+            ComponentInformation componentInformation = new ComponentInformation(componentByName);
             JSONObject componentObject = (JSONObject) entity.get(componentName);
             for (String fieldName : (Iterable<String>) componentObject.keySet()) {
                 Object fieldValue = componentObject.get(fieldName);

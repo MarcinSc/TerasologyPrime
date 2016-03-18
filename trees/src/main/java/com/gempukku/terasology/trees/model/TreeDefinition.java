@@ -1,4 +1,4 @@
-package com.gempukku.terasology.trees;
+package com.gempukku.terasology.trees.model;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.gempukku.terasology.graphics.shape.ShapeDef;

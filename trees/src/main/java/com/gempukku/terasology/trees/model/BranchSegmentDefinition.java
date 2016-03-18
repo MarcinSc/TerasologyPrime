@@ -1,4 +1,4 @@
-package com.gempukku.terasology.trees;
+package com.gempukku.terasology.trees.model;
 
 import java.util.LinkedList;
 import java.util.List;
