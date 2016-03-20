@@ -8,10 +8,10 @@ uniform float u_viewportHeight;
 struct CelestialBody
 {
     vec2 positionScreenCoords;
-	vec3 color;
+	vec4 color;
 	float size;
 };
-uniform CelestialBody u_celestialBodies[10];
+uniform CelestialBody u_celestialBodies[100];
 
 void main() {
     float aspectRatio = u_viewportWidth/u_viewportHeight;
@@ -22,15 +22,15 @@ void main() {
     fragmentScreenCoords.x *= aspectRatio;
 
     bool hasBody = false;
-    for (int i=0; i<1; i++) {
+    for (int i=0; i<50; i++) {
         if (u_celestialBodies[i].size > 0.0) {
             vec2 bodyPos = vec2(u_celestialBodies[i].positionScreenCoords);
             bodyPos.x *= aspectRatio;
 
             //check if it is in the radius of the sun
-            if (length(fragmentScreenCoords-bodyPos) < u_celestialBodies[0].size) {
+            if (length(fragmentScreenCoords-bodyPos) < u_celestialBodies[i].size) {
                 hasBody = true;
-                gl_FragColor = vec4(u_celestialBodies[i].color, 1.0);
+                gl_FragColor = u_celestialBodies[i].color;
                 break;
             }
         }
