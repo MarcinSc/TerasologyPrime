@@ -10,12 +10,11 @@ import com.badlogic.gdx.math.Vector3;
 
 public class MyShaderProvider implements ShaderProvider {
     public enum Mode {
-        ENVIRONMENT, ENVIRONMENT_SHADOW, SKY
+        ENVIRONMENT, ENVIRONMENT_SHADOW
     }
 
     private EnvironmentShadowShader environmentShadowShader;
     private EnvironmentShader environmentShader;
-    private SkyShader skyShader;
 
     private Mode mode;
     private Matrix4 lightTrans;
@@ -84,12 +83,6 @@ public class MyShaderProvider implements ShaderProvider {
             environmentShader.setNoDirectionalLight(night);
             environmentShader.setShadowMapSize(shadowMapSize);
             return environmentShader;
-        } else if (mode == Mode.SKY) {
-            if (skyShader == null)
-                skyShader = createSkyShader(renderable);
-            skyShader.setSkyColor(skyColor);
-            skyShader.setLightDirection(lightDirection);
-            return skyShader;
         } else {
             return null;
         }
@@ -101,17 +94,6 @@ public class MyShaderProvider implements ShaderProvider {
             environmentShadowShader.dispose();
         if (environmentShader != null)
             environmentShader.dispose();
-        if (skyShader != null)
-            skyShader.dispose();
-    }
-
-    private SkyShader createSkyShader(Renderable renderable) {
-        DefaultShader.Config config = new DefaultShader.Config(
-                Gdx.files.internal("shader/sky.vert").readString(),
-                Gdx.files.internal("shader/sky.frag").readString());
-        SkyShader skyShader = new SkyShader(renderable, config);
-        skyShader.init();
-        return skyShader;
     }
 
     private EnvironmentShader createEnvironmentShader(Renderable renderable) {
