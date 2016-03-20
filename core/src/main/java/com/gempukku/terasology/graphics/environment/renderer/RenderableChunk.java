@@ -11,12 +11,13 @@ import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.utils.Disposable;
 import com.gempukku.terasology.graphics.environment.ChunkMesh;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 
 import java.util.List;
 
-public class RenderableChunk {
+public class RenderableChunk implements Disposable {
     public final String worldId;
     public final int x;
     public final int y;
@@ -63,5 +64,10 @@ public class RenderableChunk {
 
     public RenderableProvider getRenderableProvider() {
         return modelInstance;
+    }
+
+    @Override
+    public void dispose() {
+        model.dispose();
     }
 }
