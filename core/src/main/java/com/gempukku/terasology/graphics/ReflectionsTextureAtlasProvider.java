@@ -50,6 +50,7 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Te
         settings.maxWidth = 512;
         settings.maxHeight = 512;
         settings.silent = true;
+        settings.duplicatePadding = true;
 
         File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile().getParentFile();
         TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);

@@ -59,6 +59,12 @@ void main()
 {
     vec4 finalColor = texture2D(u_diffuseTexture, v_texCoord0);
 
+    if (finalColor.a < 0.5) {
+        discard;
+    } else {
+        finalColor.a = 1.0;
+    }
+
     float percentageInLight = getPercentageInLight();
     if (percentageInLight == 0.0) {
         // Not lighted by directional light (star)
