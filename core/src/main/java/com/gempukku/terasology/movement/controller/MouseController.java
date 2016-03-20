@@ -44,7 +44,7 @@ public class MouseController implements GameLoopListener, LifeCycleSystem {
             yaw += diffX * rotateStep;
             pitch += -diffY * rotateStep;
 
-            pitch = MathUtils.clamp(pitch, -(float) Math.PI / 2f, (float) Math.PI / 2f);
+            pitch = MathUtils.clamp(pitch, -(float) Math.PI / 3f, (float) Math.PI / 3f);
 
             movementController.updateMovement(yaw, pitch, movementController.getHorizontalSpeed(), movementController.getVerticalSpeed());
 

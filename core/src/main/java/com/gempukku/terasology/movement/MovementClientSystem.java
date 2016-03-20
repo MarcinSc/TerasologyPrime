@@ -141,7 +141,8 @@ public class MovementClientSystem implements MovementController, GameLoopListene
                 positionY = location.getY();
                 positionZ = location.getZ();
 
-                tmp.set((float) Math.cos(yaw), (float) Math.sin(pitch), (float) Math.sin(yaw)).nor();
+                float pitchValue = (float) Math.sin(pitch);
+                tmp.set((float) Math.cos(yaw) * (1 - Math.abs(pitchValue)), pitchValue, (float) Math.sin(yaw) * (1 - Math.abs(pitchValue))).nor();
                 camera.setDirectionX(tmp.x);
                 camera.setDirectionY(tmp.y);
                 camera.setDirectionZ(tmp.z);
