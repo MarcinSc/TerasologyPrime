@@ -25,6 +25,7 @@ public class MyShaderProvider implements ShaderProvider {
     private float time;
     private Vector3 skyColor;
     private boolean night;
+    private int shadowMapSize;
 
     public void setMode(Mode mode) {
         this.mode = mode;
@@ -58,6 +59,10 @@ public class MyShaderProvider implements ShaderProvider {
         this.night = night;
     }
 
+    public void setShadowMapSize(int shadowMapSize) {
+        this.shadowMapSize = shadowMapSize;
+    }
+
     @Override
     public Shader getShader(Renderable renderable) {
         if (mode == Mode.ENVIRONMENT_SHADOW) {
@@ -77,6 +82,7 @@ public class MyShaderProvider implements ShaderProvider {
             environmentShader.setTime(time);
             environmentShader.setFogColor(skyColor);
             environmentShader.setNoDirectionalLight(night);
+            environmentShader.setShadowMapSize(shadowMapSize);
             return environmentShader;
         } else if (mode == Mode.SKY) {
             if (skyShader == null)
