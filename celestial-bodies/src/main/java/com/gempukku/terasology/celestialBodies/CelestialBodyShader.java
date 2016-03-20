@@ -10,14 +10,9 @@ import com.gempukku.terasology.celestialBodies.model.CelestialBody;
 import java.util.Iterator;
 
 public class CelestialBodyShader extends DefaultShader {
-    private static final int NUMBER_OF_BODIES = 100;
+    private static final int NUMBER_OF_BODIES = 70;
 
-    private int celestialBodyDirectionLocation;
-    private int celestialBodyColorLocation;
-    private int celestialBodySizeLocation;
-    private int posIncr;
-    private int colIncr;
-    private int sizeIncr;
+    private int celestialBodyParamsLocation;
 
     private int u_viewportWidth = register("u_viewportWidth");
     private int u_viewportHeight = register("u_viewportHeight");
@@ -26,14 +21,11 @@ public class CelestialBodyShader extends DefaultShader {
     private float viewportWidth;
     private float viewportHeight;
 
+    private float[] celestialBodyParams = new float[490];
+
     public CelestialBodyShader(Renderable renderable, Config config) {
         super(renderable, config);
-        celestialBodyDirectionLocation = program.fetchUniformLocation("u_celestialBodies[0].positionScreenCoords", false);
-        posIncr = program.fetchUniformLocation("u_celestialBodies[1].positionScreenCoords", false) - celestialBodyDirectionLocation;
-        celestialBodyColorLocation = program.fetchUniformLocation("u_celestialBodies[0].color", false);
-        colIncr = program.fetchUniformLocation("u_celestialBodies[1].color", false) - celestialBodyColorLocation;
-        celestialBodySizeLocation = program.fetchUniformLocation("u_celestialBodies[0].size", false);
-        sizeIncr = program.fetchUniformLocation("u_celestialBodies[1].size", false) - celestialBodySizeLocation;
+        celestialBodyParamsLocation = program.fetchUniformLocation("u_celestialBodiesParams[0]", false);
     }
 
     public void setCelestialBodies(Iterable<CelestialBody> celestialBodies) {
@@ -64,16 +56,13 @@ public class CelestialBodyShader extends DefaultShader {
                 // also projects it onto a screen directly opposite where it should be.
                 if (camera.frustum.sphereInFrustum(new Vector3(bodyLocation).scl(0.99f), 10f)) {
                     Vector3 inScreenCoords = camera.project(bodyLocation);
-
-                    program.setUniformf(celestialBodyDirectionLocation + posIncr * i,
-                            inScreenCoords.x / camera.viewportWidth,
-                            inScreenCoords.y / camera.viewportHeight);
-                    program.setUniformf(celestialBodyColorLocation + colIncr * i,
-                            celestialBody.color.r,
-                            celestialBody.color.g,
-                            celestialBody.color.b,
-                            celestialBody.color.a);
-                    program.setUniformf(celestialBodySizeLocation + sizeIncr * i, celestialBody.cosAngleSize);
+                    celestialBodyParams[7 * i] = inScreenCoords.x / camera.viewportWidth;
+                    celestialBodyParams[7 * i + 1] = inScreenCoords.y / camera.viewportHeight;
+                    celestialBodyParams[7 * i + 2] = celestialBody.color.r;
+                    celestialBodyParams[7 * i + 3] = celestialBody.color.g;
+                    celestialBodyParams[7 * i + 4] = celestialBody.color.b;
+                    celestialBodyParams[7 * i + 5] = celestialBody.color.a;
+                    celestialBodyParams[7 * i + 6] = celestialBody.cosAngleSize;
                 } else {
                     appendEmptyCelestialBody(i);
                 }
@@ -82,16 +71,20 @@ public class CelestialBodyShader extends DefaultShader {
             }
         }
 
+        program.setUniform1fv(celestialBodyParamsLocation, celestialBodyParams, 0, celestialBodyParams.length);
+
         set(u_viewportWidth, viewportWidth);
         set(u_viewportHeight, viewportHeight);
     }
 
     private void appendEmptyCelestialBody(int i) {
-        program.setUniformf(celestialBodyDirectionLocation + posIncr * i,
-                0, 0);
-        program.setUniformf(celestialBodyColorLocation + colIncr * i,
-                0, 0, 0, 0);
-        program.setUniformf(celestialBodySizeLocation + sizeIncr * i, 0);
+        celestialBodyParams[7 * i] = 0;
+        celestialBodyParams[7 * i + 1] = 0;
+        celestialBodyParams[7 * i + 2] = 0;
+        celestialBodyParams[7 * i + 3] = 0;
+        celestialBodyParams[7 * i + 4] = 0;
+        celestialBodyParams[7 * i + 5] = 0;
+        celestialBodyParams[7 * i + 6] = 0;
     }
 
     @Override

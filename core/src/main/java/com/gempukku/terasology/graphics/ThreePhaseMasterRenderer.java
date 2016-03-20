@@ -70,7 +70,7 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         myShaderProvider = new MyShaderProvider();
         modelBatch = new ModelBatch(myShaderProvider);
         lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, shadowFidelity * 1024, shadowFidelity * 1024, false);
-        lightCamera = new PerspectiveCamera(120f, 1024, 1024);
+        lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     @Override

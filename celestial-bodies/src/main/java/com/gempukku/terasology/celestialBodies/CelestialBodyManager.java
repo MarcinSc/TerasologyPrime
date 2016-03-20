@@ -36,7 +36,7 @@ public class CelestialBodyManager implements CelestialBodyProvider {
 
         // If it's bright (from Sun), the stars are not visible
         if (alpha > 0) {
-            for (int i = 0; i < 99; i++) {
+            for (int i = 0; i < 69; i++) {
                 float u = rnd.nextFloat() * 2 - 1;
                 float theta = 2 * (float) Math.PI * rnd.nextFloat();
 
