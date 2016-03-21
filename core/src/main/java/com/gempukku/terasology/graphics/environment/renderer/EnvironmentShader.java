@@ -27,6 +27,7 @@ public class EnvironmentShader extends DefaultShader {
     private float time;
     private boolean noDirectionalLight;
     private int shadowMapSize;
+    private float ambientLight;
 
     public EnvironmentShader(Renderable renderable, Config config) {
         super(renderable, config);
@@ -64,6 +65,10 @@ public class EnvironmentShader extends DefaultShader {
         this.shadowMapSize = shadowMapSize;
     }
 
+    public void setAmbientLight(float ambientLight) {
+        this.ambientLight = ambientLight;
+    }
+
     @Override
     public void begin(Camera camera, RenderContext context) {
         super.begin(camera, context);
@@ -73,7 +78,7 @@ public class EnvironmentShader extends DefaultShader {
         set(u_lightDirection, lightDirection);
         set(u_lightPlaneDistance, lightPlaneDistance);
         set(u_depthMap, 2);
-        set(u_ambientLighting, 0.2f);
+        set(u_ambientLighting, ambientLight);
         set(u_fogColor, fogColor);
         set(u_time, time);
         set(u_noDirectionalLight, noDirectionalLight ? 1 : 0);

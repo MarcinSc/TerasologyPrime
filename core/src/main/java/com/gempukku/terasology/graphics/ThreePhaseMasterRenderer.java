@@ -117,6 +117,9 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
     private void setupShaders(String worldId, float timeOfDay) {
         myShaderProvider.setSkyColor(skyColorProvider.getSkyColor(
                 worldId, camera.position.x, camera.position.y, camera.position.z));
+        float ambientLight = getAmbientLight(timeOfDay);
+
+        myShaderProvider.setAmbientLight(ambientLight);
         // Time used in shading depends on real time, not multiverse time
         myShaderProvider.setTime((System.currentTimeMillis() % 10000) / 1000f);
         myShaderProvider.setLightTrans(lightCamera.combined);
@@ -125,6 +128,18 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         myShaderProvider.setLightDirection(lightCamera.direction);
         myShaderProvider.setNight(!isDay(timeOfDay));
         myShaderProvider.setShadowMapSize(shadowFidelity * 1024);
+    }
+
+    private float getAmbientLight(float timeOfDay) {
+        float ambientLight = 0.4f;
+
+        float dayComponent = (float) Math.cos(timeOfDay);
+        if (dayComponent < -0.3f) {
+            ambientLight = 0.2f;
+        } else if (dayComponent < 0.3) {
+            ambientLight = 0.2f + 0.2f * (dayComponent + 0.3f) / (2f * 0.3f);
+        }
+        return ambientLight;
     }
 
     private void cleanBuffer() {

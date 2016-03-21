@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
 public class MyShaderProvider implements ShaderProvider {
+
     public enum Mode {
         ENVIRONMENT, ENVIRONMENT_SHADOW
     }
@@ -23,6 +24,7 @@ public class MyShaderProvider implements ShaderProvider {
     private float lightPlaneDistance;
     private float time;
     private Vector3 skyColor;
+    private float ambientLight;
     private boolean night;
     private int shadowMapSize;
 
@@ -32,6 +34,10 @@ public class MyShaderProvider implements ShaderProvider {
 
     public void setSkyColor(Vector3 skyColor) {
         this.skyColor = skyColor;
+    }
+
+    public void setAmbientLight(float ambientLight) {
+        this.ambientLight = ambientLight;
     }
 
     public void setTime(float time) {
@@ -80,6 +86,7 @@ public class MyShaderProvider implements ShaderProvider {
             environmentShader.setLightPlaneDistance(lightPlaneDistance);
             environmentShader.setTime(time);
             environmentShader.setFogColor(skyColor);
+            environmentShader.setAmbientLight(ambientLight);
             environmentShader.setNoDirectionalLight(night);
             environmentShader.setShadowMapSize(shadowMapSize);
             return environmentShader;
