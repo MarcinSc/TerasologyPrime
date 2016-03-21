@@ -1,4 +1,4 @@
-package com.gempukku.terasology.trees;
+package com.gempukku.terasology.trees.leaves;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -15,6 +15,7 @@ import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.prefab.PrefabManager;
+import com.gempukku.terasology.trees.LSystemTreeBlockMeshGenerator;
 import com.gempukku.terasology.trees.component.LeavesDefinitionComponent;
 import com.gempukku.terasology.trees.model.BranchDefinition;
 import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
@@ -26,7 +27,7 @@ import java.util.Set;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes")
-public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSystem {
+public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleSystem {
     @In
     private LeavesGeneratorRegistry leavesGeneratorRegistry;
     @In
@@ -40,7 +41,7 @@ public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSys
 
     @Override
     public void initialize() {
-        leavesGeneratorRegistry.registerLeavesGenerator("lastSegment", this);
+        leavesGeneratorRegistry.registerLeavesGenerator("trunkSegments", this);
 
         Set<String> texturesToLoad = new HashSet<>();
         for (EntityData entityData : prefabManager.findPrefabsWithComponents(LeavesDefinitionComponent.class)) {
@@ -90,36 +91,39 @@ public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSys
         public void segmentEnd(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
             movingMatrix.transformPoint(origin.set(0, 0, 0));
 
-            if (segmentIndex == segmentCount - 1) {
-                float horizontalScale = trunk ? 0.7f : segmentCount * 0.7f;
-                float verticalScale = horizontalScale * (trunk ? 1.2f : 0.6f);
+            if (trunk) {
+                if (segmentIndex > 1
+                        || (segmentIndex == 1 && segmentCount == 2)
+                        || (segmentIndex == 0 && segmentCount == 1)) {
+                    float scale = (segmentCount - segmentIndex) * 0.8f;
 
-                for (ShapePartDef shapePart : leavesShape.getShapeParts()) {
-                    int vertexCount = shapePart.getVertices().size();
+                    for (ShapePartDef shapePart : leavesShape.getShapeParts()) {
+                        int vertexCount = shapePart.getVertices().size();
 
-                    // This array will store indexes of vertices in the resulting Mesh
-                    short[] vertexMapping = new short[vertexCount];
+                        // This array will store indexes of vertices in the resulting Mesh
+                        short[] vertexMapping = new short[vertexCount];
 
-                    // Trunk
-                    for (int vertex = 0; vertex < vertexCount; vertex++) {
-                        Float[] vertexCoords = shapePart.getVertices().get(vertex);
-                        Float[] normalValues = shapePart.getNormals().get(vertex);
-                        Float[] textureCoords = shapePart.getUvs().get(vertex);
+                        // Trunk
+                        for (int vertex = 0; vertex < vertexCount; vertex++) {
+                            Float[] vertexCoords = shapePart.getVertices().get(vertex);
+                            Float[] normalValues = shapePart.getNormals().get(vertex);
+                            Float[] textureCoords = shapePart.getUvs().get(vertex);
 
-                        tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
-                                .mul(horizontalScale, verticalScale, horizontalScale).add(origin);
+                            tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
+                                    .mul(scale, scale, scale).add(origin);
 
-                        vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
-                        vertexOutput.setNormal(normalValues[0], normalValues[1], normalValues[2]);
-                        vertexOutput.setTextureCoordinate(
-                                texture.getU() + textureCoords[0] * (texture.getU2() - texture.getU()),
-                                texture.getV() + textureCoords[1] * (texture.getV2() - texture.getV()));
-                        vertexOutput.setFlag(BlockMeshGenerator.INFLUENCED_BY_WIND);
+                            vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
+                            vertexOutput.setNormal(normalValues[0], normalValues[1], normalValues[2]);
+                            vertexOutput.setTextureCoordinate(
+                                    texture.getU() + textureCoords[0] * (texture.getU2() - texture.getU()),
+                                    texture.getV() + textureCoords[1] * (texture.getV2() - texture.getV()));
+                            vertexOutput.setFlag(BlockMeshGenerator.INFLUENCED_BY_WIND);
 
-                        vertexMapping[vertex] = vertexOutput.finishVertex();
-                    }
-                    for (short index : shapePart.getIndices()) {
-                        vertexOutput.addVertexIndex(vertexMapping[index]);
+                            vertexMapping[vertex] = vertexOutput.finishVertex();
+                        }
+                        for (short index : shapePart.getIndices()) {
+                            vertexOutput.addVertexIndex(vertexMapping[index]);
+                        }
                     }
                 }
             }

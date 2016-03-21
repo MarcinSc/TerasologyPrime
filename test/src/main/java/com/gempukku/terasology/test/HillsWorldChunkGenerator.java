@@ -41,6 +41,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
     private short tree = -1;
 
     private EntityData oakPrefab;
+    private EntityData pinePrefab;
 
     @Override
     public Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z) {
@@ -52,6 +53,7 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
             tree = commonBlockManager.getCommonBlockId("tree");
 
             oakPrefab = prefabManager.getPrefabByName("oak");
+            pinePrefab = prefabManager.getPrefabByName("pine");
         }
 
         FastRandom rnd = new FastRandom(x + 153 * y + 3121 * z);
@@ -67,8 +69,8 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
                     if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
-                        int maxGenerations = ((Number) oakPrefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
-                        EntityInformation entityInformation = new EntityInformation(oakPrefab);
+                        int maxGenerations = ((Number) pinePrefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
+                        EntityInformation entityInformation = new EntityInformation(pinePrefab);
                         ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
                         individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
                         individual.addField("seed", rnd.nextLong());

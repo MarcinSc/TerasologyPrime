@@ -9,6 +9,8 @@ import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
 import com.gempukku.terasology.graphics.environment.BlockMeshGeneratorRegistry;
 import com.gempukku.terasology.graphics.environment.ChunkMeshGeneratorCallback;
 import com.gempukku.terasology.trees.component.TreeGenerationComponent;
+import com.gempukku.terasology.trees.leaves.LeavesGenerator;
+import com.gempukku.terasology.trees.leaves.LeavesGeneratorRegistry;
 import com.gempukku.terasology.trees.model.BranchDefinition;
 import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
 import com.gempukku.terasology.trees.model.TreeDefinition;
