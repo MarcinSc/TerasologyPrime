@@ -53,46 +53,47 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
         SimpleTreeDefinitionComponent simpleTreeDefinition = entityRef.getComponent(SimpleTreeDefinitionComponent.class);
         IndividualTreeComponent individualTree = entityRef.getComponent(IndividualTreeComponent.class);
 
-        FastRandom rnd = new FastRandom(individualTree.getSeed());
-
         int generation = individualTree.getGeneration();
 
-        PDist newTrunkSegmentLength = new PDist(0.8f, 0.2f, PDist.Type.normal);
-        PDist newTrunkSegmentRadius = new PDist(0.02f, 0.005f, PDist.Type.normal);
+        FastRandom rnd = new FastRandom(individualTree.getSeed());
 
-        int maxBranchesPerSegment = 2;
-        // 137.5 is a golden angle, which is incidentally the angle between two consecutive branches grown by many plants
-        PDist branchInitialAngleAddY = new PDist(137.5f, 10f, PDist.Type.normal);
-        PDist branchInitialAngleZ = new PDist(60, 20, PDist.Type.normal);
-        PDist branchInitialLength = new PDist(0.3f, 0.075f, PDist.Type.normal);
-        PDist branchInitialRadius = new PDist(0.01f, 0.003f, PDist.Type.normal);
+        PDist trunkRotationDist = extractDist(simpleTreeDefinition.getInitialTrunkRotationDist());
 
-        PDist segmentRotateX = new PDist(0, 15, PDist.Type.normal);
-        PDist segmentRotateZ = new PDist(0, 15, PDist.Type.normal);
+        PDist newTrunkSegmentLength = extractDist(simpleTreeDefinition.getTrunkSegmentLengthDist());
+        PDist newTrunkSegmentRadius = extractDist(simpleTreeDefinition.getTrunkSegmentRadiusDist());
 
-        PDist branchCurveAngleZ = new PDist(-8, 2, PDist.Type.normal);
+        PDist segmentRotateX = extractDist(simpleTreeDefinition.getTrunkSegmentRotateXDist());
+        PDist segmentRotateZ = extractDist(simpleTreeDefinition.getTrunkSegmentRotateZDist());
 
-        float segmentLengthIncreasePerGeneration = 0.2f;
-        float segmentRadiusIncreasePerGeneration = 0.05f;
+        PDist segmentLengthIncreasePerGeneration = extractDist(simpleTreeDefinition.getTrunkSegmentLengthIncreasePerGenerationDist());
+        PDist segmentRadiusIncreasePerGeneration = extractDist(simpleTreeDefinition.getTrunkSegmentRadiusIncreasePerGenerationDist());
 
-        float branchSegmentLengthIncreasePerGeneration = 0.1f;
-        float branchSegmentRadiusIncreasePerGeneration = 0.05f;
+        PDist branchCountDist = extractDist(simpleTreeDefinition.getBranchCountDist());
 
-        float trunkRotation = rnd.nextFloat();
+        PDist branchInitialLength = extractDist(simpleTreeDefinition.getBranchLengthDist());
+        PDist branchInitialRadius = extractDist(simpleTreeDefinition.getBranchRadiusDist());
 
-        BranchDefinition tree = new BranchDefinition(0, trunkRotation);
+        PDist branchInitialAngleAddY = extractDist(simpleTreeDefinition.getBranchInitialAngleAddYDist());
+        PDist branchInitialAngleZ = extractDist(simpleTreeDefinition.getBranchInitialAngleZDist());
+
+        PDist branchCurveAngleZ = extractDist(simpleTreeDefinition.getBranchCurveAngleZDist());
+
+        PDist branchSegmentLengthIncreasePerGeneration = extractDist(simpleTreeDefinition.getBranchSegmentLengthIncreasePerGenerationDist());
+        PDist branchSegmentRadiusIncreasePerGeneration = extractDist(simpleTreeDefinition.getBranchSegmentRadiusIncreasePerGenerationDist());
+
+        BranchDefinition tree = new BranchDefinition(0, trunkRotationDist.getValue(rnd));
         for (int i = 0; i < generation; i++) {
             float lastBranchAngle = 0;
 
             // Grow existing segments and their branches
             for (BranchSegmentDefinition segment : tree.segments) {
-                segment.length += segmentLengthIncreasePerGeneration;
-                segment.radius += segmentRadiusIncreasePerGeneration;
+                segment.length += segmentLengthIncreasePerGeneration.getValue(rnd);
+                segment.radius += segmentRadiusIncreasePerGeneration.getValue(rnd);
                 for (BranchDefinition branch : segment.branches) {
                     lastBranchAngle += branch.rotationY;
                     for (BranchSegmentDefinition branchSegment : branch.segments) {
-                        branchSegment.length += branchSegmentLengthIncreasePerGeneration;
-                        branchSegment.radius += branchSegmentRadiusIncreasePerGeneration;
+                        branchSegment.length += branchSegmentLengthIncreasePerGeneration.getValue(rnd);
+                        branchSegment.radius += branchSegmentRadiusIncreasePerGeneration.getValue(rnd);
                     }
 
                     branch.segments.add(new BranchSegmentDefinition(
@@ -105,7 +106,7 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
 
             if (existingSegmentCount > 2) {
                 // Add branches to last existing segment
-                int branchCount = rnd.nextInt(maxBranchesPerSegment) + 1;
+                int branchCount = branchCountDist.getIntValue(rnd);
 
                 for (int branch = 0; branch < branchCount; branch++) {
                     lastBranchAngle = lastBranchAngle + branchInitialAngleAddY.getValue(rnd);
@@ -146,5 +147,21 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
                 textureAtlasProvider.getTexture(simpleTreeDefinition.getBarkTexture()),
                 textureAtlasProvider.getTexture(simpleTreeDefinition.getLeavesTexture()), tree);
 
+    }
+
+    private PDist extractDist(String value) {
+        PDist.Type type;
+
+        String[] split = value.split(",");
+        if (split[0].equals("u")) {
+            type = PDist.Type.uniform;
+        } else if (split[0].equals("n")) {
+            type = PDist.Type.normal;
+        } else {
+            throw new IllegalArgumentException("Unknown PDist type: " + split[0]);
+        }
+        float mean = Float.parseFloat(split[1]);
+        float range = Float.parseFloat(split[2]);
+        return new PDist(mean, range, type);
     }
 }

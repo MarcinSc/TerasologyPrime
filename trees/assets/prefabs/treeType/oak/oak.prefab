@@ -6,6 +6,21 @@
     "barkTexture": "blockTiles/trees/OakBark.png",
     "leavesTexture": "blockTiles/trees/OakLeaf.png",
     "leavesShape": "cube",
-    "maxGenerations": 15
+    "maxGenerations": 15,
+    "initialTrunkRotationDist": "u,0,6.28",
+    "trunkSegmentLengthDist": "n,0.8,0.2",
+    "trunkSegmentRadiusDist": "n,0.02,0.005",
+    "trunkSegmentRotateXDist": "n,0,15",
+    "trunkSegmentRotateZDist": "n,0,15",
+    "trunkSegmentLengthIncreasePerGenerationDist": "n,0.2,0",
+    "trunkSegmentRadiusIncreasePerGenerationDist": "n,0.05,0",
+    "branchCountDist": "u,1.5,0.5",
+    "branchLengthDist": "n,0.3,0.075",
+    "branchRadiusDist": "n,0.01,0.003",
+    "branchInitialAngleAddYDist": "n,137.5,10",
+    "branchInitialAngleZDist": "n,60,20",
+    "branchCurveAngleZDist": "n,-8,2",
+    "branchSegmentLengthIncreasePerGenerationDist": "n,0.1,0",
+    "branchSegmentRadiusIncreasePerGenerationDist": "n,0.05,0"
   }
 }
