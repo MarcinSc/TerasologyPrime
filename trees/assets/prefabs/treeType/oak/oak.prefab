@@ -4,9 +4,9 @@
   },
   "SimpleTreeDefinitionComponent": {
     "barkTexture": "blockTiles/trees/OakBark.png",
-    "leavesTexture": "blockTiles/trees/OakLeaf.png",
-    "leavesShape": "cube",
+    "leavesGenerator": "eachSegmentEnd",
     "maxGenerations": 15,
+
     "initialTrunkRotationDist": "u,0,6.28",
     "trunkSegmentLengthDist": "n,0.8,0.2",
     "trunkSegmentRadiusDist": "n,0.02,0.005",
@@ -22,5 +22,9 @@
     "branchCurveAngleZDist": "n,-8,2",
     "branchSegmentLengthIncreasePerGenerationDist": "n,0.1,0",
     "branchSegmentRadiusIncreasePerGenerationDist": "n,0.05,0"
+  },
+  "LeavesDefinitionComponent": {
+    "leavesTexture": "blockTiles/trees/OakLeaf.png",
+    "leavesShape": "cube"
   }
 }

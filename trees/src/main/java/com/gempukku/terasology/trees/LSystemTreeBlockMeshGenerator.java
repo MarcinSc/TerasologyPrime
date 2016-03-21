@@ -8,8 +8,6 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
 import com.gempukku.terasology.graphics.environment.BlockMeshGeneratorRegistry;
 import com.gempukku.terasology.graphics.environment.ChunkMeshGeneratorCallback;
-import com.gempukku.terasology.graphics.shape.ShapeDef;
-import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.trees.component.TreeGenerationComponent;
 import com.gempukku.terasology.trees.model.BranchDefinition;
 import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
@@ -27,14 +25,16 @@ import java.util.Iterator;
 import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes", shared = TreeGenerationRegistry.class)
-public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, TreeGenerationRegistry, LifeCycleSystem {
+        profiles = "generateChunkMeshes", shared = {TreeGeneratorRegistry.class, LeavesGeneratorRegistry.class})
+public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSystem,
+        TreeGeneratorRegistry, LeavesGeneratorRegistry {
     @In
     private BlockMeshGeneratorRegistry blockMeshGeneratorRegistry;
     @In
     private WorldStorage worldStorage;
 
     private Map<String, TreeGenerator> treeGenerators = new HashMap<>();
+    private Map<String, LeavesGenerator> leavesGenerators = new HashMap<>();
 
     @Override
     public void initialize() {
@@ -44,6 +44,11 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, TreeGe
     @Override
     public void registerTreeGenerator(String generatorName, TreeGenerator treeGenerator) {
         treeGenerators.put(generatorName, treeGenerator);
+    }
+
+    @Override
+    public void registerLeavesGenerator(String generatorName, LeavesGenerator leavesGenerator) {
+        leavesGenerators.put(generatorName, leavesGenerator);
     }
 
     @Override
@@ -73,82 +78,16 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, TreeGe
 
             processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
         }
-        if (texture == treeDefinition.leavesTexture.getTexture()) {
+
+        LeavesGenerator leavesGenerator = leavesGenerators.get(treeDefinition.leavesGenerator);
+        LSystemCallback leavesCallback = leavesGenerator.createLeavesCallback(entityAndBlockId.entityRef, vertexOutput, texture);
+        if (leavesCallback != null) {
             Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
                     treeX + 0.5f,
                     treeY,
                     treeZ + 0.5f), 1);
 
-            LeavesDrawingCallback branchCallback = new LeavesDrawingCallback(vertexOutput, treeDefinition.leavesShape,
-                    treeDefinition.leavesTexture);
-
-            processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
-        }
-    }
-
-    private class LeavesDrawingCallback implements LSystemCallback {
-        private VertexOutput vertexOutput;
-
-        private Vector3f tempVector = new Vector3f();
-        private Vector3f origin = new Vector3f();
-        private ShapeDef leavesShape;
-        private TextureRegion texture;
-
-        public LeavesDrawingCallback(VertexOutput vertexOutput, ShapeDef leavesShape, TextureRegion texture) {
-            this.vertexOutput = vertexOutput;
-            this.leavesShape = leavesShape;
-            this.texture = texture;
-        }
-
-        @Override
-        public void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
-
-        }
-
-        @Override
-        public void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
-
-        }
-
-        @Override
-        public void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
-            movingMatrix.transformPoint(origin.set(0, 0, 0));
-
-            if (segment.horizontalLeavesScale > 0.01f && segment.verticalLeavesScale > 0.01f) {
-                for (ShapePartDef shapePart : leavesShape.getShapeParts()) {
-                    int vertexCount = shapePart.getVertices().size();
-
-                    // This array will store indexes of vertices in the resulting Mesh
-                    short[] vertexMapping = new short[vertexCount];
-
-                    // Trunk
-                    for (int vertex = 0; vertex < vertexCount; vertex++) {
-                        Float[] vertexCoords = shapePart.getVertices().get(vertex);
-                        Float[] normalValues = shapePart.getNormals().get(vertex);
-                        Float[] textureCoords = shapePart.getUvs().get(vertex);
-
-                        tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
-                                .mul(segment.horizontalLeavesScale, segment.verticalLeavesScale, segment.horizontalLeavesScale).add(origin);
-
-                        vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
-                        vertexOutput.setNormal(normalValues[0], normalValues[1], normalValues[2]);
-                        vertexOutput.setTextureCoordinate(
-                                texture.getU() + textureCoords[0] * (texture.getU2() - texture.getU()),
-                                texture.getV() + textureCoords[1] * (texture.getV2() - texture.getV()));
-                        vertexOutput.setFlag(INFLUENCED_BY_WIND);
-
-                        vertexMapping[vertex] = vertexOutput.finishVertex();
-                    }
-                    for (short index : shapePart.getIndices()) {
-                        vertexOutput.addVertexIndex(vertexMapping[index]);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
-
+            processBranchWithCallback(leavesCallback, true, treeDefinition.trunkDefinition, movingMatrix);
         }
     }
 
@@ -294,7 +233,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, TreeGe
         vertexOutput.addVertexIndex(firstIndex);
     }
 
-    private interface LSystemCallback {
+    public interface LSystemCallback {
         void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix);
 
         void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix);

@@ -31,19 +31,18 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
     @In
     private TextureAtlasProvider textureAtlasProvider;
     @In
-    private TreeGenerationRegistry treeGenerationRegistry;
+    private TreeGeneratorRegistry treeGeneratorRegistry;
     @In
     private PrefabManager prefabManager;
 
     @Override
     public void initialize() {
-        treeGenerationRegistry.registerTreeGenerator("simple", this);
+        treeGeneratorRegistry.registerTreeGenerator("simple", this);
 
         Set<String> texturesToLoad = new HashSet<>();
         for (EntityData entityData : prefabManager.findPrefabsWithComponents(SimpleTreeDefinitionComponent.class)) {
             ComponentData component = entityData.getComponent(SimpleTreeDefinitionComponent.class);
             texturesToLoad.add((String) component.getFields().get("barkTexture"));
-            texturesToLoad.add((String) component.getFields().get("leavesTexture"));
         }
         textureAtlasRegistry.registerTextures(texturesToLoad);
     }
@@ -143,10 +142,9 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
             }
         }
 
-        return new TreeDefinition(shapeProvider.getShapeById(simpleTreeDefinition.getLeavesShape()),
+        return new TreeDefinition(tree,
                 textureAtlasProvider.getTexture(simpleTreeDefinition.getBarkTexture()),
-                textureAtlasProvider.getTexture(simpleTreeDefinition.getLeavesTexture()), tree);
-
+                simpleTreeDefinition.getLeavesGenerator());
     }
 
     private PDist extractDist(String value) {

@@ -1,5 +1,5 @@
 package com.gempukku.terasology.trees;
 
-public interface TreeGenerationRegistry {
+public interface TreeGeneratorRegistry {
     void registerTreeGenerator(String generatorName, TreeGenerator treeGenerator);
 }

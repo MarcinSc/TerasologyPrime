@@ -7,9 +7,7 @@ import com.gempukku.terasology.communication.SharedComponent;
 public interface SimpleTreeDefinitionComponent extends Component {
     String getBarkTexture();
 
-    String getLeavesTexture();
-
-    String getLeavesShape();
+    String getLeavesGenerator();
 
     int getMaxGenerations();
 
