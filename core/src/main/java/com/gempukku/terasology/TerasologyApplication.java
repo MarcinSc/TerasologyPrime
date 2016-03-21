@@ -16,6 +16,7 @@ import com.gempukku.secsy.network.client.RemoteEntityManager;
 import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.graphics.RenderingEngine;
 import com.gempukku.terasology.graphics.component.CameraComponent;
+import com.gempukku.terasology.graphics.environment.event.ScreenshotFactory;
 import com.gempukku.terasology.time.InternalTimeManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.component.LocationComponent;
@@ -145,6 +146,8 @@ public class TerasologyApplication extends ApplicationAdapter {
     public void render() {
         if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
             Gdx.app.exit();
+        } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
+            ScreenshotFactory.saveScreenshot(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), "screenshot");
         }
 
         fpsLogger.log();

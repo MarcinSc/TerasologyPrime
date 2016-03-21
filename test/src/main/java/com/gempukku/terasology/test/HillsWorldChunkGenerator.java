@@ -69,8 +69,9 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
                     if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
-                        int maxGenerations = ((Number) pinePrefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
-                        EntityInformation entityInformation = new EntityInformation(pinePrefab);
+                        EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
+                        int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
+                        EntityInformation entityInformation = new EntityInformation(prefab);
                         ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
                         individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
                         individual.addField("seed", rnd.nextLong());
