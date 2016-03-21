@@ -128,20 +128,6 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
             tree.segments.add(segment);
         }
 
-        // Add leaves
-        BranchSegmentDefinition lastTrunkSegment = tree.segments.get(tree.segments.size() - 1);
-        lastTrunkSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
-        lastTrunkSegment.verticalLeavesScale = lastTrunkSegment.horizontalLeavesScale * 0.75f;
-
-        for (BranchSegmentDefinition segment : tree.segments) {
-            for (BranchDefinition branch : segment.branches) {
-                BranchSegmentDefinition lastBrunchSegment = branch.segments.get(branch.segments.size() - 1);
-
-                lastBrunchSegment.horizontalLeavesScale = (float) Math.pow(tree.segments.size(), 1.3f) * 0.25f;
-                lastBrunchSegment.verticalLeavesScale = lastBrunchSegment.horizontalLeavesScale * 0.75f;
-            }
-        }
-
         return new TreeDefinition(tree,
                 textureAtlasProvider.getTexture(simpleTreeDefinition.getBarkTexture()),
                 simpleTreeDefinition.getLeavesGenerator());

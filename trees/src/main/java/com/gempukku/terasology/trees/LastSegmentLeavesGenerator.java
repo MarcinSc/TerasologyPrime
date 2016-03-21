@@ -26,7 +26,7 @@ import java.util.Set;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes")
-public class EachSegmentEndLeavesGenerator implements LeavesGenerator, LifeCycleSystem {
+public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSystem {
     @In
     private LeavesGeneratorRegistry leavesGeneratorRegistry;
     @In
@@ -40,7 +40,7 @@ public class EachSegmentEndLeavesGenerator implements LeavesGenerator, LifeCycle
 
     @Override
     public void initialize() {
-        leavesGeneratorRegistry.registerLeavesGenerator("eachSegmentEnd", this);
+        leavesGeneratorRegistry.registerLeavesGenerator("lastSegment", this);
 
         Set<String> texturesToLoad = new HashSet<>();
         for (EntityData entityData : prefabManager.findPrefabsWithComponents(LeavesDefinitionComponent.class)) {
@@ -77,20 +77,23 @@ public class EachSegmentEndLeavesGenerator implements LeavesGenerator, LifeCycle
         }
 
         @Override
-        public void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchStart(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
+        public void segmentStart(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
+        public void segmentEnd(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
             movingMatrix.transformPoint(origin.set(0, 0, 0));
 
-            if (segment.horizontalLeavesScale > 0.01f && segment.verticalLeavesScale > 0.01f) {
+            if (segmentIndex == segmentCount - 1) {
+                float horizontalScale = trunk ? 0.7f : segmentCount * 0.7f;
+                float verticalScale = horizontalScale * (trunk ? 1.2f : 0.6f);
+
                 for (ShapePartDef shapePart : leavesShape.getShapeParts()) {
                     int vertexCount = shapePart.getVertices().size();
 
@@ -104,7 +107,7 @@ public class EachSegmentEndLeavesGenerator implements LeavesGenerator, LifeCycle
                         Float[] textureCoords = shapePart.getUvs().get(vertex);
 
                         tempVector.set(vertexCoords[0] - 0.5f, vertexCoords[1] - 0.5f, vertexCoords[2] - 0.5f)
-                                .mul(segment.horizontalLeavesScale, segment.verticalLeavesScale, segment.horizontalLeavesScale).add(origin);
+                                .mul(horizontalScale, verticalScale, horizontalScale).add(origin);
 
                         vertexOutput.setPosition(tempVector.x, tempVector.y, tempVector.z);
                         vertexOutput.setNormal(normalValues[0], normalValues[1], normalValues[2]);
@@ -123,7 +126,7 @@ public class EachSegmentEndLeavesGenerator implements LeavesGenerator, LifeCycle
         }
 
         @Override
-        public void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchEnd(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
     }

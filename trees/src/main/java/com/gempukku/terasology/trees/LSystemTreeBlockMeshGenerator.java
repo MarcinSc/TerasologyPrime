@@ -113,12 +113,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchStart(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
 
         @Override
-        public void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
+        public void segmentStart(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, Matrix4f movingMatrix) {
             movingMatrix.transformPoint(first.set(1, 0, 1).mul(segment.radius));
             movingMatrix.transformPoint(second.set(-1, 0, 1).mul(segment.radius));
             movingMatrix.transformPoint(third.set(-1, 0, -1).mul(segment.radius));
@@ -126,7 +126,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
+        public void segmentEnd(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix) {
             float radius;
             if (nextSegment != null)
                 radius = nextSegment.radius;
@@ -156,7 +156,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         }
 
         @Override
-        public void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix) {
+        public void branchEnd(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix) {
 
         }
     }
@@ -165,18 +165,20 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
         movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 1, 0), TeraMath.DEG_TO_RAD * branchDefinition.rotationY), new Vector3f(), 1));
         movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 0, 1), TeraMath.DEG_TO_RAD * branchDefinition.rotationZ), new Vector3f(), 1));
 
-        callback.branchStart(trunk, branchDefinition, movingMatrix);
+        int segmentCount = branchDefinition.segments.size();
+        callback.branchStart(trunk, segmentCount, branchDefinition, movingMatrix);
 
         Iterator<BranchSegmentDefinition> segmentIterator = branchDefinition.segments.iterator();
         BranchSegmentDefinition currentSegment = segmentIterator.next();
+        int segmentIndex = 0;
         do {
             BranchSegmentDefinition nextSegment = segmentIterator.hasNext() ? segmentIterator.next() : null;
 
-            callback.segmentStart(trunk, currentSegment, movingMatrix);
+            callback.segmentStart(trunk, segmentIndex, segmentCount, currentSegment, movingMatrix);
             movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(0, 0, 1), TeraMath.DEG_TO_RAD * currentSegment.rotateZ), new Vector3f(), 1));
             movingMatrix.mul(new Matrix4f(new Quat4f(new Vector3f(1, 0, 0), TeraMath.DEG_TO_RAD * currentSegment.rotateX), new Vector3f(), 1));
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, currentSegment.length, 0), 1));
-            callback.segmentEnd(trunk, currentSegment, nextSegment, movingMatrix);
+            callback.segmentEnd(trunk, segmentIndex, segmentCount, currentSegment, nextSegment, movingMatrix);
 
             // Get back half of the segment to create branches
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, -currentSegment.length / 2, 0), 1));
@@ -188,9 +190,11 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
             movingMatrix.mul(new Matrix4f(new Quat4f(), new Vector3f(0, currentSegment.length / 2, 0), 1));
 
             currentSegment = nextSegment;
+
+            segmentIndex++;
         } while (currentSegment != null);
 
-        callback.branchEnd(trunk, branchDefinition, movingMatrix);
+        callback.branchEnd(trunk, segmentCount, branchDefinition, movingMatrix);
     }
 
     private void addQuad(VertexOutput vertexOutput,
@@ -234,12 +238,12 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     public interface LSystemCallback {
-        void branchStart(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix);
+        void branchStart(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix);
 
-        void segmentStart(boolean trunk, BranchSegmentDefinition segment, Matrix4f movingMatrix);
+        void segmentStart(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, Matrix4f movingMatrix);
 
-        void segmentEnd(boolean trunk, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix);
+        void segmentEnd(boolean trunk, int segmentIndex, int segmentCount, BranchSegmentDefinition segment, BranchSegmentDefinition nextSegment, Matrix4f movingMatrix);
 
-        void branchEnd(boolean trunk, BranchDefinition branch, Matrix4f movingMatrix);
+        void branchEnd(boolean trunk, int segmentCount, BranchDefinition branch, Matrix4f movingMatrix);
     }
 }
