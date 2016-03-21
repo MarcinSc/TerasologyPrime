@@ -3,7 +3,7 @@
     "generationType": "simple"
   },
   "SimpleTreeDefinitionComponent": {
-    "barkTexture": "blockTiles/trees/OakBark.png",
+    "barkTexture": "blockTiles/trees/PineBark.png",
     "leavesGenerator": "trunkSegments",
     "maxGenerations": 15,
     "initialTrunkRotationDist": "u,0,6.28",
@@ -23,7 +23,7 @@
     "branchSegmentRadiusIncreasePerGenerationDist": "n,0.02,0"
   },
   "LeavesDefinitionComponent": {
-    "leavesTexture": "blockTiles/trees/OakLeaf.png",
+    "leavesTexture": "blockTiles/trees/PineLeaf.png",
     "leavesShape": "cube"
   }
 }
