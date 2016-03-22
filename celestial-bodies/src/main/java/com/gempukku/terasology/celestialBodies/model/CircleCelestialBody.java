@@ -8,18 +8,21 @@ public class CircleCelestialBody implements CelestialBody {
     private int rendererIndex;
     private final Color color;
     private final Vector3 directionFromViewpoint;
-    private final float bodySizeInDeviceCoords;
+    private final float bodySize;
+    private final float coronaSize;
 
-    public CircleCelestialBody(int rendererIndex, Color color, Vector3 directionFromViewpoint, float bodySizeInDeviceCoords) {
+    public CircleCelestialBody(int rendererIndex, Color color, Vector3 directionFromViewpoint,
+                               float bodySize, float coronaSize) {
         this.rendererIndex = rendererIndex;
         this.color = color;
         this.directionFromViewpoint = directionFromViewpoint;
-        this.bodySizeInDeviceCoords = bodySizeInDeviceCoords;
+        this.bodySize = bodySize;
+        this.coronaSize = coronaSize;
     }
 
     @Override
     public int getDataFloatCount() {
-        return 7;
+        return 8;
     }
 
     @Override
@@ -43,6 +46,7 @@ public class CircleCelestialBody implements CelestialBody {
         array[startIndex + 4] = color.g;
         array[startIndex + 5] = color.b;
         array[startIndex + 6] = color.a;
-        array[startIndex + 7] = bodySizeInDeviceCoords;
+        array[startIndex + 7] = bodySize;
+        array[startIndex + 8] = bodySize + coronaSize;
     }
 }

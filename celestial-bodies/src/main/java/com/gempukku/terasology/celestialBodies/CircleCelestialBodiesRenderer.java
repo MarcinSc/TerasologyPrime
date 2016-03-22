@@ -16,7 +16,7 @@ import java.util.Random;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
-public class CelestialBodyManager implements CelestialBodyTypeRenderer, LifeCycleSystem {
+public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer, LifeCycleSystem {
     @In
     private CelestialBodyTypeRendererRegistry celestialBodyTypeRendererRegistry;
     @In
@@ -35,13 +35,15 @@ public class CelestialBodyManager implements CelestialBodyTypeRenderer, LifeCycl
                 "    bodyPos.x *= aspectRatio;\n" +
                 "\n" +
                 "    float size = u_celestialBodiesParams[arrayIndex + 6];\n" +
+                "    float maxSize = u_celestialBodiesParams[arrayIndex + 7];\n" +
                 "    //check if it is in the radius of the star\n" +
-                "    if (length(fragmentScreenCoords - bodyPos) < size) {\n" +
+                "    float distance = length(fragmentScreenCoords - bodyPos);\n" +
+                "    if (distance < maxSize) {\n" +
                 "        return vec4(\n" +
                 "            u_celestialBodiesParams[arrayIndex + 2],\n" +
                 "            u_celestialBodiesParams[arrayIndex + 3],\n" +
                 "            u_celestialBodiesParams[arrayIndex + 4],\n" +
-                "            u_celestialBodiesParams[arrayIndex + 5]);\n" +
+                "            (1.0 - smoothstep(size, maxSize, distance)) * u_celestialBodiesParams[arrayIndex + 5]);\n" +
                 "    } else {\n" +
                 "        return vec4(0.0, 0.0, 0.0, 0.0);\n" +
                 "    }\n";
@@ -49,7 +51,7 @@ public class CelestialBodyManager implements CelestialBodyTypeRenderer, LifeCycl
 
     @Override
     public int getDataFloatCount() {
-        return 7;
+        return 8;
     }
 
     @Override
@@ -83,7 +85,7 @@ public class CelestialBodyManager implements CelestialBodyTypeRenderer, LifeCycl
                         rendererIndex,
                         new Color(1, 1, 1, alpha),
                         new Vector3(posX, posY, posZ).nor(),
-                        0.002f);
+                        0.003f, 0.001f);
                 celestialBodies.add(star);
             }
         }
@@ -94,7 +96,7 @@ public class CelestialBodyManager implements CelestialBodyTypeRenderer, LifeCycl
     private CelestialBody getSun(float timeOfDay) {
         Vector3 directionFromViewpoint = new Vector3((float) Math.sin(timeOfDay), (float) Math.cos(timeOfDay), 0);
 
-        return new CircleCelestialBody(rendererIndex, new Color(1.0f, 1.0f, 1.0f, 1), directionFromViewpoint, 0.02f);
+        return new CircleCelestialBody(rendererIndex, new Color(1.0f, 1.0f, 1.0f, 1), directionFromViewpoint, 0.02f, 0.03f);
     }
 
     private boolean isDay(float timeOfDay) {
