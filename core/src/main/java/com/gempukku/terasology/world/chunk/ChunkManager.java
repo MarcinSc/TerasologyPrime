@@ -115,9 +115,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     }
 
     @Override
-    public boolean isEntityRuledByRuleAndIrrelevant(EntityRef entityRef) {
-        // TODO Proper rule implementation
-        return false;
+    public Iterable<? extends EntityRef> getNotRelevantEntities() {
+        return Collections.emptySet();
     }
 
     @Override

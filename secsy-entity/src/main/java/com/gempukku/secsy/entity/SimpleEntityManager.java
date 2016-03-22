@@ -192,10 +192,10 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
 
     private Multimap<EntityRelevanceRule, SimpleEntity> determineEntitiesToUnloadByRules() {
         Multimap<EntityRelevanceRule, SimpleEntity> entitiesToUnload = HashMultimap.create();
-        for (SimpleEntity entity : entities) {
-            entityRelevanceRules.stream().
-                    filter(entityRelevanceRule -> entityRelevanceRule.isEntityRuledByRuleAndIrrelevant(new EntityRefImpl(entity, true))).
-                    forEach(entityRelevanceRule -> entitiesToUnload.put(entityRelevanceRule, entity));
+        for (EntityRelevanceRule entityRelevanceRule : entityRelevanceRules) {
+            for (EntityRef entityRef : entityRelevanceRule.getNotRelevantEntities()) {
+                entitiesToUnload.put(entityRelevanceRule, ((EntityRefImpl) entityRef).entity);
+            }
         }
         return entitiesToUnload;
     }
