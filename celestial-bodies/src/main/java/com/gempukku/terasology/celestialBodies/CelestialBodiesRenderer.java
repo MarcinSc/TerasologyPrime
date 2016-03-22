@@ -64,13 +64,15 @@ public class CelestialBodiesRenderer implements BackdropRenderer, LifeCycleSyste
     @Override
     public void renderBackdrop(Camera camera, String worldId) {
         Iterable<CelestialBody> visibleCelestialBodies = celestialBodyProvider.getVisibleCelestialBodies(worldId, camera.position.x, camera.position.y, camera.position.z);
-        shaderProvider.setCelestialBodies(visibleCelestialBodies);
         shaderProvider.setViewportWidth(camera.viewportWidth);
         shaderProvider.setViewportHeight(camera.viewportHeight);
 
-        modelBatch.begin(camera);
-        modelBatch.render(modelInstance);
-        modelBatch.end();
+        shaderProvider.prepareCelestialBodies(visibleCelestialBodies);
+        while (shaderProvider.hasBodiesToRender()) {
+            modelBatch.begin(camera);
+            modelBatch.render(modelInstance);
+            modelBatch.end();
+        }
     }
 
     @Override

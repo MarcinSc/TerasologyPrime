@@ -1,16 +1,11 @@
 package com.gempukku.terasology.celestialBodies.model;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.Camera;
 
-public class CelestialBody {
-    public final Color color;
-    public final Vector3 directionFromViewpoint;
-    public final float cosAngleSize;
+public interface CelestialBody {
+    int getFloatCount();
 
-    public CelestialBody(Color color, Vector3 directionFromViewpoint, float cosAngleSize) {
-        this.color = color;
-        this.directionFromViewpoint = directionFromViewpoint;
-        this.cosAngleSize = cosAngleSize;
-    }
+    boolean isVisibleFrom(Camera camera);
+
+    void appendFloats(float[] array, int startIndex, Camera camera);
 }

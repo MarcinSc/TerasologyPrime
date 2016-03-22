@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.terasology.celestialBodies.model.CelestialBody;
+import com.gempukku.terasology.celestialBodies.model.CircleCelestialBody;
 import com.gempukku.terasology.time.TimeManager;
 
 import java.util.LinkedList;
@@ -36,7 +37,7 @@ public class CelestialBodyManager implements CelestialBodyProvider {
 
         // If it's bright (from Sun), the stars are not visible
         if (alpha > 0) {
-            for (int i = 0; i < 69; i++) {
+            for (int i = 0; i < 1000; i++) {
                 float u = rnd.nextFloat() * 2 - 1;
                 float theta = 2 * (float) Math.PI * rnd.nextFloat();
 
@@ -44,7 +45,7 @@ public class CelestialBodyManager implements CelestialBodyProvider {
                 float posY = (float) (Math.sqrt(1 - u * u) * Math.sin(theta - timeOfDay));
                 float posZ = u;
 
-                CelestialBody star = new CelestialBody(
+                CircleCelestialBody star = new CircleCelestialBody(
                         new Color(1, 1, 1, alpha),
                         new Vector3(posX, posY, posZ).nor(),
                         0.002f);
@@ -58,7 +59,7 @@ public class CelestialBodyManager implements CelestialBodyProvider {
     private CelestialBody getSun(float timeOfDay) {
         Vector3 directionFromViewpoint = new Vector3((float) Math.sin(timeOfDay), (float) Math.cos(timeOfDay), 0);
 
-        return new CelestialBody(new Color(1.0f, 1.0f, 1.0f, 1), directionFromViewpoint, 0.02f);
+        return new CircleCelestialBody(new Color(1.0f, 1.0f, 1.0f, 1), directionFromViewpoint, 0.02f);
     }
 
     private boolean isDay(float timeOfDay) {

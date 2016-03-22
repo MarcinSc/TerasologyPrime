@@ -10,12 +10,13 @@ import com.gempukku.terasology.celestialBodies.model.CelestialBody;
 public class CelestialBodyShaderProvider implements ShaderProvider {
     private CelestialBodyShader celestialBodyShader;
 
-    private Iterable<CelestialBody> celestialBodies;
     private float viewportWidth;
     private float viewportHeight;
 
-    public void setCelestialBodies(Iterable<CelestialBody> celestialBodies) {
-        this.celestialBodies = celestialBodies;
+    public void prepareCelestialBodies(Iterable<CelestialBody> celestialBodies) {
+        if (celestialBodyShader != null) {
+            celestialBodyShader.prepareCelestialBodies(celestialBodies);
+        }
     }
 
     public void setViewportWidth(float viewportWidth) {
@@ -24,6 +25,10 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
 
     public void setViewportHeight(float viewportHeight) {
         this.viewportHeight = viewportHeight;
+    }
+
+    public boolean hasBodiesToRender() {
+        return celestialBodyShader == null || celestialBodyShader.hasBodiesToRender();
     }
 
     @Override
@@ -37,7 +42,6 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
                     config);
             celestialBodyShader.init();
         }
-        celestialBodyShader.setCelestialBodies(celestialBodies);
         celestialBodyShader.setViewportWidth(viewportWidth);
         celestialBodyShader.setViewportHeight(viewportHeight);
         return celestialBodyShader;

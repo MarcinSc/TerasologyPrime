@@ -5,7 +5,7 @@ precision mediump float;
 uniform float u_viewportWidth;
 uniform float u_viewportHeight;
 
-uniform float u_celestialBodiesParams[490];
+uniform float u_celestialBodiesParams[500];
 
 void main() {
     float aspectRatio = u_viewportWidth/u_viewportHeight;
@@ -16,22 +16,27 @@ void main() {
     fragmentScreenCoords.x *= aspectRatio;
 
     bool hasBody = false;
-    for (int i=0; i < 490; i += 7) {
-        if (u_celestialBodiesParams[i + 6] > 0.0) {
-            vec2 bodyPos = vec2(u_celestialBodiesParams[i + 0], u_celestialBodiesParams[i + 1]);
-            bodyPos.x *= aspectRatio;
+    int arrayIndex = 1;
+    int celestialBodyCount = int(u_celestialBodiesParams[0]);
+    for (int i=0; i < celestialBodyCount; i++) {
+        int bodyType = int(u_celestialBodiesParams[arrayIndex++]);
 
-            //check if it is in the radius of the sun
-            if (length(fragmentScreenCoords - bodyPos) < u_celestialBodiesParams[i + 6]) {
-                hasBody = true;
-                gl_FragColor = vec4(
-                    u_celestialBodiesParams[i + 2],
-                    u_celestialBodiesParams[i + 3],
-                    u_celestialBodiesParams[i + 4],
-                    u_celestialBodiesParams[i + 5]);
-                break;
-            }
+        vec2 bodyPos = vec2(u_celestialBodiesParams[arrayIndex + 0], u_celestialBodiesParams[arrayIndex + 1]);
+        bodyPos.x *= aspectRatio;
+
+        float size = u_celestialBodiesParams[arrayIndex + 6];
+        //check if it is in the radius of the star
+        if (length(fragmentScreenCoords - bodyPos) < size) {
+            hasBody = true;
+            gl_FragColor = vec4(
+                u_celestialBodiesParams[arrayIndex + 2],
+                u_celestialBodiesParams[arrayIndex + 3],
+                u_celestialBodiesParams[arrayIndex + 4],
+                u_celestialBodiesParams[arrayIndex + 5]);
+            break;
         }
+
+        arrayIndex += 7;
     }
 
     if (!hasBody) {
