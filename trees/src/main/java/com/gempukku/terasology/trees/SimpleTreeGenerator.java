@@ -17,6 +17,7 @@ import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
 import com.gempukku.terasology.trees.model.BranchDefinition;
 import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
 import com.gempukku.terasology.trees.model.TreeDefinition;
+import com.gempukku.terasology.world.component.SeedComponent;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,10 +52,11 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
     public TreeDefinition generateTreeDefinition(EntityRef entityRef) {
         SimpleTreeDefinitionComponent simpleTreeDefinition = entityRef.getComponent(SimpleTreeDefinitionComponent.class);
         IndividualTreeComponent individualTree = entityRef.getComponent(IndividualTreeComponent.class);
+        SeedComponent seedComponent = entityRef.getComponent(SeedComponent.class);
 
         int generation = individualTree.getGeneration();
 
-        FastRandom rnd = new FastRandom(individualTree.getSeed());
+        FastRandom rnd = new FastRandom(seedComponent.getSeed());
 
         PDist trunkRotationDist = extractDist(simpleTreeDefinition.getInitialTrunkRotationDist());
 

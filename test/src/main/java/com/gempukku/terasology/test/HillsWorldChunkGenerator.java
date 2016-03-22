@@ -17,6 +17,7 @@ import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkGenerator;
 import com.gempukku.terasology.world.chunk.ChunkSize;
+import com.gempukku.terasology.world.component.SeedComponent;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -72,10 +73,15 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
                         EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
                         int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
                         EntityInformation entityInformation = new EntityInformation(prefab);
+
                         ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
                         individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
-                        individual.addField("seed", rnd.nextLong());
                         entityInformation.addComponent(individual);
+
+                        ComponentInformation seed = new ComponentInformation(SeedComponent.class);
+                        seed.addField("seed", rnd.nextLong());
+                        entityInformation.addComponent(seed);
+
                         entities.add(EntityDataOrCommonBlock.entityData(tree, entityInformation));
                     } else if (blockLevel > groundLevel) {
                         entities.add(EntityDataOrCommonBlock.commonBlock(air));

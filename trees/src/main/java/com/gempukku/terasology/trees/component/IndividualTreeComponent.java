@@ -8,6 +8,4 @@ public interface IndividualTreeComponent extends Component {
     int getGeneration();
 
     void setGeneration(int generation);
-
-    long getSeed();
 }
