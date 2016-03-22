@@ -148,6 +148,12 @@ public class TerasologyApplication extends ApplicationAdapter {
             Gdx.app.exit();
         } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
             ScreenshotFactory.saveScreenshot(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), "screenshot");
+        } else if (Gdx.input.isKeyPressed(Input.Keys.F11)) {
+            if (Gdx.graphics.isFullscreen()) {
+                Gdx.graphics.setWindowedMode(640, 480);
+            } else {
+                Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+            }
         }
 
         fpsLogger.log();
