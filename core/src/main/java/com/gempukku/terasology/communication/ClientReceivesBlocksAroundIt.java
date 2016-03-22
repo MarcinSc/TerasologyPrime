@@ -1,5 +1,6 @@
 package com.gempukku.terasology.communication;
 
+import com.badlogic.gdx.Gdx;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -15,7 +16,6 @@ import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
 import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.WorldBlock;
-import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
@@ -25,7 +25,6 @@ import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -116,8 +115,6 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     public void clientConnected(ClientConnectedEvent event, EntityRef clientEntity, ClientComponent clientComponent, LocationComponent location) {
         List<EntityRef> entitiesToUpdate = new LinkedList<>();
 
-        List<StoreNewChunk> storeNewChunks = new LinkedList<>();
-
         for (EntityRef multiverseEntity : entityManager.getEntitiesWithComponents(MultiverseComponent.class)) {
             entitiesToUpdate.add(multiverseEntity);
         }
@@ -126,6 +123,8 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             if (location.getWorldId().equals(worldEntity.getComponent(WorldComponent.class).getWorldId()))
                 entitiesToUpdate.add(worldEntity);
         }
+
+        List<StoreNewChunk> storeNewChunks = new LinkedList<>();
 
         worldBlock.set(FastMath.floor(location.getX()), FastMath.floor(location.getY()), FastMath.floor(location.getZ()));
         int playerChunkX = worldBlock.getChunkX();
@@ -166,15 +165,18 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     }
 
     @ReceiveEvent
-    public void characterMoved(AfterComponentUpdated event, EntityRef entity, LocationComponent locationComponent, ClientComponent client) {
-        LocationComponent oldLocation = event.getOldComponent(LocationComponent.class);
-        LocationComponent newLocation = event.getNewComponent(LocationComponent.class);
+    public void characterMoved(AfterComponentUpdated event, EntityRef entity, LocationComponent locationComponent) {
+        ClientComponent client = entity.getComponent(ClientComponent.class);
+        if (client != null) {
+            LocationComponent oldLocation = event.getOldComponent(LocationComponent.class);
+            LocationComponent newLocation = event.getNewComponent(LocationComponent.class);
 
-        if (oldLocation != null && newLocation != null) {
-            if (!oldLocation.getWorldId().equals(newLocation.getWorldId())) {
-                processMovedBetweenWorlds(entity, client, oldLocation, newLocation);
-            } else {
-                processMovedWithinWorld(entity, client, oldLocation, newLocation);
+            if (oldLocation != null && newLocation != null) {
+                if (!oldLocation.getWorldId().equals(newLocation.getWorldId())) {
+                    processMovedBetweenWorlds(entity, client, oldLocation, newLocation);
+                } else {
+                    processMovedWithinWorld(entity, client, oldLocation, newLocation);
+                }
             }
         }
     }
@@ -182,37 +184,55 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     @ReceiveEvent
     public void chunkLoaded(AfterChunkLoadedEvent event, EntityRef worldEntity) {
         String worldId = worldEntity.getComponent(WorldComponent.class).getWorldId();
-        EntityRef chunkEntity = null;
-        for (EntityRef chunk : entityManager.getEntitiesWithComponents(ChunkComponent.class)) {
-            ChunkComponent chunkComp = chunk.getComponent(ChunkComponent.class);
-            if (chunkComp.getWorldId().equals(worldId)
-                    && chunkComp.getX() == event.x
-                    && chunkComp.getY() == event.y
-                    && chunkComp.getZ() == event.z) {
-                chunkEntity = chunk;
-                break;
-            }
-        }
+        int chunkX = event.x;
+        int chunkY = event.y;
+        int chunkZ = event.z;
+        EntityRef chunkEntity = getChunkEntity(worldId, chunkX, chunkY, chunkZ);
 
         for (EntityRef clientEntity : entityManager.getEntitiesWithComponents(ClientComponent.class, LocationComponent.class)) {
+            List<EntityRef> changeRelevanceEntities = new LinkedList<>();
+
             LocationComponent clientLocation = clientEntity.getComponent(LocationComponent.class);
             worldBlock.set(FastMath.floor(clientLocation.getX()), FastMath.floor(clientLocation.getY()), FastMath.floor(clientLocation.getZ()));
 
             ClientComponent client = clientEntity.getComponent(ClientComponent.class);
-            if (isChunkInViewDistance(worldId, event.x, event.y, event.z,
+            if (isChunkInViewDistance(worldId, chunkX, chunkY, chunkZ,
                     clientLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client)) {
+                changeRelevanceEntities.add(chunkEntity);
+
+                for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class)) {
+                    LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
+                    if (blockLocation.getWorldId().equals(worldId)) {
+                        worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                        if (worldBlock.getChunkX() == chunkX && worldBlock.getChunkY() == chunkY && worldBlock.getChunkZ() == chunkZ)
+                            changeRelevanceEntities.add(blockEntity);
+                    }
+                }
+
+                short[] blocks = chunkBlocksProvider.getChunkBlocks(worldId, chunkX, chunkY, chunkZ).getBlocks();
+                Gdx.app.debug("ClientReceivesBlocksAroundIt", "Sending chunk to client: " + chunkX + "," + chunkY + "," + chunkZ);
+                clientEntity.send(new StoreNewChunk(worldId, chunkX, chunkY, chunkZ, blocks));
+            }
+
+            if (changeRelevanceEntities.size() > 0) {
                 for (ClientEntityRelevancyRuleListener listener : listeners) {
-                    listener.entityRelevancyChanged(client.getClientId(), Collections.singleton(chunkEntity));
+                    listener.entityRelevancyChanged(client.getClientId(), changeRelevanceEntities);
                 }
-                ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, event.x, event.y, event.z);
-                if (chunkBlocks == null) {
-                    chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, event.x, event.y, event.z);
-                    System.out.println("Processing chunk loaded: " + event.x + "," + event.y + "," + event.z);
-                }
-                short[] blocks = chunkBlocks.getBlocks();
-                clientEntity.send(new StoreNewChunk(worldId, event.x, event.y, event.z, blocks));
             }
         }
+    }
+
+    private EntityRef getChunkEntity(String worldId, int chunkX, int chunkY, int chunkZ) {
+        for (EntityRef chunk : entityManager.getEntitiesWithComponents(ChunkComponent.class)) {
+            ChunkComponent chunkComp = chunk.getComponent(ChunkComponent.class);
+            if (chunkComp.getWorldId().equals(worldId)
+                    && chunkComp.getX() == chunkX
+                    && chunkComp.getY() == chunkY
+                    && chunkComp.getZ() == chunkZ) {
+                return chunk;
+            }
+        }
+        return null;
     }
 
     private void processMovedWithinWorld(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {

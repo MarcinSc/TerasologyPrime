@@ -84,7 +84,6 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
         RenderableChunk chunk = findRenderableChunk(worldId, x, y, z);
         if (chunk != null) {
             renderableChunksInWorld.remove(worldId, chunk);
-            chunk.dispose();
         }
     }
 

@@ -80,21 +80,31 @@ public class AnnotationDrivenEventDispatcher implements ContextAwareSystem<Objec
 
     @Override
     public void eventSent(EntityRef entity, Event event) {
-        Collection<Class<? extends Component>> eventComponents;
-        // If an event implements ComponentEvent, then it should be fired to listeners that require only components
-        // defined by the event.
-        if (event instanceof ComponentEvent) {
-            eventComponents = ((ComponentEvent) event).getComponents();
-        } else {
-            eventComponents = entity.listComponents();
-        }
+        Collection<Class<? extends Component>> entityComponents = entity.listComponents();
 
         for (EventListenerDefinition eventListenerDefinition : eventListenerDefinitions.get(event.getClass())) {
             boolean valid = true;
             for (Class<? extends Component> componentRequired : eventListenerDefinition.getComponentParameters()) {
-                if (!eventComponents.contains(componentRequired)) {
+                if (!entityComponents.contains(componentRequired)) {
                     valid = false;
                     break;
+                }
+            }
+            if (valid && event instanceof ComponentEvent) {
+                // Either defined components by listener have to be empty (interested in receiving all changes),
+                // or at least one of the components that is defined by listener has to be in the ComponentEvent collection
+                if (eventListenerDefinition.getComponentParameters().length != 0) {
+                    Collection<Class<? extends Component>> eventComponents = ((ComponentEvent) event).getComponents();
+                    boolean hasAtLeastOne = false;
+                    for (Class<? extends Component> definedComponent : eventListenerDefinition.getComponentParameters()) {
+                        if (eventComponents.contains(definedComponent)) {
+                            hasAtLeastOne = true;
+                            break;
+                        }
+                    }
+                    if (!hasAtLeastOne) {
+                        valid = false;
+                    }
                 }
             }
             if (valid) {

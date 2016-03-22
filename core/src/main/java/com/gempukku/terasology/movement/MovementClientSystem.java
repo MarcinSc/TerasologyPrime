@@ -64,9 +64,11 @@ public class MovementClientSystem implements MovementController, GameLoopListene
     }
 
     @ReceiveEvent
-    public void movementUpdated(AfterComponentUpdated event, EntityRef entity, MovementComponent movement, ClientComponent client) {
-        maxSpeed = movement.getMaxSpeed();
-        jumpSpeed = movement.getJumpSpeed();
+    public void movementUpdated(AfterComponentUpdated event, EntityRef entity, MovementComponent movement) {
+        if (entity.hasComponent(ClientComponent.class)) {
+            maxSpeed = movement.getMaxSpeed();
+            jumpSpeed = movement.getJumpSpeed();
+        }
     }
 
     @Override
