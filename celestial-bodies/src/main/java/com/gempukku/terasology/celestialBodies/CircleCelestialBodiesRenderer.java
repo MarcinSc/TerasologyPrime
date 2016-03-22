@@ -99,7 +99,8 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
     private CelestialBody getSun(float timeOfDay) {
         Vector3 directionFromViewpoint = new Vector3((float) Math.sin(timeOfDay), (float) Math.cos(timeOfDay), 0);
 
-        return new CircleCelestialBody(rendererIndex, new Color(1.0f, 1.0f, 1.0f, 1), directionFromViewpoint, 0.02f, 0.03f);
+        return new CircleCelestialBody(rendererIndex, new Color(
+                1.0f, 249f / 255f, 210f / 255f, 1), directionFromViewpoint, 0.02f, 0.03f);
     }
 
     private boolean isDay(float timeOfDay) {
