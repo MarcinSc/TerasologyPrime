@@ -81,12 +81,15 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
                 float posY = (float) (Math.sqrt(1 - u * u) * Math.sin(theta - timeOfDay));
                 float posZ = u;
 
-                CircleCelestialBody star = new CircleCelestialBody(
-                        rendererIndex,
-                        new Color(1, 1, 1, alpha),
-                        new Vector3(posX, posY, posZ).nor(),
-                        0.003f, 0.001f);
-                celestialBodies.add(star);
+                // Pulsar are 2% of stars, so if it's a pulsar and should not be displayed just skip it
+                if (rnd.nextFloat() >= 0.02f || ((timeOfDay % 0.2f) >= 0.05f)) {
+                    CircleCelestialBody star = new CircleCelestialBody(
+                            rendererIndex,
+                            new Color(1, 1, 1, alpha),
+                            new Vector3(posX, posY, posZ).nor(),
+                            0.003f, 0.001f);
+                    celestialBodies.add(star);
+                }
             }
         }
 
