@@ -59,7 +59,7 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
     @Override
     public Shader getShader(Renderable renderable) {
         if (celestialBodyShader == null) {
-            String fragmentShader = Gdx.files.internal("shader/celestial.frag").readString()
+            String fragmentShader = Gdx.files.internal("shader/celestial.frag.template").readString()
                     .replace("${functions}", functionReplacement).replace("${dispatch}", functionDispatch);
             DefaultShader.Config config = new DefaultShader.Config(
                     Gdx.files.internal("shader/celestial.vert").readString(),
