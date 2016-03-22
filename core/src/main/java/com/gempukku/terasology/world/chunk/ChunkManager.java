@@ -29,8 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY, shared = ChunkBlocksProvider.class)
@@ -48,12 +46,9 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     @In
     private CommonBlockManager commonBlockManager;
 
-    private Executor generatingChunksExecutor = Executors.newFixedThreadPool(4,
-            r -> {
-                Thread thr = new Thread(r);
-                thr.setName("Chunk generation");
-                return thr;
-            });
+    private final int offlineThreadCount = 3;
+
+    private OfflineProcessingThread[] offlineProcessingThread;
 
     // This is being accessed both by main thread, as well as generating threads
     private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
@@ -65,11 +60,18 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
 
     private List<ChunkBlocks> finishedBlocksOffMainThread = new LinkedList<>();
     private List<Iterable<EntityData>> entitiesToConsumeOffMainThread = new LinkedList<>();
-    private List<ChunkLocation> chunksToNotifyOffMainThread = new LinkedList<>();
 
     @Override
     public void initialize() {
         registry.registerEntityRelevanceRule(this);
+
+        offlineProcessingThread = new OfflineProcessingThread[offlineThreadCount];
+        for (int i = 0; i < offlineThreadCount; i++) {
+            offlineProcessingThread[i] = new OfflineProcessingThread();
+            Thread thr = new Thread(offlineProcessingThread[i]);
+            thr.setName("Chunk-generation-" + i);
+            thr.start();
+        }
     }
 
     @Override
@@ -83,11 +85,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
                 finishedBlock.setStatus(ChunkBlocks.Status.READY);
             }
             entitiesToConsume.addAll(entitiesToConsumeOffMainThread);
-            chunksToNotify.addAll(chunksToNotifyOffMainThread);
+            chunksToNotify.addAll(finishedBlocksOffMainThread);
 
             finishedBlocksOffMainThread.clear();
             entitiesToConsumeOffMainThread.clear();
-            chunksToNotifyOffMainThread.clear();
         }
 
         for (EntityRef player : entityManager.getEntitiesWithComponents(ClientComponent.class, LocationComponent.class)) {
@@ -128,8 +129,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
     public void newRelevantEntitiesLoaded() {
         // We have to assign to ChunkBlocks the entity that it represents
         for (ChunkLocation chunkLocation : chunksToNotify) {
-            multiverseManager.getWorldEntity(chunkLocation.worldId).send(
-                    new AfterChunkLoadedEvent(chunkLocation.x, chunkLocation.y, chunkLocation.z));
+            multiverseManager.getWorldEntity(chunkLocation.getWorldId()).send(
+                    new AfterChunkLoadedEvent(chunkLocation.getX(), chunkLocation.getY(), chunkLocation.getZ()));
         }
     }
 
@@ -151,29 +152,37 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         return chunkBlocks != null && chunkBlocks.getStatus() == ChunkBlocks.Status.READY;
     }
 
-    @Override
-    public ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
+    private ChunkBlocks getChunkBlocksInternal(String worldId, int x, int y, int z) {
         Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
         if (chunksInWorld == null)
             return null;
         return chunksInWorld.get(new Vector3(x, y, z));
     }
 
+    @Override
+    public ChunkBlocks getChunkBlocks(String worldId, int x, int y, int z) {
+        ChunkBlocks chunkBlocks = getChunkBlocksInternal(worldId, x, y, z);
+        if (chunkBlocks == null || chunkBlocks.getStatus() != ChunkBlocks.Status.READY)
+            return null;
+        return chunkBlocks;
+    }
+
     private void ensureChunkLoaded(String worldId, int x, int y, int z) {
-        if (getChunkBlocks(worldId, x, y, z) == null) {
+        if (getChunkBlocksInternal(worldId, x, y, z) == null) {
             loadOrGenerateChunk(worldId, x, y, z);
         }
     }
 
     private void loadOrGenerateChunk(String worldId, int x, int y, int z) {
-        ChunkBlocks chunkDataHolder = new ChunkBlocks(ChunkBlocks.Status.QUEUED, worldId, x, y, z);
-        Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
-        if (chunksInWorld == null) {
-            chunksInWorld = Collections.synchronizedMap(new HashMap<>());
-            chunkBlocks.put(worldId, chunksInWorld);
+        synchronized (chunkBlocks) {
+            ChunkBlocks chunkDataHolder = new ChunkBlocks(ChunkBlocks.Status.QUEUED, worldId, x, y, z);
+            Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
+            if (chunksInWorld == null) {
+                chunksInWorld = Collections.synchronizedMap(new HashMap<>());
+                chunkBlocks.put(worldId, chunksInWorld);
+            }
+            chunksInWorld.put(new Vector3(x, y, z), chunkDataHolder);
         }
-        chunksInWorld.put(new Vector3(x, y, z), chunkDataHolder);
-        generatingChunksExecutor.execute(new GenerateChunkTask(chunkDataHolder));
     }
 
     private Vector3 tempVec = new Vector3();
@@ -186,29 +195,24 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
         return tempVec;
     }
 
-    private static class ChunkLocation {
-        private final String worldId;
-        private final int x;
-        private final int y;
-        private final int z;
-
-        public ChunkLocation(String worldId, int x, int y, int z) {
-            this.worldId = worldId;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-    }
-
-    private class GenerateChunkTask implements Runnable {
-        private ChunkBlocks chunkBlocks;
-
-        public GenerateChunkTask(ChunkBlocks chunkBlocks) {
-            this.chunkBlocks = chunkBlocks;
-        }
-
+    private class OfflineProcessingThread implements Runnable {
         @Override
         public void run() {
+            while (true) {
+                ChunkBlocks chunkToProcess = selectChunkBlocksToGenerate();
+                if (chunkToProcess != null) {
+                    generateChunk(chunkToProcess);
+                } else {
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException exp) {
+                        // Ignore
+                    }
+                }
+            }
+        }
+
+        private void generateChunk(ChunkBlocks chunkBlocks) {
             Iterable<ChunkGenerator.EntityDataOrCommonBlock> chunkData = chunkGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
 
             short[] chunkBlockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
@@ -250,8 +254,21 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, L
             synchronized (copyLockObject) {
                 finishedBlocksOffMainThread.add(chunkBlocks);
                 entitiesToConsumeOffMainThread.add(entities);
-                chunksToNotifyOffMainThread.add(new ChunkLocation(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z));
             }
+        }
+
+        private ChunkBlocks selectChunkBlocksToGenerate() {
+            synchronized (chunkBlocks) {
+                for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
+                    for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
+                        if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
+                            blocks.setStatus(ChunkBlocks.Status.GENERATING);
+                            return blocks;
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }

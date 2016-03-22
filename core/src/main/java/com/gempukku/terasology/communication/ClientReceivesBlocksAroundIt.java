@@ -15,6 +15,7 @@ import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
 import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.WorldBlock;
+import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
@@ -203,7 +204,12 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                 for (ClientEntityRelevancyRuleListener listener : listeners) {
                     listener.entityRelevancyChanged(client.getClientId(), Collections.singleton(chunkEntity));
                 }
-                short[] blocks = chunkBlocksProvider.getChunkBlocks(worldId, event.x, event.y, event.z).getBlocks();
+                ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, event.x, event.y, event.z);
+                if (chunkBlocks == null) {
+                    chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, event.x, event.y, event.z);
+                    System.out.println("Processing chunk loaded: " + event.x + "," + event.y + "," + event.z);
+                }
+                short[] blocks = chunkBlocks.getBlocks();
                 clientEntity.send(new StoreNewChunk(worldId, event.x, event.y, event.z, blocks));
             }
         }

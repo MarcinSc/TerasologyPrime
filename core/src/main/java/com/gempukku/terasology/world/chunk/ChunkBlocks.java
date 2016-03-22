@@ -1,15 +1,15 @@
 package com.gempukku.terasology.world.chunk;
 
-public class ChunkBlocks {
+public class ChunkBlocks implements ChunkLocation {
     public enum Status {
-        QUEUED, READY
+        QUEUED, GENERATING, READY
     }
 
     public final String worldId;
     public final int x;
     public final int y;
     public final int z;
-    private Status status;
+    private volatile Status status;
 
     private short[] blocks;
 
@@ -44,5 +44,25 @@ public class ChunkBlocks {
 
     private int getIndex(int xInChunk, int yInChunk, int zInChunk) {
         return zInChunk + (ChunkSize.Z * yInChunk) + (ChunkSize.Z * ChunkSize.Y * xInChunk);
+    }
+
+    @Override
+    public String getWorldId() {
+        return worldId;
+    }
+
+    @Override
+    public int getX() {
+        return x;
+    }
+
+    @Override
+    public int getY() {
+        return y;
+    }
+
+    @Override
+    public int getZ() {
+        return z;
     }
 }

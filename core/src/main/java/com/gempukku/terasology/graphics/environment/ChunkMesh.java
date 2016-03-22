@@ -4,10 +4,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.gempukku.terasology.world.chunk.ChunkLocation;
 
 import java.util.List;
 
-public class ChunkMesh implements Disposable {
+public class ChunkMesh implements ChunkLocation, Disposable {
     public class Status {
         private boolean needsOfflineProcessing = true;
         private boolean processingOffline = false;
@@ -102,6 +103,26 @@ public class ChunkMesh implements Disposable {
 
     public Array<MeshPart> getMeshParts() {
         return meshParts;
+    }
+
+    @Override
+    public String getWorldId() {
+        return worldId;
+    }
+
+    @Override
+    public int getX() {
+        return x;
+    }
+
+    @Override
+    public int getY() {
+        return y;
+    }
+
+    @Override
+    public int getZ() {
+        return z;
     }
 
     @Override
