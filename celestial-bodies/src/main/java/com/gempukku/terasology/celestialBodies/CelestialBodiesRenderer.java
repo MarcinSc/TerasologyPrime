@@ -18,19 +18,24 @@ import com.gempukku.secsy.context.util.Prioritable;
 import com.gempukku.terasology.celestialBodies.model.CelestialBody;
 import com.gempukku.terasology.graphics.backdrop.BackdropRenderer;
 import com.gempukku.terasology.graphics.backdrop.BackdropRendererRegistry;
+import com.google.common.collect.Iterables;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 @RegisterSystem(
-        profiles = NetProfiles.CLIENT)
-public class CelestialBodiesRenderer implements BackdropRenderer, LifeCycleSystem, Prioritable {
+        profiles = NetProfiles.CLIENT, shared = CelestialBodyTypeRendererRegistry.class)
+public class CelestialBodiesRenderer implements BackdropRenderer, LifeCycleSystem,
+        CelestialBodyTypeRendererRegistry, Prioritable {
     @In
     private BackdropRendererRegistry backdropRendererRegistry;
-    @In
-    private CelestialBodyProvider celestialBodyProvider;
 
-    private CelestialBodyShaderProvider shaderProvider = new CelestialBodyShaderProvider();
+    private CelestialBodyShaderProvider shaderProvider;
     private ModelBatch modelBatch;
     private Model model;
     private ModelInstance modelInstance;
+    private List<CelestialBodyTypeRenderer> bodyTypeRenderers = new ArrayList<>();
 
     @Override
     public int getPriority() {
@@ -38,9 +43,13 @@ public class CelestialBodiesRenderer implements BackdropRenderer, LifeCycleSyste
     }
 
     @Override
-    public void preInitialize() {
-        modelBatch = new ModelBatch(shaderProvider);
+    public int registerCelestialBodyTypeRenderer(CelestialBodyTypeRenderer celestialBodyTypeRenderer) {
+        bodyTypeRenderers.add(celestialBodyTypeRenderer);
+        return bodyTypeRenderers.size() - 1;
+    }
 
+    @Override
+    public void preInitialize() {
         ModelBuilder modelBuilder = new ModelBuilder();
         modelBuilder.begin();
         MeshPartBuilder backgroundBuilder = modelBuilder.part("background", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position,
@@ -57,13 +66,23 @@ public class CelestialBodiesRenderer implements BackdropRenderer, LifeCycleSyste
     }
 
     @Override
+    public void postInitialize() {
+        shaderProvider = new CelestialBodyShaderProvider(bodyTypeRenderers);
+        modelBatch = new ModelBatch(shaderProvider);
+    }
+
+    @Override
     public void initialize() {
         backdropRendererRegistry.registerBackdropRenderer(this);
     }
 
     @Override
     public void renderBackdrop(Camera camera, String worldId) {
-        Iterable<CelestialBody> visibleCelestialBodies = celestialBodyProvider.getVisibleCelestialBodies(worldId, camera.position.x, camera.position.y, camera.position.z);
+        List<CelestialBody> visibleCelestialBodies = new LinkedList<>();
+        for (CelestialBodyTypeRenderer bodyTypeRenderer : bodyTypeRenderers) {
+            Iterables.addAll(visibleCelestialBodies, bodyTypeRenderer.getCelestialBodies(
+                    worldId, camera.position.x, camera.position.y, camera.position.z));
+        }
         shaderProvider.setViewportWidth(camera.viewportWidth);
         shaderProvider.setViewportHeight(camera.viewportHeight);
 

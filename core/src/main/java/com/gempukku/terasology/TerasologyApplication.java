@@ -40,7 +40,6 @@ public class TerasologyApplication extends ApplicationAdapter {
     private RenderingEngine renderingEngine;
 
     private FPSLogger fpsLogger = new FPSLogger();
-    private long startTime;
 
     private RunningServer runningServer;
 
@@ -136,8 +135,6 @@ public class TerasologyApplication extends ApplicationAdapter {
         playerCamera.setTranslateFromLocationZ(0f);
 
         player.saveComponents(playerLocation, playerCamera);
-
-        startTime = System.currentTimeMillis();
 
         Gdx.input.setCursorCatched(true);
     }

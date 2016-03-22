@@ -57,14 +57,12 @@ public class CelestialBodyShader extends DefaultShader {
         int celestialBodyCount = 0;
         while (nextBody != null) {
             if (nextBody.isVisibleFrom(camera)) {
-                int floatCount = nextBody.getFloatCount();
+                int floatCount = nextBody.getDataFloatCount();
                 // Check if we have space in array for it
                 if (arrayIndex + 1 + floatCount < BODY_ARRAY_SIZE) {
-                    celestialBodyParams[arrayIndex++] = 1;
-
                     nextBody.appendFloats(celestialBodyParams, arrayIndex, camera);
 
-                    arrayIndex += floatCount;
+                    arrayIndex += 1 + floatCount;
                     celestialBodyCount++;
                 } else {
                     break;

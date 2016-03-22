@@ -3,7 +3,7 @@ package com.gempukku.terasology.celestialBodies.model;
 import com.badlogic.gdx.graphics.Camera;
 
 public interface CelestialBody {
-    int getFloatCount();
+    int getDataFloatCount();
 
     boolean isVisibleFrom(Camera camera);
 
