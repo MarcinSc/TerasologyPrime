@@ -277,8 +277,8 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
 
     private void setupLight(float radialTimeOfDay) {
         lightCamera.position.set(
-                (float) -(camera.position.x + 0.6 * camera.far * Math.sin(radialTimeOfDay)),
-                (float) -(camera.position.y + 0.6 * camera.far * Math.cos(radialTimeOfDay)),
+                (float) -(camera.position.x + 1.1 * camera.far * Math.sin(radialTimeOfDay)),
+                (float) -(camera.position.y + 1.1 * camera.far * Math.cos(radialTimeOfDay)),
                 camera.position.z);
         if (radialTimeOfDay == 0) {
             lightCamera.up.set(1, 0, 0);
@@ -286,7 +286,7 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
             lightCamera.up.set(0, 1, 0);
         }
         lightCamera.lookAt(camera.position.x, camera.position.y, camera.position.z);
-        lightCamera.far = camera.far * 1.21f;
+        lightCamera.far = camera.far * 2.21f;
         lightCamera.near = camera.near;
         lightCamera.update();
     }

@@ -17,7 +17,6 @@ import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.graphics.RenderingEngine;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.graphics.environment.event.ScreenshotFactory;
-import com.gempukku.terasology.graphics.postprocess.blur.BlurComponent;
 import com.gempukku.terasology.time.InternalTimeManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.component.LocationComponent;
@@ -135,10 +134,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         playerCamera.setTranslateFromLocationY(1.8f);
         playerCamera.setTranslateFromLocationZ(0f);
 
-        BlurComponent blur = player.createComponent(BlurComponent.class);
-        blur.setBlurRadius(3);
-
-        player.saveComponents(playerLocation, playerCamera, blur);
+        player.saveComponents(playerLocation, playerCamera);
 
         Gdx.input.setCursorCatched(true);
     }
