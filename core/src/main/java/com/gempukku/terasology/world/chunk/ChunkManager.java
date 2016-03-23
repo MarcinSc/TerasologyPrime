@@ -64,7 +64,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     private List<Iterable<StoredEntityData>> entitiesToAdd = new LinkedList<>();
     private List<EntityRef> entitiesToRemove = new LinkedList<>();
 
-    private List<ChunkLocation> chunksToNotify = new LinkedList<>();
+    private List<ChunkBlocks> chunksToNotify = new LinkedList<>();
 
     private final Object copyLockObject = new Object();
 
@@ -114,6 +114,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                 chunkBlocks.setStatus(ChunkBlocks.Status.READY);
                 entitiesToAdd.add(entry.getValue());
                 chunksToNotify.add(chunkBlocks);
+                Gdx.app.debug("ChunkManager", "Merged chunk: " + chunkBlocks.x + "," + chunkBlocks.y + "," + chunkBlocks.z);
                 iterator.remove();
                 count++;
             }
@@ -132,6 +133,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                     synchronized (copyLockObject) {
                         // Make sure we remove any un-merged data about that chunk
                         finishedBlocksOffMainThread.remove(blocks);
+                        chunksToNotify.remove(blocks);
                     }
 
                     EntityRef chunkEntity = getChunkEntity(blocks);
@@ -195,6 +197,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     public void newRelevantEntitiesLoaded() {
         // We have to assign to ChunkBlocks the entity that it represents
         for (ChunkLocation chunkLocation : chunksToNotify) {
+            Gdx.app.debug("ChunkManager", "Notifying on: " + chunkLocation.getX() + "," + chunkLocation.getY() + "," + chunkLocation.getZ());
             multiverseManager.getWorldEntity(chunkLocation.getWorldId()).send(
                     new AfterChunkLoadedEvent(chunkLocation.getX(), chunkLocation.getY(), chunkLocation.getZ()));
         }
@@ -335,7 +338,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
 //                        else if (blocks.getStatus() == ChunkBlocks.Status.GENERATING)
 //                            generatingCount++;
 //                    }
-//                    Gdx.app.error("ChunkManager", "Total: " + vector3ChunkBlocksMap.size() + ", Queued: " + queuedCount + ", Generating: " + generatingCount);
+//                    Gdx.app.debug("ChunkManager", "Total: " + vector3ChunkBlocksMap.size() + ", Queued: " + queuedCount + ", Generating: " + generatingCount);
 
                     for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
                         if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
