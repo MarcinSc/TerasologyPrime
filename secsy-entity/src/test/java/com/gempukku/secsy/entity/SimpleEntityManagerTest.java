@@ -1,11 +1,15 @@
 package com.gempukku.secsy.entity;
 
+import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.ShareSystemInitializer;
 import com.gempukku.secsy.entity.component.map.MapAnnotationDrivenProxyComponentManager;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
+import com.gempukku.secsy.entity.event.AfterComponentRemoved;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
 import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
 import com.gempukku.secsy.entity.event.Event;
+import com.gempukku.secsy.entity.game.InternalGameLoop;
+import com.gempukku.secsy.entity.game.InternalGameLoopListener;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,7 +17,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class SimpleEntityManagerTest {
     private SimpleEntityManager simpleEntityManager;
@@ -23,7 +31,8 @@ public class SimpleEntityManagerTest {
         MapAnnotationDrivenProxyComponentManager componentManager = new MapAnnotationDrivenProxyComponentManager();
         simpleEntityManager = new SimpleEntityManager();
         ShareSystemInitializer<Object> shareSystemInitializer = new ShareSystemInitializer<>();
-        shareSystemInitializer.initializeSystems(Arrays.asList(componentManager, simpleEntityManager));
+
+        shareSystemInitializer.initializeSystems(Arrays.asList(componentManager, simpleEntityManager, new MockInternalGameLoop()));
     }
 
     @Test
@@ -177,11 +186,16 @@ public class SimpleEntityManagerTest {
 
         entity.removeComponents(SampleComponent.class);
 
-        assertEquals(1, listener.events.size());
+        assertEquals(2, listener.events.size());
         EntityAndEvent entityAndEvent = listener.events.get(0);
 
         simpleEntityManager.isSameEntity(entityAndEvent.entity, entity);
         assertTrue(entityAndEvent.event instanceof BeforeComponentRemoved);
+
+        entityAndEvent = listener.events.get(1);
+
+        simpleEntityManager.isSameEntity(entityAndEvent.entity, entity);
+        assertTrue(entityAndEvent.event instanceof AfterComponentRemoved);
     }
 
     private class Listener implements EntityEventListener {
@@ -190,6 +204,25 @@ public class SimpleEntityManagerTest {
         @Override
         public void eventSent(EntityRef entity, Event event) {
             events.add(new EntityAndEvent(entity, event));
+        }
+    }
+
+    @RegisterSystem(
+            shared = InternalGameLoop.class)
+    public static class MockInternalGameLoop implements InternalGameLoop {
+        @Override
+        public void addInternalGameLoopListener(InternalGameLoopListener internalGameLoopListener) {
+
+        }
+
+        @Override
+        public void removeInternalGameLooplListener(InternalGameLoopListener internalGameLoopListener) {
+
+        }
+
+        @Override
+        public void processUpdate() {
+
         }
     }
 
