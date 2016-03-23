@@ -10,6 +10,8 @@ import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.secsy.network.server.ClientConnectedEvent;
 import com.gempukku.secsy.network.server.ClientEntityRelevanceRule;
 import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
@@ -34,11 +36,19 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     @In
     private EntityManager entityManager;
     @In
+    private EntityIndexManager entityIndexManager;
+    @In
     private ClientManager clientManager;
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
 
     private PriorityCollection<ClientEntityRelevancyRuleListener> listeners = new PriorityCollection<>();
+
+    private EntityIndex multiverseIndex;
+    private EntityIndex worldIndex;
+    private EntityIndex chunkIndex;
+    private EntityIndex blockIndex;
+    private EntityIndex clientAndLocationIndex;
 
     @Override
     public void addClientEntityRelevancyRuleListener(ClientEntityRelevancyRuleListener listener) {
@@ -53,6 +63,11 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     @Override
     public void initialize() {
         clientManager.addClientEntityRelevanceRule(this);
+        multiverseIndex = entityIndexManager.addIndexOnComponents(MultiverseComponent.class);
+        worldIndex = entityIndexManager.addIndexOnComponents(WorldComponent.class);
+        chunkIndex = entityIndexManager.addIndexOnComponents(ChunkComponent.class);
+        blockIndex = entityIndexManager.addIndexOnComponents(BlockComponent.class);
+        clientAndLocationIndex = entityIndexManager.addIndexOnComponents(ClientComponent.class, LocationComponent.class);
     }
 
     private WorldBlock worldBlock = new WorldBlock();
@@ -115,11 +130,11 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     public void clientConnected(ClientConnectedEvent event, EntityRef clientEntity, ClientComponent clientComponent, LocationComponent location) {
         List<EntityRef> entitiesToUpdate = new LinkedList<>();
 
-        for (EntityRef multiverseEntity : entityManager.getEntitiesWithComponents(MultiverseComponent.class)) {
+        for (EntityRef multiverseEntity : multiverseIndex.getEntities()) {
             entitiesToUpdate.add(multiverseEntity);
         }
 
-        for (EntityRef worldEntity : entityManager.getEntitiesWithComponents(WorldComponent.class)) {
+        for (EntityRef worldEntity : worldIndex.getEntities()) {
             if (location.getWorldId().equals(worldEntity.getComponent(WorldComponent.class).getWorldId()))
                 entitiesToUpdate.add(worldEntity);
         }
@@ -130,7 +145,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         int playerChunkX = worldBlock.getChunkX();
         int playerChunkY = worldBlock.getChunkY();
         int playerChunkZ = worldBlock.getChunkZ();
-        for (EntityRef chunkEntity : entityManager.getEntitiesWithComponents(ChunkComponent.class)) {
+        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
             ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
             if (isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
                     location.getWorldId(), playerChunkX, playerChunkY, playerChunkZ, clientComponent)) {
@@ -141,7 +156,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             }
         }
 
-        for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class)) {
+        for (EntityRef blockEntity : blockIndex.getEntities()) {
             LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
 
             worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()),
@@ -189,7 +204,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         int chunkZ = event.z;
         EntityRef chunkEntity = getChunkEntity(worldId, chunkX, chunkY, chunkZ);
 
-        for (EntityRef clientEntity : entityManager.getEntitiesWithComponents(ClientComponent.class, LocationComponent.class)) {
+        for (EntityRef clientEntity : clientAndLocationIndex.getEntities()) {
             List<EntityRef> changeRelevanceEntities = new LinkedList<>();
 
             LocationComponent clientLocation = clientEntity.getComponent(LocationComponent.class);
@@ -200,7 +215,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     clientLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client)) {
                 changeRelevanceEntities.add(chunkEntity);
 
-                for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class)) {
+                for (EntityRef blockEntity : blockIndex.getEntities()) {
                     LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
                     if (blockLocation.getWorldId().equals(worldId)) {
                         worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
@@ -223,7 +238,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     }
 
     private EntityRef getChunkEntity(String worldId, int chunkX, int chunkY, int chunkZ) {
-        for (EntityRef chunk : entityManager.getEntitiesWithComponents(ChunkComponent.class)) {
+        for (EntityRef chunk : chunkIndex.getEntities()) {
             ChunkComponent chunkComp = chunk.getComponent(ChunkComponent.class);
             if (chunkComp.getWorldId().equals(worldId)
                     && chunkComp.getX() == chunkX
@@ -241,7 +256,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         List<StoreNewChunk> storeNewChunks = new LinkedList<>();
         List<RemoveOldChunk> removeOldChunks = new LinkedList<>();
 
-        for (EntityRef chunkEntity : entityManager.getEntitiesWithComponents(ChunkComponent.class)) {
+        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
             ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
 
             worldBlock.set(FastMath.floor(oldLocation.getX()), FastMath.floor(oldLocation.getY()), FastMath.floor(oldLocation.getZ()));
@@ -282,8 +297,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         List<StoreNewChunk> storeNewChunks = new LinkedList<>();
         List<RemoveOldChunk> removeOldChunks = new LinkedList<>();
 
-        Iterable<EntityRef> chunkEntities = entityManager.getEntitiesWithComponents(ChunkComponent.class);
-        for (EntityRef chunkEntity : chunkEntities) {
+        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
             ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
 
             if (chunk.getWorldId().equals(oldLocation.getWorldId())) {
@@ -305,7 +319,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                 }
             }
         }
-        for (EntityRef worldEntity : entityManager.getEntitiesWithComponents(WorldComponent.class)) {
+        for (EntityRef worldEntity : worldIndex.getEntities()) {
             String worldId = worldEntity.getComponent(WorldComponent.class).getWorldId();
             if (worldId.equals(oldLocation.getWorldId()) || worldId.equals(newLocation.getWorldId()))
                 entitiesToUpdate.add(worldEntity);

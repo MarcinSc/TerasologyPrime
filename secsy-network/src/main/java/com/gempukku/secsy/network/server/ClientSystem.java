@@ -7,7 +7,6 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityEventListener;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.InternalEntityManager;
-import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.AfterComponentRemoved;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
@@ -94,6 +93,15 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
 
     @Override
     public void eventSent(EntityRef entity, Event event) {
+        if (event.getClass() == AfterComponentAdded.class
+                || event.getClass() == AfterComponentUpdated.class
+                || event.getClass() == AfterComponentRemoved.class) {
+            entityModified(entity);
+        }
+        if (event.getClass() == BeforeEntityUnloaded.class) {
+            entityUnloaded(entity);
+        }
+
         if (event.getClass().isAnnotationPresent(ToClientEvent.class)) {
             int entityId = internalEntityManager.getEntityId(entity);
             for (Map.Entry<String, Set<Integer>> clientKnownEntities : entitiesClientIsAwareOf.entrySet()) {
@@ -138,23 +146,7 @@ public class ClientSystem implements ClientManager, EntityEventListener, LifeCyc
         }
     }
 
-    @ReceiveEvent
-    public void componentsAdded(AfterComponentAdded event, EntityRef entity) {
-        entityModified(entity);
-    }
-
-    @ReceiveEvent
-    public void componentsUpdated(AfterComponentUpdated event, EntityRef entity) {
-        entityModified(entity);
-    }
-
-    @ReceiveEvent
-    public void componentsRemoved(AfterComponentRemoved event, EntityRef entity) {
-        entityModified(entity);
-    }
-
-    @ReceiveEvent
-    public void entityUnloaded(BeforeEntityUnloaded event, EntityRef entity) {
+    public void entityUnloaded(EntityRef entity) {
         int entityId = internalEntityManager.getEntityId(entity);
         for (Map.Entry<String, Set<Integer>> clientKnownEntities : entitiesClientIsAwareOf.entrySet()) {
             String clientId = clientKnownEntities.getKey();

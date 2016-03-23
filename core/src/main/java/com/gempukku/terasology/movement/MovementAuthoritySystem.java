@@ -10,6 +10,8 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.game.GameLoop;
 import com.gempukku.secsy.entity.game.GameLoopListener;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.graphics.component.CameraComponent;
 import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.LocationComponent;
@@ -20,20 +22,25 @@ public class MovementAuthoritySystem implements LifeCycleSystem, GameLoopListene
     @In
     private EntityManager entityManager;
     @In
+    private EntityIndexManager entityIndexManager;
+    @In
     private GameLoop gameLoop;
     @In
     private TimeManager timeManager;
 
+    private EntityIndex movementAndLocationIndex;
+
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
+        movementAndLocationIndex = entityIndexManager.addIndexOnComponents(MovementComponent.class, LocationComponent.class);
     }
 
     @Override
     public void update() {
         float timeSinceLastUpdateInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
 
-        for (EntityRef movingEntity : entityManager.getEntitiesWithComponents(MovementComponent.class, LocationComponent.class)) {
+        for (EntityRef movingEntity : movementAndLocationIndex.getEntities()) {
             MovementComponent movement = movingEntity.getComponent(MovementComponent.class);
             LocationComponent location = movingEntity.getComponent(LocationComponent.class);
 

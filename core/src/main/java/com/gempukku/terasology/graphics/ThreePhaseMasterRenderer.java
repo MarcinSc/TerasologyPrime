@@ -14,6 +14,8 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.graphics.backdrop.BackdropRenderer;
 import com.gempukku.terasology.graphics.backdrop.BackdropRendererRegistry;
 import com.gempukku.terasology.graphics.component.CameraComponent;
@@ -33,6 +35,8 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
     @In
     private EntityManager entityManager;
     @In
+    private EntityIndexManager entityIndexManager;
+    @In
     private TimeManager timeManager;
     @In
     private SkyColorProvider skyColorProvider;
@@ -46,6 +50,8 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
     private ModelBatch modelBatch;
     private FrameBuffer lightFrameBuffer;
     private Camera lightCamera;
+
+    private EntityIndex cameraAndLocationIndex;
 
     private static int shadowFidelity = 4;
 
@@ -71,6 +77,11 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         modelBatch = new ModelBatch(myShaderProvider);
         lightFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, shadowFidelity * 1024, shadowFidelity * 1024, true);
         lightCamera = new PerspectiveCamera(120f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    @Override
+    public void initialize() {
+        cameraAndLocationIndex = entityIndexManager.addIndexOnComponents(CameraComponent.class, LocationComponent.class);
     }
 
     @Override
@@ -155,7 +166,7 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
 
     private EntityRef getActiveCameraEntity() {
         EntityRef activeCameraEntity = null;
-        for (EntityRef entity : entityManager.getEntitiesWithComponents(CameraComponent.class, LocationComponent.class)) {
+        for (EntityRef entity : cameraAndLocationIndex.getEntities()) {
             CameraComponent cameraComponent = entity.getComponent(CameraComponent.class);
             if (cameraComponent.isActive()) {
                 activeCameraEntity = entity;

@@ -40,6 +40,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     private InternalGameLoop internalGameLoop;
 
     private PriorityCollection<EntityEventListener> entityEventListeners = new PriorityCollection<>();
+    private PriorityCollection<EntityListener> entityListeners = new PriorityCollection<>();
     private Set<EntityRelevanceRule> entityRelevanceRules = new HashSet<>();
 
     private int maxId;
@@ -53,6 +54,16 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     @Override
     public void removeEntityEventListener(EntityEventListener entityEventListener) {
         entityEventListeners.remove(entityEventListener);
+    }
+
+    @Override
+    public void addEntityListener(EntityListener entityListener) {
+        entityListeners.add(entityListener);
+    }
+
+    @Override
+    public void removeEntityListener(EntityListener entityListener) {
+        entityListeners.remove(entityListener);
     }
 
     @Override
@@ -102,10 +113,16 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         // Unload the entities
         unloadTheEntities(entitiesToUnload);
 
+        entityListeners.forEach(
+                listener -> listener.entitiesModified(entitiesToUnload));
+
         int lastMaxId = maxId;
 
         // Load any new entities that became relevant
         Set<SimpleEntity> loadedEntities = loadNewlyRelevantEntities();
+
+        entityListeners.forEach(
+                listener -> listener.entitiesModified(loadedEntities));
 
         // Send events to them
         sendEventsToThem(loadedEntities, lastMaxId);
@@ -215,6 +232,11 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     @Override
     public boolean isSameEntity(EntityRef ref1, EntityRef ref2) {
         return ((EntityRefImpl) ref1).entity == ((EntityRefImpl) ref2).entity;
+    }
+
+    @Override
+    public EntityRef wrapEntity(SimpleEntity entity) {
+        return new EntityRefImpl(entity, false);
     }
 
     @Override
@@ -346,6 +368,9 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
             addedComponents.keySet().forEach(
                     clazz -> newInThisEntityRef.put(clazz, false));
 
+            entityListeners.forEach(
+                    listener -> listener.entitiesModified(Collections.singleton(entity)));
+
             if (!addedComponents.isEmpty()) {
                 AfterComponentAdded event = new AfterComponentAdded(addedComponents);
                 createNewEntityRef(this).send(event);
@@ -378,6 +403,9 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 newInThisEntityRef.remove(clazz);
                 entity.entityValues.remove(componentClass);
             }
+
+            entityListeners.forEach(
+                    listener -> listener.entitiesModified(Collections.singleton(entity)));
 
             AfterComponentRemoved afterEvent = new AfterComponentRemoved(removedComponents);
             createNewEntityRef(this).send(afterEvent);

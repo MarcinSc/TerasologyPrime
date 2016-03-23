@@ -5,9 +5,15 @@ import com.gempukku.secsy.context.system.ClassSystemProducer;
 import com.gempukku.secsy.context.system.ShareSystemInitializer;
 import com.gempukku.secsy.context.system.SimpleContext;
 import com.gempukku.secsy.entity.EntityEventListener;
+import com.gempukku.secsy.entity.EntityListener;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.InternalEntityManager;
 import com.gempukku.secsy.entity.SampleEvent;
+import com.gempukku.secsy.entity.SimpleEntity;
+import com.gempukku.secsy.entity.event.AfterComponentAdded;
+import com.gempukku.secsy.entity.event.AfterComponentUpdated;
+import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
+import com.gempukku.secsy.entity.event.BeforeEntityUnloaded;
 import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.entity.game.InternalGameLoopListener;
 import org.junit.Before;
@@ -54,9 +60,9 @@ public class ClientSystemTest {
 
         clientSystem.addClient("clientId", clientEntity, clientCommunication);
 
-        clientSystem.componentsAdded(null, irrelevantEntity);
-        clientSystem.componentsUpdated(null, irrelevantEntity);
-        clientSystem.componentsRemoved(null, irrelevantEntity);
+        clientSystem.eventSent(irrelevantEntity, new AfterComponentAdded(Collections.emptyMap()));
+        clientSystem.eventSent(irrelevantEntity, new AfterComponentUpdated(Collections.emptyMap(), Collections.emptyMap()));
+        clientSystem.eventSent(irrelevantEntity, new BeforeComponentRemoved(Collections.emptyMap()));
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -77,13 +83,13 @@ public class ClientSystemTest {
         relevanceRule.setEntityRelevant("clientId", relevantEntity, true);
         Mockito.verify(clientCommunication).addEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
-        clientSystem.componentsAdded(null, relevantEntity);
+        clientSystem.eventSent(relevantEntity, new AfterComponentAdded(Collections.emptyMap()));
         Mockito.verify(clientCommunication, new Times(1)).updateEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
-        clientSystem.componentsUpdated(null, relevantEntity);
+        clientSystem.eventSent(relevantEntity, new AfterComponentUpdated(Collections.emptyMap(), Collections.emptyMap()));
         Mockito.verify(clientCommunication, new Times(2)).updateEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
-        clientSystem.componentsRemoved(null, relevantEntity);
+        clientSystem.eventSent(relevantEntity, new BeforeComponentRemoved(Collections.emptyMap()));
         Mockito.verify(clientCommunication, new Times(3)).updateEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
         relevanceRule.setEntityRelevant("clientId", relevantEntity, false);
@@ -166,7 +172,7 @@ public class ClientSystemTest {
         relevanceRule.setEntityRelevant("clientId", relevantEntity, true);
         Mockito.verify(clientCommunication).addEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
-        clientSystem.entityUnloaded(null, relevantEntity);
+        clientSystem.eventSent(relevantEntity, new BeforeEntityUnloaded(Collections.emptyMap()));
         Mockito.verify(clientCommunication).removeEntity(1);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
@@ -270,6 +276,21 @@ public class ClientSystemTest {
         @Override
         public void removeEntityEventListener(EntityEventListener entityEventListener) {
 
+        }
+
+        @Override
+        public void addEntityListener(EntityListener entityListener) {
+
+        }
+
+        @Override
+        public void removeEntityListener(EntityListener entityListener) {
+
+        }
+
+        @Override
+        public EntityRef wrapEntity(SimpleEntity entity) {
+            return null;
         }
 
         @Override

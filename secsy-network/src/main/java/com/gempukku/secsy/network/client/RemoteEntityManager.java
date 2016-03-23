@@ -7,6 +7,7 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.EntityEventListener;
+import com.gempukku.secsy.entity.EntityListener;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.InternalEntityManager;
@@ -43,6 +44,7 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
     private InternalGameLoop internalGameLoop;
 
     private PriorityCollection<EntityEventListener> listeners = new PriorityCollection<>();
+    private PriorityCollection<EntityListener> entityListeners = new PriorityCollection<>();
 
     private Set<SimpleEntity> serverEntities = new HashSet<>();
     private Set<SimpleEntity> clientEntities = new HashSet<>();
@@ -68,6 +70,16 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
     @Override
     public void removeEntityEventListener(EntityEventListener entityEventListener) {
         listeners.remove(entityEventListener);
+    }
+
+    @Override
+    public void addEntityListener(EntityListener entityListener) {
+        entityListeners.add(entityListener);
+    }
+
+    @Override
+    public void removeEntityListener(EntityListener entityListener) {
+        entityListeners.remove(entityListener);
     }
 
     @Override
@@ -106,6 +118,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
                         Map<Class<? extends Component>, Component> addedComponents = new HashMap<>();
                         entity.entityValues.entrySet().forEach(
                                 componentEntry -> addedComponents.put(componentEntry.getKey(), internalComponentManager.copyComponentUnmodifiable(componentEntry.getValue(), false)));
+
+                        entityListeners.forEach(
+                                listener -> listener.entitiesModified(Collections.singleton(entity)));
                         sendEventToEntity(entity, new AfterComponentAdded(addedComponents));
                     }
 
@@ -174,6 +189,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
                             entity.entityValues.remove(componentClass);
                         }
 
+                        entityListeners.forEach(
+                                listener -> listener.entitiesModified(Collections.singleton(entity)));
+
                         if (!addedComponents.isEmpty()) {
                             AfterComponentAdded event = new AfterComponentAdded(addedComponents);
                             sendEventToEntity(entity, event);
@@ -196,6 +214,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
 
                         entity.exists = false;
                         serverEntities.remove(entity);
+
+                        entityListeners.forEach(
+                                listener -> listener.entitiesModified(Collections.singleton(entity)));
                     }
 
                     @Override
@@ -222,6 +243,11 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
     public EntityRef createEntity() {
         SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
         clientEntities.add(entity);
+        return new EntityRefImpl(entity, false);
+    }
+
+    @Override
+    public EntityRef wrapEntity(SimpleEntity entity) {
         return new EntityRefImpl(entity, false);
     }
 
@@ -276,6 +302,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
         entityRef.removeComponents(components.toArray(new Class[components.size()]));
         underlyingEntity.exists = false;
         clientEntities.remove(underlyingEntity);
+
+        entityListeners.forEach(
+                listener -> listener.entitiesModified(Collections.singleton(underlyingEntity)));
     }
 
     @Override
@@ -385,6 +414,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
             addedComponents.keySet().forEach(
                     clazz -> newInThisEntityRef.put(clazz, false));
 
+            entityListeners.forEach(
+                    listener -> listener.entitiesModified(Collections.singleton(entity)));
+
             if (!addedComponents.isEmpty()) {
                 AfterComponentAdded event = new AfterComponentAdded(addedComponents);
                 createNewEntityRef(this).send(event);
@@ -417,6 +449,9 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
                 newInThisEntityRef.remove(clazz);
                 entity.entityValues.remove(componentClass);
             }
+
+            entityListeners.forEach(
+                    listener -> listener.entitiesModified(Collections.singleton(entity)));
 
             AfterComponentRemoved afterEvent = new AfterComponentRemoved(removedComponents);
             createNewEntityRef(this).send(afterEvent);

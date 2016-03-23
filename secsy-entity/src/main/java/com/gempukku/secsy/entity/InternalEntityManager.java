@@ -5,5 +5,11 @@ public interface InternalEntityManager {
 
     void removeEntityEventListener(EntityEventListener entityEventListener);
 
+    void addEntityListener(EntityListener entityListener);
+
+    void removeEntityListener(EntityListener entityListener);
+
     int getEntityId(EntityRef entityRef);
+
+    EntityRef wrapEntity(SimpleEntity entity);
 }
