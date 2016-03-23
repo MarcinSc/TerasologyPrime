@@ -7,16 +7,13 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
-import com.gempukku.secsy.entity.event.AfterComponentAdded;
-import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.world.component.ClientComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY)
@@ -25,22 +22,24 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
     private ChunkRelevanceRuleRegistry chunkRelevanceRuleRegistry;
     @In
     private EntityManager entityManager;
+    @In
+    private EntityIndexManager entityIndexManager;
 
     private int horizontalChunkDistance = 10;
     private int verticalChunkDistance = 3;
-
-    private Set<EntityRef> connectedClients = new HashSet<>();
+    private EntityIndex clientAndLocationIndex;
 
     @Override
     public void initialize() {
         chunkRelevanceRuleRegistry.registerChunkRelevanceRule(this);
+        clientAndLocationIndex = entityIndexManager.addIndexOnComponents(ClientComponent.class, LocationComponent.class);
     }
 
     @Override
     public Iterable<ChunkLocation> getRelevantChunks() {
         List<ChunkLocation> chunkLocationList = new LinkedList<>();
 
-        for (EntityRef player : connectedClients) {
+        for (EntityRef player : clientAndLocationIndex.getEntities()) {
             if (player.hasComponent(LocationComponent.class)) {
                 LocationComponent location = player.getComponent(LocationComponent.class);
                 Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
@@ -59,24 +58,9 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
         return chunkLocationList;
     }
 
-    @ReceiveEvent
-    public void afterClientConnected(AfterComponentAdded event, EntityRef entity, ClientComponent client, LocationComponent location) {
-        connectedClients.add(entity);
-    }
-
-    @ReceiveEvent
-    public void beforeClientDisconnected(BeforeComponentRemoved event, EntityRef entity, ClientComponent client, LocationComponent location) {
-        for (EntityRef connectedClient : connectedClients) {
-            if (entityManager.isSameEntity(entity, connectedClient)) {
-                connectedClients.remove(connectedClient);
-                break;
-            }
-        }
-    }
-
     @Override
     public boolean isChunkRelevant(ChunkLocation chunk) {
-        for (EntityRef player : connectedClients) {
+        for (EntityRef player : clientAndLocationIndex.getEntities()) {
             if (player.hasComponent(LocationComponent.class)) {
                 LocationComponent location = player.getComponent(LocationComponent.class);
                 Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
