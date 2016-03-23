@@ -48,12 +48,14 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
                 String worldId = location.getWorldId();
 
                 for (int x = -horizontalChunkDistance; x <= horizontalChunkDistance; x++) {
-                    for (int y = -verticalChunkDistance; y <= verticalChunkDistance; y++) {
-                        for (int z = -horizontalChunkDistance; z <= horizontalChunkDistance; z++) {
-                            chunkLocationList.add(new ChunkLocationImpl(worldId,
-                                    tempBlock.getChunkX() + x,
-                                    tempBlock.getChunkY() + y,
-                                    tempBlock.getChunkZ() + z));
+                    for (int z = -horizontalChunkDistance; z <= horizontalChunkDistance; z++) {
+                        if ((x * x + z * z) <= horizontalChunkDistance * horizontalChunkDistance) {
+                            for (int y = -verticalChunkDistance; y <= verticalChunkDistance; y++) {
+                                chunkLocationList.add(new ChunkLocationImpl(worldId,
+                                        tempBlock.getChunkX() + x,
+                                        tempBlock.getChunkY() + y,
+                                        tempBlock.getChunkZ() + z));
+                            }
                         }
                     }
                 }

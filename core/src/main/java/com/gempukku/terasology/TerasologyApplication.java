@@ -125,7 +125,7 @@ public class TerasologyApplication extends ApplicationAdapter {
 
         CameraComponent playerCamera = player.createComponent(CameraComponent.class);
         playerCamera.setNear(0.1f);
-        playerCamera.setFar(200f);
+        playerCamera.setFar(8f * 32);
         playerCamera.setActive(true);
         playerCamera.setDirectionX(0);
         playerCamera.setDirectionY(0);

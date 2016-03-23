@@ -6,12 +6,11 @@ public interface ClientComponent extends Component {
     String getClientId();
     void setClientId(String clientId);
 
-    int getChunkDistanceX();
-    void setChunkDistanceX(int chunkDistance);
+    int getChunkHorizontalDistance();
 
-    int getChunkDistanceY();
-    void setChunkDistanceY(int chunkDistance);
+    void setChunkHorizontalDistance(int chunkDistance);
 
-    int getChunkDistanceZ();
-    void setChunkDistanceZ(int chunkDistance);
+    int getChunkVerticalDistance();
+
+    void setChunkVerticalDistance(int chunkDistance);
 }

@@ -22,9 +22,8 @@ public class DefaultPlayerManager implements PlayerManager {
 
         ClientComponent player = entity.createComponent(ClientComponent.class);
         player.setClientId(id);
-        player.setChunkDistanceX(7);
-        player.setChunkDistanceY(3);
-        player.setChunkDistanceZ(7);
+        player.setChunkHorizontalDistance(9);
+        player.setChunkVerticalDistance(3);
 
         MovementComponent movement = entity.createComponent(MovementComponent.class);
         movement.setMaxSpeed(30f);

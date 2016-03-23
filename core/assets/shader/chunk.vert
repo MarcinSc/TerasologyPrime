@@ -18,7 +18,7 @@ varying float v_visibility;
 varying float v_distanceToLight;
 varying float v_lightingComponent;
 
-const float fogDensity = 0.008;
+const float fogDensity = 0.005;
 const float fogGradient = 5.0;
 
 float smoothCurve(float x) {

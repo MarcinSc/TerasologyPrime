@@ -91,9 +91,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
             worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
 
-            return Math.abs(playerChunkX - worldBlock.getChunkX()) <= client.getChunkDistanceX()
-                    && Math.abs(playerChunkY - worldBlock.getChunkY()) <= client.getChunkDistanceY()
-                    && Math.abs(playerChunkZ - worldBlock.getChunkZ()) <= client.getChunkDistanceZ();
+            return isWithinPlayerDistance(worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), playerChunkX, playerChunkY, playerChunkZ, client);
         } else if (entity.hasComponent(ChunkComponent.class)) {
             LocationComponent clientLocation = clientEntity.getComponent(LocationComponent.class);
             worldBlock.set(clientLocation.getX(), clientLocation.getY(), clientLocation.getZ());
@@ -120,9 +118,13 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         if (!playerWorldId.equals(worldId))
             return false;
 
-        return Math.abs(playerChunkX - chunkX) <= client.getChunkDistanceX()
-                && Math.abs(playerChunkY - chunkY) <= client.getChunkDistanceY()
-                && Math.abs(playerChunkZ - chunkZ) <= client.getChunkDistanceZ();
+        return isWithinPlayerDistance(chunkX, chunkY, chunkZ, playerChunkX, playerChunkY, playerChunkZ, client);
+    }
+
+    private boolean isWithinPlayerDistance(int chunkX, int chunkY, int chunkZ, int playerChunkX, int playerChunkY, int playerChunkZ, ClientComponent client) {
+        int clientChunkHorizontalDistance = client.getChunkHorizontalDistance();
+        return Math.abs(playerChunkX - chunkX) * Math.abs(playerChunkZ - chunkZ) <= (clientChunkHorizontalDistance * clientChunkHorizontalDistance)
+                && Math.abs(playerChunkY - chunkY) <= client.getChunkVerticalDistance();
     }
 
     @ReceiveEvent
@@ -160,9 +162,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
             worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
 
-            if (Math.abs(playerChunkX - worldBlock.getChunkX()) <= clientComponent.getChunkDistanceX()
-                    && Math.abs(playerChunkY - worldBlock.getChunkY()) <= clientComponent.getChunkDistanceY()
-                    && Math.abs(playerChunkZ - worldBlock.getChunkZ()) <= clientComponent.getChunkDistanceZ())
+            if (isWithinPlayerDistance(worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), playerChunkX, playerChunkY, playerChunkZ, clientComponent))
                 entitiesToUpdate.add(blockEntity);
         }
 
