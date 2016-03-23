@@ -8,6 +8,8 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
@@ -41,6 +43,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     @In
     private EntityManager entityManager;
     @In
+    private EntityIndexManager entityIndexManager;
+    @In
     private MultiverseManager multiverseManager;
     @In
     private WorldStorage worldStorage;
@@ -65,6 +69,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     private final Object copyLockObject = new Object();
 
     private Map<ChunkBlocks, Iterable<EntityData>> finishedBlocksOffMainThread = new HashMap<>();
+    private EntityIndex blockIndex;
+    private EntityIndex chunkIndex;
 
     @Override
     public void initialize() {
@@ -77,6 +83,9 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
             thr.setName("Chunk-generation-" + i);
             thr.start();
         }
+
+        blockIndex = entityIndexManager.addIndexOnComponents(BlockComponent.class);
+        chunkIndex = entityIndexManager.addIndexOnComponents(ChunkComponent.class);
     }
 
     @Override
@@ -126,7 +135,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                     EntityRef chunkEntity = getChunkEntity(blocks);
                     if (chunkEntity != null) {
                         entitiesToRemove.add(chunkEntity);
-                        for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
+                        for (EntityRef blockEntity : blockIndex.getEntities()) {
                             LocationComponent location = blockEntity.getComponent(LocationComponent.class);
                             if (location.getWorldId().equals(blocks.getWorldId())) {
                                 Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
@@ -241,8 +250,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     }
 
     private EntityRef getChunkEntity(ChunkLocation chunkLocation) {
-        Iterable<EntityRef> chunkEntities = entityManager.getEntitiesWithComponents(ChunkComponent.class);
-        for (EntityRef chunkEntity : chunkEntities) {
+        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
             ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
             if (chunk.getWorldId().equals(chunkLocation.getWorldId())
                     && chunk.getX() == chunkLocation.getX()
