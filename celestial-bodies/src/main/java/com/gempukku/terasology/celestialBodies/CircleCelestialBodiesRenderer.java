@@ -58,13 +58,13 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
     public Iterable<CelestialBody> getCelestialBodies(String worldId, float x, float y, float z) {
         Random rnd = new Random(1032);
 
-        float timeOfDay = getTimeOfDay();
+        float radialTimeOfDay = (float) (2 * Math.PI * timeManager.getWorldDayTime(worldId));
 
         List<CelestialBody> celestialBodies = new LinkedList<>();
-        celestialBodies.add(getSun(timeOfDay));
+        celestialBodies.add(getSun(radialTimeOfDay));
 
         float alpha = 0f;
-        float dayComponent = (float) Math.cos(timeOfDay);
+        float dayComponent = (float) -Math.cos(radialTimeOfDay);
         if (dayComponent < -0.3f) {
             alpha = 1f;
         } else if (dayComponent < 0.3) {
@@ -77,12 +77,12 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
                 float u = rnd.nextFloat() * 2 - 1;
                 float theta = 2 * (float) Math.PI * rnd.nextFloat();
 
-                float posX = (float) (Math.sqrt(1 - u * u) * Math.cos(theta - timeOfDay));
-                float posY = (float) (Math.sqrt(1 - u * u) * Math.sin(theta - timeOfDay));
+                float posX = (float) (Math.sqrt(1 - u * u) * Math.cos(theta - radialTimeOfDay));
+                float posY = (float) (Math.sqrt(1 - u * u) * Math.sin(theta - radialTimeOfDay));
                 float posZ = u;
 
                 // Pulsar are 2% of stars, so if it's a pulsar and should not be displayed just skip it
-                if (rnd.nextFloat() >= 0.02f || ((timeOfDay % 0.2f) >= 0.05f)) {
+                if (rnd.nextFloat() >= 0.02f || ((radialTimeOfDay % 0.2f) >= 0.05f)) {
                     CircleCelestialBody star = new CircleCelestialBody(
                             rendererIndex,
                             new Color(1, 1, 1, alpha),
@@ -97,7 +97,7 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
     }
 
     private CelestialBody getSun(float timeOfDay) {
-        Vector3 directionFromViewpoint = new Vector3((float) Math.sin(timeOfDay), (float) Math.cos(timeOfDay), 0);
+        Vector3 directionFromViewpoint = new Vector3((float) -Math.sin(timeOfDay), (float) -Math.cos(timeOfDay), 0);
 
         return new CircleCelestialBody(rendererIndex, new Color(
                 1.0f, 249f / 255f, 210f / 255f, 1), directionFromViewpoint, 0.02f, 0.03f);
@@ -105,12 +105,5 @@ public class CircleCelestialBodiesRenderer implements CelestialBodyTypeRenderer,
 
     private boolean isDay(float timeOfDay) {
         return timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
-    }
-
-    private float getTimeOfDay() {
-        int dayLengthInMs = 1 * 60 * 1000;
-
-        // Number between 0 and 2*PI, where 0 is "midday", PI is midnight
-        return (float) (2 * Math.PI * (timeManager.getMultiverseTime() % dayLengthInMs) / (1f * dayLengthInMs));
     }
 }

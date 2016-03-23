@@ -2,13 +2,13 @@ package com.gempukku.secsy.entity;
 
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.io.ComponentData;
-import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SimpleEntity implements EntityData {
+public class SimpleEntity implements StoredEntityData {
     private InternalComponentManager internalComponentManager;
     public int id;
     public Map<Class<? extends Component>, Component> entityValues = new HashMap<>();

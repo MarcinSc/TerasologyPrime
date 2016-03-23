@@ -13,13 +13,10 @@ public class WeatherManager implements SkyColorProvider {
 
     @Override
     public Vector3 getSkyColor(String worldId, float x, float y, float z) {
-        int dayLengthInMs = 1 * 60 * 1000;
-
-        // Number between 0 and 2*PI, where 0 is "midday", PI is midnight
-        float timeOfDay = (float) (2 * Math.PI * (timeManager.getMultiverseTime() % dayLengthInMs) / (1f * dayLengthInMs));
+        float radialTimeOfDay = (float) (2 * Math.PI * timeManager.getWorldDayTime(worldId));
 
         Vector3 skyColor = new Vector3(145f / 255, 186f / 255, 220f / 255);
-        float dayComponent = (float) Math.cos(timeOfDay);
+        float dayComponent = (float) -Math.cos(radialTimeOfDay);
         if (dayComponent < -0.3f) {
             skyColor.scl(0);
         } else if (dayComponent < 0.3) {

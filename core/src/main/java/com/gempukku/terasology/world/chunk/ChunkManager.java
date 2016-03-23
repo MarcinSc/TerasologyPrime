@@ -10,7 +10,7 @@ import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.index.EntityIndex;
 import com.gempukku.secsy.entity.index.EntityIndexManager;
-import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
@@ -49,7 +49,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     @In
     private WorldStorage worldStorage;
     @In
-    private ChunkGenerator chunkGenerator;
+    private WorldGenerator worldGenerator;
     @In
     private CommonBlockManager commonBlockManager;
 
@@ -61,14 +61,14 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     // This is being accessed both by main thread, as well as generating threads
     private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
 
-    private List<Iterable<EntityData>> entitiesToAdd = new LinkedList<>();
+    private List<Iterable<StoredEntityData>> entitiesToAdd = new LinkedList<>();
     private List<EntityRef> entitiesToRemove = new LinkedList<>();
 
     private List<ChunkLocation> chunksToNotify = new LinkedList<>();
 
     private final Object copyLockObject = new Object();
 
-    private Map<ChunkBlocks, Iterable<EntityData>> finishedBlocksOffMainThread = new HashMap<>();
+    private Map<ChunkBlocks, Iterable<StoredEntityData>> finishedBlocksOffMainThread = new HashMap<>();
     private EntityIndex blockIndex;
     private EntityIndex chunkIndex;
 
@@ -105,11 +105,11 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         synchronized (copyLockObject) {
             Gdx.app.debug("ChunkManager", "To merge: " + finishedBlocksOffMainThread.size() + " chunks.");
 
-            Iterator<Map.Entry<ChunkBlocks, Iterable<EntityData>>> iterator = finishedBlocksOffMainThread.entrySet().iterator();
+            Iterator<Map.Entry<ChunkBlocks, Iterable<StoredEntityData>>> iterator = finishedBlocksOffMainThread.entrySet().iterator();
             int count = 0;
             // We merge 50 chunks at a time...
             while (iterator.hasNext() && count < 50) {
-                Map.Entry<ChunkBlocks, Iterable<EntityData>> entry = iterator.next();
+                Map.Entry<ChunkBlocks, Iterable<StoredEntityData>> entry = iterator.next();
                 ChunkBlocks chunkBlocks = entry.getKey();
                 chunkBlocks.setStatus(ChunkBlocks.Status.READY);
                 entitiesToAdd.add(entry.getValue());
@@ -177,7 +177,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     }
 
     @Override
-    public Iterable<? extends EntityData> getNewRelevantEntities() {
+    public Iterable<? extends StoredEntityData> getNewRelevantEntities() {
         return Iterables.concat(entitiesToAdd);
     }
 
@@ -187,7 +187,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     }
 
     @Override
-    public void storeEntities(Iterable<? extends EntityData> iterable) {
+    public void storeEntities(Iterable<? extends StoredEntityData> iterable) {
         // TODO store entities in storage
     }
 
@@ -281,13 +281,13 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         }
 
         private void generateChunk(ChunkBlocks chunkBlocks) {
-            Iterable<ChunkGenerator.EntityDataOrCommonBlock> chunkData = chunkGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
+            Iterable<WorldGenerator.EntityDataOrCommonBlock> chunkData = worldGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
 
             short[] chunkBlockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
 
-            Set<EntityData> entities = new HashSet<>();
+            Set<StoredEntityData> entities = new HashSet<>();
             int index = 0;
-            for (ChunkGenerator.EntityDataOrCommonBlock blockInfo : chunkData) {
+            for (WorldGenerator.EntityDataOrCommonBlock blockInfo : chunkData) {
                 int blockInChunkX = index / (ChunkSize.Y * ChunkSize.Z);
                 int blockInChunkY = (index / ChunkSize.Z) % ChunkSize.Y;
                 int blockInChunkZ = index % ChunkSize.Z;

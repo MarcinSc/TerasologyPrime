@@ -16,6 +16,7 @@ import com.gempukku.secsy.entity.event.BeforeEntityUnloaded;
 import com.gempukku.secsy.entity.event.Event;
 import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.entity.game.InternalGameLoopListener;
+import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
 import com.google.common.collect.HashMultimap;
@@ -165,19 +166,23 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                         if (id == 0)
                             id = ++maxId;
                         SimpleEntity entity = new SimpleEntity(internalComponentManager, id);
-                        entityData.getComponents().forEach(
-                                componentData -> {
-                                    Class<? extends Component> componentClass = componentData.getComponentClass();
-                                    Component component = internalComponentManager.createComponent(null, componentClass);
-                                    componentData.getFields().entrySet().forEach(
-                                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.getKey(), fieldNameAndValue.getValue()));
-                                    entity.entityValues.put(componentClass, component);
-                                });
+                        addEntityDataToEntity(entityData, entity);
                         entities.add(entity);
                         loadedEntities.add(entity);
                     });
         }
         return loadedEntities;
+    }
+
+    private void addEntityDataToEntity(EntityData entityData, SimpleEntity entity) {
+        entityData.getComponents().forEach(
+                componentData -> {
+                    Class<? extends Component> componentClass = componentData.getComponentClass();
+                    Component component = internalComponentManager.createComponent(null, componentClass);
+                    componentData.getFields().entrySet().forEach(
+                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.getKey(), fieldNameAndValue.getValue()));
+                    entity.entityValues.put(componentClass, component);
+                });
     }
 
     private void unloadTheEntities(Collection<SimpleEntity> entitiesToUnload) {
@@ -221,6 +226,23 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     public EntityRef createEntity() {
         SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
         entities.add(entity);
+        return new EntityRefImpl(entity, false);
+    }
+
+    @Override
+    public EntityRef createEntity(EntityData entityData) {
+        SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
+        addEntityDataToEntity(entityData, entity);
+        entities.add(entity);
+
+        Map<Class<? extends Component>, Component> components = new HashMap<>();
+        entity.entityValues.forEach(
+                (clazz, component) -> components.put(clazz, internalComponentManager.copyComponentUnmodifiable(component, false)));
+
+        entityListeners.forEach(
+                listener -> listener.entitiesModified(Collections.singleton(entity)));
+
+        sendEventToEntity(entity, new AfterComponentAdded(components));
         return new EntityRefImpl(entity, false);
     }
 

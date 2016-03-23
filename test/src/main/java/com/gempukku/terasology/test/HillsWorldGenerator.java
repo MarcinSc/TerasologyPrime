@@ -15,16 +15,18 @@ import com.gempukku.terasology.procedural.SimplexNoise;
 import com.gempukku.terasology.trees.component.IndividualTreeComponent;
 import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
-import com.gempukku.terasology.world.chunk.ChunkGenerator;
 import com.gempukku.terasology.world.chunk.ChunkSize;
+import com.gempukku.terasology.world.chunk.WorldGenerator;
+import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.SeedComponent;
+import com.gempukku.terasology.world.component.WorldComponent;
 
 import java.util.LinkedList;
 import java.util.List;
 
 @RegisterSystem(
-        profiles = {NetProfiles.AUTHORITY, "hillsWorld"}, shared = ChunkGenerator.class)
-public class HillsWorldChunkGenerator implements ChunkGenerator {
+        profiles = {NetProfiles.AUTHORITY, "hillsWorld"}, shared = WorldGenerator.class)
+public class HillsWorldGenerator implements WorldGenerator {
     @In
     private PrefabManager prefabManager;
     @In
@@ -43,6 +45,32 @@ public class HillsWorldChunkGenerator implements ChunkGenerator {
 
     private EntityData oakPrefab;
     private EntityData pinePrefab;
+
+    @Override
+    public EntityData createMultiverseEntity() {
+        EntityInformation entityInformation = new EntityInformation();
+        ComponentInformation multiverse = new ComponentInformation(MultiverseComponent.class);
+        multiverse.addField("time", 0L);
+        entityInformation.addComponent(multiverse);
+
+        return entityInformation;
+    }
+
+    @Override
+    public EntityData createWorldEntity(String worldId) {
+        EntityInformation entityInformation = new EntityInformation();
+
+        int dayLength = 1 * 60 * 1000;
+
+        ComponentInformation world = new ComponentInformation(WorldComponent.class);
+        world.addField("worldId", worldId);
+        world.addField("dayLength", dayLength);
+        // Start just after sunrise
+        world.addField("dayStartDifferenceFromMultiverse", dayLength / 4);
+        entityInformation.addComponent(world);
+
+        return entityInformation;
+    }
 
     @Override
     public Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z) {

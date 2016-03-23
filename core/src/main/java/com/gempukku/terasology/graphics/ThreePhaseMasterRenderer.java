@@ -103,21 +103,19 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         if (activeCameraEntity != null) {
             String worldId = activeCameraEntity.getComponent(LocationComponent.class).getWorldId();
 
-            int dayLengthInMs = 1 * 60 * 1000;
-
-            // Number between 0 and 2*PI, where 0 is "midday", PI is midnight
-            float timeOfDay = (float) (2 * Math.PI * (timeManager.getMultiverseTime() % dayLengthInMs) / (1f * dayLengthInMs));
+            // Number between 0 and 2*PI, where 0 is midnight, PI is midday
+            float radialTimeOfDay = (float) (2 * Math.PI * timeManager.getWorldDayTime(worldId));
 
             setupCamera(activeCameraEntity);
-            setupLight(timeOfDay);
+            setupLight(radialTimeOfDay);
 
-            setupShaders(worldId, timeOfDay);
+            setupShaders(worldId, radialTimeOfDay);
 
             cleanBuffer();
 
             renderBackdrop(worldId);
 
-            renderEnvironment(worldId, timeOfDay);
+            renderEnvironment(worldId, radialTimeOfDay);
         }
 
         for (UiRenderer uiRenderer : uiRenderers) {
@@ -125,10 +123,10 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         }
     }
 
-    private void setupShaders(String worldId, float timeOfDay) {
+    private void setupShaders(String worldId, float radialTimeOfDay) {
         myShaderProvider.setSkyColor(skyColorProvider.getSkyColor(
                 worldId, camera.position.x, camera.position.y, camera.position.z));
-        float ambientLight = getAmbientLight(timeOfDay);
+        float ambientLight = getAmbientLight(radialTimeOfDay);
 
         myShaderProvider.setAmbientLight(ambientLight);
         // Time used in shading depends on real time, not multiverse time
@@ -137,7 +135,7 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         myShaderProvider.setLightPosition(lightCamera.position);
         myShaderProvider.setLightPlaneDistance(lightCamera.position.len());
         myShaderProvider.setLightDirection(lightCamera.direction);
-        myShaderProvider.setNight(!isDay(timeOfDay));
+        myShaderProvider.setNight(!isDay(radialTimeOfDay));
         myShaderProvider.setShadowMapSize(shadowFidelity * 1024);
     }
 
@@ -200,12 +198,12 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         camera.update();
     }
 
-    private void setupLight(float timeOfDay) {
+    private void setupLight(float radialTimeOfDay) {
         lightCamera.position.set(
-                (float) (camera.position.x + 0.6 * camera.far * Math.sin(timeOfDay)),
-                (float) (camera.position.y + 0.6 * camera.far * Math.cos(timeOfDay)),
+                (float) -(camera.position.x + 0.6 * camera.far * Math.sin(radialTimeOfDay)),
+                (float) -(camera.position.y + 0.6 * camera.far * Math.cos(radialTimeOfDay)),
                 camera.position.z);
-        if (timeOfDay == 0) {
+        if (radialTimeOfDay == 0) {
             lightCamera.up.set(1, 0, 0);
         } else {
             lightCamera.up.set(0, 1, 0);
@@ -216,7 +214,7 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         lightCamera.update();
     }
 
-    private void lightRenderPass(String worldId, float timeOfDay) {
+    private void lightRenderPass(String worldId, float radialTimeOfDay) {
         lightFrameBuffer.begin();
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -224,7 +222,7 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
 
         // If sun is over the horizon, just skip drawing anything in the light pass to save time
         // (and avoid artifacts created due to light shining through from beneath the chunks)
-        if (isDay(timeOfDay)) {
+        if (isDay(radialTimeOfDay)) {
             myShaderProvider.setMode(MyShaderProvider.Mode.ENVIRONMENT_SHADOW);
             modelBatch.begin(lightCamera);
             for (EnvironmentRenderer environmentRenderer : environmentRenderers) {
@@ -235,8 +233,8 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         lightFrameBuffer.end();
     }
 
-    private boolean isDay(float timeOfDay) {
-        return timeOfDay < Math.PI / 2f || timeOfDay > 3 * Math.PI / 2f;
+    private boolean isDay(float radialTimeOfDay) {
+        return radialTimeOfDay > Math.PI / 2f && radialTimeOfDay < 3 * Math.PI / 2f;
     }
 
     private void normalRenderPass(String worldId) {

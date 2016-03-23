@@ -23,6 +23,7 @@ import com.gempukku.secsy.entity.game.InternalGameLoop;
 import com.gempukku.secsy.entity.game.InternalGameLoopListener;
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.google.common.collect.Iterables;
 
 import java.util.Collection;
@@ -102,7 +103,7 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
         serverCommunication.visitQueuedEvents(
                 new ServerCommunication.ClientEventVisitor() {
                     @Override
-                    public void visitEntityCreate(EntityData entityData) {
+                    public void visitEntityCreate(StoredEntityData entityData) {
                         SimpleEntity entity = new SimpleEntity(internalComponentManager, entityData.getEntityId());
                         Iterable<? extends ComponentData> components = entityData.getComponents();
                         components.forEach(
@@ -125,7 +126,7 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
                     }
 
                     @Override
-                    public void visitEntityUpdate(EntityData entityData) {
+                    public void visitEntityUpdate(StoredEntityData entityData) {
                         SimpleEntity entity = getServerEntityById(entityData.getEntityId());
 
                         Map<Class<? extends Component>, Component> addedComponents = new HashMap<>();
@@ -244,6 +245,34 @@ public class RemoteEntityManager implements EntityManager, InternalEntityManager
         SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
         clientEntities.add(entity);
         return new EntityRefImpl(entity, false);
+    }
+
+    @Override
+    public EntityRef createEntity(EntityData entityData) {
+        SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
+        addEntityDataToEntity(entityData, entity);
+        clientEntities.add(entity);
+
+        Map<Class<? extends Component>, Component> components = new HashMap<>();
+        entity.entityValues.forEach(
+                (clazz, component) -> components.put(clazz, internalComponentManager.copyComponentUnmodifiable(component, false)));
+
+        entityListeners.forEach(
+                listener -> listener.entitiesModified(Collections.singleton(entity)));
+
+        sendEventToEntity(entity, new AfterComponentAdded(components));
+        return new EntityRefImpl(entity, false);
+    }
+
+    private void addEntityDataToEntity(EntityData entityData, SimpleEntity entity) {
+        entityData.getComponents().forEach(
+                componentData -> {
+                    Class<? extends Component> componentClass = componentData.getComponentClass();
+                    Component component = internalComponentManager.createComponent(null, componentClass);
+                    componentData.getFields().entrySet().forEach(
+                            fieldNameAndValue -> internalComponentManager.setComponentFieldValue(component, fieldNameAndValue.getKey(), fieldNameAndValue.getValue()));
+                    entity.entityValues.put(componentClass, component);
+                });
     }
 
     @Override

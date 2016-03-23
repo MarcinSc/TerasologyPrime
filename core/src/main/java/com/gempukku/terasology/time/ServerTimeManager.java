@@ -6,6 +6,7 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.component.MultiverseComponent;
+import com.gempukku.terasology.world.component.WorldComponent;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY, shared = {TimeManager.class, InternalTimeManager.class})
@@ -35,5 +36,14 @@ public class ServerTimeManager implements TimeManager, InternalTimeManager {
     @Override
     public long getTimeSinceLastUpdate() {
         return timeSinceLastUpdate;
+    }
+
+    @Override
+    public float getWorldDayTime(String worldId) {
+        EntityRef worldEntity = multiverseManager.getWorldEntity(worldId);
+        WorldComponent world = worldEntity.getComponent(WorldComponent.class);
+        int dayLength = world.getDayLength();
+        long multiverseTime = getMultiverseTime();
+        return ((multiverseTime + world.getDayStartDifferenceFromMultiverse()) % dayLength) / (1f * dayLength);
     }
 }

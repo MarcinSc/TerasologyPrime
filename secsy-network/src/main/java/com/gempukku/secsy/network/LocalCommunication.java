@@ -3,7 +3,7 @@ package com.gempukku.secsy.network;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.event.Event;
-import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.network.client.ServerCommunication;
 import com.gempukku.secsy.network.serialize.EntityInformation;
 import com.gempukku.secsy.network.serialize.EntitySerializationUtil;
@@ -100,11 +100,11 @@ public class LocalCommunication implements ServerCommunication, ClientCommunicat
         }
     }
 
-    private static ClientEvent createEntityClientEvent(EntityData entityData) {
+    private static ClientEvent createEntityClientEvent(StoredEntityData entityData) {
         return new ClientEvent(0, 0, entityData, null);
     }
 
-    private static ClientEvent updateEntityClientEvent(EntityData entityData) {
+    private static ClientEvent updateEntityClientEvent(StoredEntityData entityData) {
         return new ClientEvent(1, 0, entityData, null);
     }
 
@@ -118,11 +118,11 @@ public class LocalCommunication implements ServerCommunication, ClientCommunicat
 
     private static class ClientEvent {
         private int type;
-        private EntityData entityData;
+        private StoredEntityData entityData;
         private int entityId;
         private Event event;
 
-        public ClientEvent(int type, int entityId, EntityData entityData, Event event) {
+        public ClientEvent(int type, int entityId, StoredEntityData entityData, Event event) {
             this.type = type;
             this.entityId = entityId;
             this.entityData = entityData;

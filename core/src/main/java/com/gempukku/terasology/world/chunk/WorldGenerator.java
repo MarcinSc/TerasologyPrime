@@ -2,7 +2,11 @@ package com.gempukku.terasology.world.chunk;
 
 import com.gempukku.secsy.entity.io.EntityData;
 
-public interface ChunkGenerator {
+public interface WorldGenerator {
+    EntityData createMultiverseEntity();
+
+    EntityData createWorldEntity(String worldId);
+
     Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z);
 
     class EntityDataOrCommonBlock {

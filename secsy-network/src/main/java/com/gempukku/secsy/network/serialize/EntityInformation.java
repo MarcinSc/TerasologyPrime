@@ -3,20 +3,19 @@ package com.gempukku.secsy.network.serialize;
 import com.gempukku.secsy.entity.Component;
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class EntityInformation implements EntityData {
-    private int entityId;
+public class EntityInformation implements StoredEntityData {
+    private int entityId = 0;
     private List<ComponentInformation> components = new LinkedList<>();
 
     public EntityInformation() {
     }
 
     public EntityInformation(EntityData toCopy) {
-        setEntityId(toCopy.getEntityId());
-
         for (ComponentData componentData : toCopy.getComponents()) {
             addComponent(new ComponentInformation(componentData));
         }
@@ -40,6 +39,7 @@ public class EntityInformation implements EntityData {
         components.add(componentInformation);
     }
 
+    @Override
     public int getEntityId() {
         return entityId;
     }

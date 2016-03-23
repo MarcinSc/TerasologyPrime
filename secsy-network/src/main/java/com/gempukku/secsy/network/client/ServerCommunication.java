@@ -1,7 +1,7 @@
 package com.gempukku.secsy.network.client;
 
 import com.gempukku.secsy.entity.event.Event;
-import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 
 /**
  * Interface allowing client to communicate with the server.
@@ -25,9 +25,9 @@ public interface ServerCommunication {
     void sendEventToServer(Event event);
 
     interface ClientEventVisitor {
-        void visitEntityCreate(EntityData entityData);
+        void visitEntityCreate(StoredEntityData entityData);
 
-        void visitEntityUpdate(EntityData entityData);
+        void visitEntityUpdate(StoredEntityData entityData);
 
         void visitEntityRemove(int entityId);
 

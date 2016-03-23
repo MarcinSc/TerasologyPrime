@@ -268,6 +268,11 @@ public class DelayedActionSystemTest {
         public long getTimeSinceLastUpdate() {
             return 0;
         }
+
+        @Override
+        public float getWorldDayTime(String worldId) {
+            return 0;
+        }
     }
 
     private static class MockDelayedActionComponent implements DelayedActionComponent {

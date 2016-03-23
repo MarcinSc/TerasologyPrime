@@ -7,4 +7,8 @@ import com.gempukku.terasology.communication.SharedComponent;
 public interface WorldComponent extends Component {
     void setWorldId(String worldId);
     String getWorldId();
+
+    int getDayLength();
+
+    int getDayStartDifferenceFromMultiverse();
 }
