@@ -195,6 +195,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         public RunningServer(InternalGameLoop internalGameLoop, InternalTimeManager internalTimeManager) {
             this.internalGameLoop = internalGameLoop;
             this.internalTimeManager = internalTimeManager;
+            setName("Terasology-server");
         }
 
         public void executeInServerThread(Runnable runnable) {

@@ -1,5 +1,6 @@
 package com.gempukku.terasology.world.chunk;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
@@ -17,6 +18,7 @@ import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
+import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
 import com.gempukku.terasology.world.component.BlockComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 import com.google.common.collect.Iterables;
@@ -48,7 +50,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
 
     private List<ChunkRelevanceRule> chunkRelevanceRules = new LinkedList<>();
 
-    private final int offlineThreadCount = 3;
+    private final int offlineThreadCount = 4;
     private OfflineProcessingThread[] offlineProcessingThread;
 
     // This is being accessed both by main thread, as well as generating threads
@@ -100,44 +102,44 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         }
 
         // To avoid ConcurrentModificationException we first gather the ones to remove
-//        Set<ChunkBlocks> toRemove = new HashSet<>();
-//        for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
-//            for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
-//                if (!isChunkRelevant(blocks)) {
-//                    Gdx.app.debug("ChunkManager", "Unloading chunk: " + blocks.x + "," + blocks.y + "," + blocks.z);
-//
-//                    multiverseManager.getWorldEntity(blocks.worldId).send(
-//                            new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
-//
-//                    synchronized (copyLockObject) {
-//                        // Make sure we remove any un-merged data about that chunk
-//                        finishedBlocksOffMainThread.remove(blocks);
-//                    }
-//
-//                    EntityRef chunkEntity = getChunkEntity(blocks);
-//                    if (chunkEntity != null) {
-//                        entitiesToRemove.add(chunkEntity);
-//                        for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
-//                            LocationComponent location = blockEntity.getComponent(LocationComponent.class);
-//                            if (location.getWorldId().equals(blocks.getWorldId())) {
-//                                Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
-//                                if (Math.round(chunkLocation.x) == blocks.x
-//                                        && Math.round(chunkLocation.y) == blocks.y
-//                                        && Math.round(chunkLocation.z) == blocks.z)
-//                                    entitiesToRemove.add(blockEntity);
-//                            }
-//                        }
-//                    }
-//
-//                    toRemove.add(blocks);
-//                }
-//            }
-//        }
-//
-//        // And now remove them
-//        for (ChunkBlocks blocks : toRemove) {
-//            chunkBlocks.get(blocks.getWorldId()).remove(new Vector3(blocks.x, blocks.y, blocks.z));
-//        }
+        Set<ChunkBlocks> toRemove = new HashSet<>();
+        for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
+            for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
+                if (!isChunkRelevant(blocks)) {
+                    Gdx.app.debug("ChunkManager", "Unloading chunk: " + blocks.x + "," + blocks.y + "," + blocks.z);
+
+                    multiverseManager.getWorldEntity(blocks.worldId).send(
+                            new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
+
+                    synchronized (copyLockObject) {
+                        // Make sure we remove any un-merged data about that chunk
+                        finishedBlocksOffMainThread.remove(blocks);
+                    }
+
+                    EntityRef chunkEntity = getChunkEntity(blocks);
+                    if (chunkEntity != null) {
+                        entitiesToRemove.add(chunkEntity);
+                        for (EntityRef blockEntity : entityManager.getEntitiesWithComponents(BlockComponent.class, LocationComponent.class)) {
+                            LocationComponent location = blockEntity.getComponent(LocationComponent.class);
+                            if (location.getWorldId().equals(blocks.getWorldId())) {
+                                Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
+                                if (Math.round(chunkLocation.x) == blocks.x
+                                        && Math.round(chunkLocation.y) == blocks.y
+                                        && Math.round(chunkLocation.z) == blocks.z)
+                                    entitiesToRemove.add(blockEntity);
+                            }
+                        }
+                    }
+
+                    toRemove.add(blocks);
+                }
+            }
+        }
+
+        // And now remove them
+        for (ChunkBlocks blocks : toRemove) {
+            chunkBlocks.get(blocks.getWorldId()).remove(new Vector3(blocks.x, blocks.y, blocks.z));
+        }
 
         for (ChunkRelevanceRule chunkRelevanceRule : chunkRelevanceRules) {
             for (ChunkLocation chunkLocation : chunkRelevanceRule.getRelevantChunks()) {
@@ -316,6 +318,16 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         private ChunkBlocks selectChunkBlocksToGenerate() {
             synchronized (chunkBlocks) {
                 for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
+//                    int queuedCount = 0;
+//                    int generatingCount = 0;
+//                    for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
+//                        if (blocks.getStatus() == ChunkBlocks.Status.QUEUED)
+//                            queuedCount++;
+//                        else if (blocks.getStatus() == ChunkBlocks.Status.GENERATING)
+//                            generatingCount++;
+//                    }
+//                    Gdx.app.error("ChunkManager", "Total: " + vector3ChunkBlocksMap.size() + ", Queued: " + queuedCount + ", Generating: " + generatingCount);
+
                     for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
                         if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
                             blocks.setStatus(ChunkBlocks.Status.GENERATING);

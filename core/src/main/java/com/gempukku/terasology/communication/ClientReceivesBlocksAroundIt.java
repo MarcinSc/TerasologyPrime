@@ -18,6 +18,7 @@ import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
 import com.gempukku.secsy.network.server.ClientManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.WorldBlock;
+import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
@@ -268,11 +269,33 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     newLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client);
             if (chunkInOldView != chunkInNewView) {
                 entitiesToUpdate.add(chunkEntity);
+
                 if (chunkInOldView) {
+                    // Old chunk
+                    for (EntityRef blockEntity : blockIndex.getEntities()) {
+                        LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
+                        if (blockLocation.getWorldId().equals(oldLocation.getWorldId())) {
+                            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                            if (worldBlock.getChunkX() == oldLocation.getX() && worldBlock.getChunkY() == oldLocation.getY() && worldBlock.getChunkZ() == oldLocation.getZ())
+                                entitiesToUpdate.add(blockEntity);
+                        }
+                    }
                     removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
                 } else {
-                    short[] blocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()).getBlocks();
-                    storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
+                    // New chunk
+                    for (EntityRef blockEntity : blockIndex.getEntities()) {
+                        LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
+                        if (blockLocation.getWorldId().equals(newLocation.getWorldId())) {
+                            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                            if (worldBlock.getChunkX() == newLocation.getX() && worldBlock.getChunkY() == newLocation.getY() && worldBlock.getChunkZ() == newLocation.getZ())
+                                entitiesToUpdate.add(blockEntity);
+                        }
+                    }
+                    ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
+                    if (chunkBlocks != null) {
+                        short[] blocks = chunkBlocks.getBlocks();
+                        storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
+                    }
                 }
             }
         }
@@ -292,6 +315,8 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     }
 
     private void processMovedBetweenWorlds(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
+        // TODO implement it correctly
+
         List<EntityRef> entitiesToUpdate = new LinkedList<>();
 
         List<StoreNewChunk> storeNewChunks = new LinkedList<>();
