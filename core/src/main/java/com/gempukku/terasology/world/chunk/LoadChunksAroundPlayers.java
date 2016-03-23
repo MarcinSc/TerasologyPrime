@@ -1,6 +1,5 @@
 package com.gempukku.terasology.world.chunk;
 
-import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -9,6 +8,7 @@ import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.index.EntityIndex;
 import com.gempukku.secsy.entity.index.EntityIndexManager;
+import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.component.ClientComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 
@@ -29,6 +29,8 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
     private int verticalChunkDistance = 3;
     private EntityIndex clientAndLocationIndex;
 
+    private WorldBlock tempBlock = new WorldBlock();
+
     @Override
     public void initialize() {
         chunkRelevanceRuleRegistry.registerChunkRelevanceRule(this);
@@ -42,13 +44,16 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
         for (EntityRef player : clientAndLocationIndex.getEntities()) {
             if (player.hasComponent(LocationComponent.class)) {
                 LocationComponent location = player.getComponent(LocationComponent.class);
-                Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
+                tempBlock.set(location.getX(), location.getY(), location.getZ());
                 String worldId = location.getWorldId();
 
                 for (int x = -horizontalChunkDistance; x <= horizontalChunkDistance; x++) {
                     for (int y = -verticalChunkDistance; y <= verticalChunkDistance; y++) {
                         for (int z = -horizontalChunkDistance; z <= horizontalChunkDistance; z++) {
-                            chunkLocationList.add(new ChunkLocationImpl(worldId, Math.round(chunkLocation.x + x), Math.round(chunkLocation.y + y), Math.round(chunkLocation.z + z)));
+                            chunkLocationList.add(new ChunkLocationImpl(worldId,
+                                    tempBlock.getChunkX() + x,
+                                    tempBlock.getChunkY() + y,
+                                    tempBlock.getChunkZ() + z));
                         }
                     }
                 }
@@ -63,13 +68,13 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
         for (EntityRef player : clientAndLocationIndex.getEntities()) {
             if (player.hasComponent(LocationComponent.class)) {
                 LocationComponent location = player.getComponent(LocationComponent.class);
-                Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
+                tempBlock.set(location.getX(), location.getY(), location.getZ());
                 String worldId = location.getWorldId();
 
                 if (worldId.equals(chunk.getWorldId())) {
-                    int diffX = Math.abs(chunk.getX() - Math.round(chunkLocation.x));
-                    int diffY = Math.abs(chunk.getY() - Math.round(chunkLocation.y));
-                    int diffZ = Math.abs(chunk.getZ() - Math.round(chunkLocation.z));
+                    int diffX = Math.abs(chunk.getX() - tempBlock.getChunkX());
+                    int diffY = Math.abs(chunk.getY() - tempBlock.getChunkY());
+                    int diffZ = Math.abs(chunk.getZ() - tempBlock.getChunkZ());
 
                     if (diffX <= horizontalChunkDistance && diffY <= verticalChunkDistance && diffZ <= horizontalChunkDistance)
                         return true;
@@ -77,16 +82,6 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
             }
         }
         return false;
-    }
-
-    private Vector3 tempVec = new Vector3();
-
-    private Vector3 getChunkLocation(float x, float y, float z) {
-        tempVec.set(
-                (float) Math.floor(x / ChunkSize.X),
-                (float) Math.floor(y / ChunkSize.Y),
-                (float) Math.floor(z / ChunkSize.Z));
-        return tempVec;
     }
 
     private static class ChunkLocationImpl implements ChunkLocation {

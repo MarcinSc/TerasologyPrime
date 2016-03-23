@@ -13,27 +13,33 @@ public class WorldBlock {
         this.z = z;
     }
 
+    public void set(float x, float y, float z) {
+        this.x = Math.round(x);
+        this.y = Math.round(y);
+        this.z = Math.round(z);
+    }
+
     public int getChunkX() {
-        return (int) Math.floor(1f*x/ ChunkSize.X);
+        return (int) Math.floor(1f * x / ChunkSize.X);
     }
 
     public int getChunkY() {
-        return (int) Math.floor(1f*y/ ChunkSize.Y);
+        return (int) Math.floor(1f * y / ChunkSize.Y);
     }
 
     public int getChunkZ() {
-        return (int) Math.floor(1f*z/ ChunkSize.Z);
+        return (int) Math.floor(1f * z / ChunkSize.Z);
     }
 
     public int getInChunkX() {
-        return x-getChunkX()*ChunkSize.X;
+        return x - getChunkX() * ChunkSize.X;
     }
 
     public int getInChunkY() {
-        return y-getChunkY()*ChunkSize.Y;
+        return y - getChunkY() * ChunkSize.Y;
     }
 
     public int getInChunkZ() {
-        return z-getChunkZ()*ChunkSize.Z;
+        return z - getChunkZ() * ChunkSize.Z;
     }
 }

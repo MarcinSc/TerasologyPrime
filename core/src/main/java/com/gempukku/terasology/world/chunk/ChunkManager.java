@@ -93,6 +93,8 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         chunkRelevanceRules.add(chunkRelevanceRule);
     }
 
+    private WorldBlock tempBlock = new WorldBlock();
+
     @Override
     public void determineRelevance() {
         entitiesToAdd.clear();
@@ -138,10 +140,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                         for (EntityRef blockEntity : blockIndex.getEntities()) {
                             LocationComponent location = blockEntity.getComponent(LocationComponent.class);
                             if (location.getWorldId().equals(blocks.getWorldId())) {
-                                Vector3 chunkLocation = getChunkLocation(location.getX(), location.getY(), location.getZ());
-                                if (Math.round(chunkLocation.x) == blocks.x
-                                        && Math.round(chunkLocation.y) == blocks.y
-                                        && Math.round(chunkLocation.z) == blocks.z)
+                                tempBlock.set(location.getX(), location.getY(), location.getZ());
+                                if (tempBlock.getChunkX() == blocks.x
+                                        && tempBlock.getChunkY() == blocks.y
+                                        && tempBlock.getChunkZ() == blocks.z)
                                     entitiesToRemove.add(blockEntity);
                             }
                         }
@@ -259,16 +261,6 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                 return chunkEntity;
         }
         return null;
-    }
-
-    private Vector3 tempVec = new Vector3();
-
-    private Vector3 getChunkLocation(float x, float y, float z) {
-        tempVec.set(
-                (float) Math.floor(x / ChunkSize.X),
-                (float) Math.floor(y / ChunkSize.Y),
-                (float) Math.floor(z / ChunkSize.Z));
-        return tempVec;
     }
 
     private class OfflineProcessingThread implements Runnable {
