@@ -1,5 +1,6 @@
 package com.gempukku.terasology.graphics.environment.renderer;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.gempukku.secsy.context.annotation.In;
@@ -72,6 +73,7 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
             renderableChunksInWorld.put(worldId, renderableChunk);
         }
         renderableChunk.updateChunkMesh(chunkMeshManager.getChunkMesh(worldId, x, y, z), textureAtlasProvider.getTextures());
+        Gdx.app.debug("ChunkRenderingSystem", "Chunk renderable created: " + x + "," + y + "," + z);
     }
 
     @ReceiveEvent
