@@ -189,9 +189,9 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
             if (oldLocation != null && newLocation != null) {
                 if (!oldLocation.getWorldId().equals(newLocation.getWorldId())) {
-                    processMovedBetweenWorlds(entity, client, oldLocation, newLocation);
+                    processPlayerMovedBetweenWorlds(entity, client, oldLocation, newLocation);
                 } else {
-                    processMovedWithinWorld(entity, client, oldLocation, newLocation);
+                    processPlayerMovedWithinWorld(entity, client, oldLocation, newLocation);
                 }
             }
         }
@@ -251,116 +251,75 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         return null;
     }
 
-    private void processMovedWithinWorld(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
-        List<EntityRef> entitiesToUpdate = new LinkedList<>();
+    private void processPlayerMovedWithinWorld(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
+        worldBlock.set(FastMath.floor(oldLocation.getX()), FastMath.floor(oldLocation.getY()), FastMath.floor(oldLocation.getZ()));
+        int oldChunkX = worldBlock.getChunkX();
+        int oldChunkY = worldBlock.getChunkY();
+        int oldChunkZ = worldBlock.getChunkZ();
 
-        List<StoreNewChunk> storeNewChunks = new LinkedList<>();
-        List<RemoveOldChunk> removeOldChunks = new LinkedList<>();
+        worldBlock.set(FastMath.floor(newLocation.getX()), FastMath.floor(newLocation.getY()), FastMath.floor(newLocation.getZ()));
+        int newChunkX = worldBlock.getChunkX();
+        int newChunkY = worldBlock.getChunkY();
+        int newChunkZ = worldBlock.getChunkZ();
 
-        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
-            ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
+        // Player moved from chunk to chunk
+        if (oldChunkX != newChunkX || oldChunkY != newChunkY || oldChunkZ != newChunkZ) {
+            List<EntityRef> entitiesToUpdate = new LinkedList<>();
 
-            worldBlock.set(FastMath.floor(oldLocation.getX()), FastMath.floor(oldLocation.getY()), FastMath.floor(oldLocation.getZ()));
-            boolean chunkInOldView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                    oldLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client);
+            List<StoreNewChunk> storeNewChunks = new LinkedList<>();
+            List<RemoveOldChunk> removeOldChunks = new LinkedList<>();
 
-            worldBlock.set(FastMath.floor(newLocation.getX()), FastMath.floor(newLocation.getY()), FastMath.floor(newLocation.getZ()));
-            boolean chunkInNewView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                    newLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client);
-            if (chunkInOldView != chunkInNewView) {
-                entitiesToUpdate.add(chunkEntity);
+            for (EntityRef chunkEntity : chunkIndex.getEntities()) {
+                ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
 
-                if (chunkInOldView) {
-                    // Old chunk
-                    for (EntityRef blockEntity : blockIndex.getEntities()) {
-                        LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
-                        if (blockLocation.getWorldId().equals(oldLocation.getWorldId())) {
-                            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
-                            if (worldBlock.getChunkX() == oldLocation.getX() && worldBlock.getChunkY() == oldLocation.getY() && worldBlock.getChunkZ() == oldLocation.getZ())
-                                entitiesToUpdate.add(blockEntity);
+                boolean chunkInOldView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
+                        oldLocation.getWorldId(), oldChunkX, oldChunkY, oldChunkZ, client);
+
+                boolean chunkInNewView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
+                        newLocation.getWorldId(), newChunkX, newChunkY, newChunkZ, client);
+                if (chunkInOldView != chunkInNewView) {
+                    entitiesToUpdate.add(chunkEntity);
+
+                    appendBlocksInChunk(entitiesToUpdate, chunk, oldLocation.getWorldId());
+                    if (chunkInOldView) {
+                        removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
+                    } else {
+                        ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
+                        if (chunkBlocks != null) {
+                            short[] blocks = chunkBlocks.getBlocks();
+                            storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
                         }
-                    }
-                    removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
-                } else {
-                    // New chunk
-                    for (EntityRef blockEntity : blockIndex.getEntities()) {
-                        LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
-                        if (blockLocation.getWorldId().equals(newLocation.getWorldId())) {
-                            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
-                            if (worldBlock.getChunkX() == newLocation.getX() && worldBlock.getChunkY() == newLocation.getY() && worldBlock.getChunkZ() == newLocation.getZ())
-                                entitiesToUpdate.add(blockEntity);
-                        }
-                    }
-                    ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
-                    if (chunkBlocks != null) {
-                        short[] blocks = chunkBlocks.getBlocks();
-                        storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
                     }
                 }
             }
-        }
 
-        if (!entitiesToUpdate.isEmpty()) {
-            for (ClientEntityRelevancyRuleListener listener : listeners) {
-                listener.entityRelevancyChanged(client.getClientId(), entitiesToUpdate);
+            if (!entitiesToUpdate.isEmpty()) {
+                for (ClientEntityRelevancyRuleListener listener : listeners) {
+                    listener.entityRelevancyChanged(client.getClientId(), entitiesToUpdate);
+                }
             }
-        }
 
-        for (RemoveOldChunk removeOldChunk : removeOldChunks) {
-            clientEntity.send(removeOldChunk);
-        }
-        for (StoreNewChunk storeNewChunk : storeNewChunks) {
-            clientEntity.send(storeNewChunk);
+            for (RemoveOldChunk removeOldChunk : removeOldChunks) {
+                clientEntity.send(removeOldChunk);
+            }
+            for (StoreNewChunk storeNewChunk : storeNewChunks) {
+                clientEntity.send(storeNewChunk);
+            }
         }
     }
 
-    private void processMovedBetweenWorlds(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
+    private void appendBlocksInChunk(List<EntityRef> entitiesToUpdate, ChunkComponent chunk, String worldId) {
+        for (EntityRef blockEntity : blockIndex.getEntities()) {
+            LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
+            if (blockLocation.getWorldId().equals(worldId)) {
+                worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                if (worldBlock.getChunkX() == chunk.getX() && worldBlock.getChunkY() == chunk.getY() && worldBlock.getChunkZ() == chunk.getZ())
+                    entitiesToUpdate.add(blockEntity);
+            }
+        }
+    }
+
+    private void processPlayerMovedBetweenWorlds(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
         // TODO implement it correctly
-
-        List<EntityRef> entitiesToUpdate = new LinkedList<>();
-
-        List<StoreNewChunk> storeNewChunks = new LinkedList<>();
-        List<RemoveOldChunk> removeOldChunks = new LinkedList<>();
-
-        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
-            ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
-
-            if (chunk.getWorldId().equals(oldLocation.getWorldId())) {
-                worldBlock.set(FastMath.floor(oldLocation.getX()), FastMath.floor(oldLocation.getY()), FastMath.floor(oldLocation.getZ()));
-                if (isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                        oldLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client)) {
-                    // Chunk was visible before
-                    entitiesToUpdate.add(chunkEntity);
-                    removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
-                }
-            } else if (chunk.getWorldId().equals(newLocation.getWorldId())) {
-                worldBlock.set(FastMath.floor(newLocation.getX()), FastMath.floor(newLocation.getY()), FastMath.floor(newLocation.getZ()));
-                if (isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                        newLocation.getWorldId(), worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), client)) {
-                    // Chunk is visible now
-                    entitiesToUpdate.add(chunkEntity);
-                    short[] blocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()).getBlocks();
-                    storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
-                }
-            }
-        }
-        for (EntityRef worldEntity : worldIndex.getEntities()) {
-            String worldId = worldEntity.getComponent(WorldComponent.class).getWorldId();
-            if (worldId.equals(oldLocation.getWorldId()) || worldId.equals(newLocation.getWorldId()))
-                entitiesToUpdate.add(worldEntity);
-        }
-
-        if (!entitiesToUpdate.isEmpty()) {
-            for (ClientEntityRelevancyRuleListener listener : listeners) {
-                listener.entityRelevancyChanged(client.getClientId(), entitiesToUpdate);
-            }
-        }
-
-        for (RemoveOldChunk removeOldChunk : removeOldChunks) {
-            clientEntity.send(removeOldChunk);
-        }
-        for (StoreNewChunk storeNewChunk : storeNewChunks) {
-            clientEntity.send(storeNewChunk);
-        }
     }
 }

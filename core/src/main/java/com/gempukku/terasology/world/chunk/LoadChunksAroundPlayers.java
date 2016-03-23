@@ -26,7 +26,7 @@ public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSys
     @In
     private EntityManager entityManager;
 
-    private int horizontalChunkDistance = 7;
+    private int horizontalChunkDistance = 10;
     private int verticalChunkDistance = 3;
 
     private Set<EntityRef> connectedClients = new HashSet<>();

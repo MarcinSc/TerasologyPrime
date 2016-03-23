@@ -26,6 +26,7 @@ import com.google.common.collect.Iterables;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -91,14 +92,20 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
 
         // Bring in all the offThread values into main thread
         synchronized (copyLockObject) {
-            for (Map.Entry<ChunkBlocks, Iterable<EntityData>> chunkBlocksIterableEntry : finishedBlocksOffMainThread.entrySet()) {
-                ChunkBlocks chunkBlocks = chunkBlocksIterableEntry.getKey();
-                chunkBlocks.setStatus(ChunkBlocks.Status.READY);
-                entitiesToAdd.add(chunkBlocksIterableEntry.getValue());
-                chunksToNotify.add(chunkBlocks);
-            }
+            Gdx.app.debug("ChunkManager", "To merge: " + finishedBlocksOffMainThread.size() + " chunks.");
 
-            finishedBlocksOffMainThread.clear();
+            Iterator<Map.Entry<ChunkBlocks, Iterable<EntityData>>> iterator = finishedBlocksOffMainThread.entrySet().iterator();
+            int count = 0;
+            // We merge 50 chunks at a time...
+            while (iterator.hasNext() && count < 50) {
+                Map.Entry<ChunkBlocks, Iterable<EntityData>> entry = iterator.next();
+                ChunkBlocks chunkBlocks = entry.getKey();
+                chunkBlocks.setStatus(ChunkBlocks.Status.READY);
+                entitiesToAdd.add(entry.getValue());
+                chunksToNotify.add(chunkBlocks);
+                iterator.remove();
+                count++;
+            }
         }
 
         // To avoid ConcurrentModificationException we first gather the ones to remove
@@ -136,9 +143,11 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
             }
         }
 
-        // And now remove them
-        for (ChunkBlocks blocks : toRemove) {
-            chunkBlocks.get(blocks.getWorldId()).remove(new Vector3(blocks.x, blocks.y, blocks.z));
+        synchronized (chunkBlocks) {
+            // And now remove them
+            for (ChunkBlocks blocks : toRemove) {
+                chunkBlocks.get(blocks.getWorldId()).remove(new Vector3(blocks.x, blocks.y, blocks.z));
+            }
         }
 
         for (ChunkRelevanceRule chunkRelevanceRule : chunkRelevanceRules) {
