@@ -16,7 +16,6 @@ import com.gempukku.secsy.network.server.ClientConnectedEvent;
 import com.gempukku.secsy.network.server.ClientEntityRelevanceRule;
 import com.gempukku.secsy.network.server.ClientEntityRelevancyRuleListener;
 import com.gempukku.secsy.network.server.ClientManager;
-import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.WorldBlock;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
@@ -85,20 +84,19 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
             ClientComponent client = clientEntity.getComponent(ClientComponent.class);
 
-            worldBlock.set(FastMath.floor(location.getX()), FastMath.floor(location.getY()), FastMath.floor(location.getZ()));
+            worldBlock.set(location.getX(), location.getY(), location.getZ());
             int playerChunkX = worldBlock.getChunkX();
             int playerChunkY = worldBlock.getChunkY();
             int playerChunkZ = worldBlock.getChunkZ();
 
-            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()),
-                    FastMath.floor(blockLocation.getZ()));
+            worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
 
             return Math.abs(playerChunkX - worldBlock.getChunkX()) <= client.getChunkDistanceX()
                     && Math.abs(playerChunkY - worldBlock.getChunkY()) <= client.getChunkDistanceY()
                     && Math.abs(playerChunkZ - worldBlock.getChunkZ()) <= client.getChunkDistanceZ();
         } else if (entity.hasComponent(ChunkComponent.class)) {
             LocationComponent clientLocation = clientEntity.getComponent(LocationComponent.class);
-            worldBlock.set(FastMath.floor(clientLocation.getX()), FastMath.floor(clientLocation.getY()), FastMath.floor(clientLocation.getZ()));
+            worldBlock.set(clientLocation.getX(), clientLocation.getY(), clientLocation.getZ());
 
             ChunkComponent chunk = entity.getComponent(ChunkComponent.class);
             return isChunkInViewDistance(
@@ -142,7 +140,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
         List<StoreNewChunk> storeNewChunks = new LinkedList<>();
 
-        worldBlock.set(FastMath.floor(location.getX()), FastMath.floor(location.getY()), FastMath.floor(location.getZ()));
+        worldBlock.set(location.getX(), location.getY(), location.getZ());
         int playerChunkX = worldBlock.getChunkX();
         int playerChunkY = worldBlock.getChunkY();
         int playerChunkZ = worldBlock.getChunkZ();
@@ -160,8 +158,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         for (EntityRef blockEntity : blockIndex.getEntities()) {
             LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
 
-            worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()),
-                    FastMath.floor(blockLocation.getZ()));
+            worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
 
             if (Math.abs(playerChunkX - worldBlock.getChunkX()) <= clientComponent.getChunkDistanceX()
                     && Math.abs(playerChunkY - worldBlock.getChunkY()) <= clientComponent.getChunkDistanceY()
@@ -209,7 +206,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             List<EntityRef> changeRelevanceEntities = new LinkedList<>();
 
             LocationComponent clientLocation = clientEntity.getComponent(LocationComponent.class);
-            worldBlock.set(FastMath.floor(clientLocation.getX()), FastMath.floor(clientLocation.getY()), FastMath.floor(clientLocation.getZ()));
+            worldBlock.set(clientLocation.getX(), clientLocation.getY(), clientLocation.getZ());
 
             ClientComponent client = clientEntity.getComponent(ClientComponent.class);
             if (isChunkInViewDistance(worldId, chunkX, chunkY, chunkZ,
@@ -219,7 +216,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                 for (EntityRef blockEntity : blockIndex.getEntities()) {
                     LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
                     if (blockLocation.getWorldId().equals(worldId)) {
-                        worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                        worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
                         if (worldBlock.getChunkX() == chunkX && worldBlock.getChunkY() == chunkY && worldBlock.getChunkZ() == chunkZ)
                             changeRelevanceEntities.add(blockEntity);
                     }
@@ -252,12 +249,12 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     }
 
     private void processPlayerMovedWithinWorld(EntityRef clientEntity, ClientComponent client, LocationComponent oldLocation, LocationComponent newLocation) {
-        worldBlock.set(FastMath.floor(oldLocation.getX()), FastMath.floor(oldLocation.getY()), FastMath.floor(oldLocation.getZ()));
+        worldBlock.set(oldLocation.getX(), oldLocation.getY(), oldLocation.getZ());
         int oldChunkX = worldBlock.getChunkX();
         int oldChunkY = worldBlock.getChunkY();
         int oldChunkZ = worldBlock.getChunkZ();
 
-        worldBlock.set(FastMath.floor(newLocation.getX()), FastMath.floor(newLocation.getY()), FastMath.floor(newLocation.getZ()));
+        worldBlock.set(newLocation.getX(), newLocation.getY(), newLocation.getZ());
         int newChunkX = worldBlock.getChunkX();
         int newChunkY = worldBlock.getChunkY();
         int newChunkZ = worldBlock.getChunkZ();
@@ -312,7 +309,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         for (EntityRef blockEntity : blockIndex.getEntities()) {
             LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
             if (blockLocation.getWorldId().equals(worldId)) {
-                worldBlock.set(FastMath.floor(blockLocation.getX()), FastMath.floor(blockLocation.getY()), FastMath.floor(blockLocation.getZ()));
+                worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
                 if (worldBlock.getChunkX() == chunk.getX() && worldBlock.getChunkY() == chunk.getY() && worldBlock.getChunkZ() == chunk.getZ())
                     entitiesToUpdate.add(blockEntity);
             }

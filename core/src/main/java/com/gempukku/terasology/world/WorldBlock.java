@@ -1,5 +1,6 @@
 package com.gempukku.terasology.world;
 
+import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 
 public class WorldBlock {
@@ -14,21 +15,21 @@ public class WorldBlock {
     }
 
     public void set(float x, float y, float z) {
-        this.x = Math.round(x);
-        this.y = Math.round(y);
-        this.z = Math.round(z);
+        this.x = FastMath.floor(x);
+        this.y = FastMath.floor(y);
+        this.z = FastMath.floor(z);
     }
 
     public int getChunkX() {
-        return (int) Math.floor(1f * x / ChunkSize.X);
+        return FastMath.floor(1f * x / ChunkSize.X);
     }
 
     public int getChunkY() {
-        return (int) Math.floor(1f * y / ChunkSize.Y);
+        return FastMath.floor(1f * y / ChunkSize.Y);
     }
 
     public int getChunkZ() {
-        return (int) Math.floor(1f * z / ChunkSize.Z);
+        return FastMath.floor(1f * z / ChunkSize.Z);
     }
 
     public int getInChunkX() {
