@@ -139,10 +139,10 @@ public class ThreePhaseMasterRenderer implements RenderingEngine, EnvironmentRen
         myShaderProvider.setShadowMapSize(shadowFidelity * 1024);
     }
 
-    private float getAmbientLight(float timeOfDay) {
+    private float getAmbientLight(float radialTimeOfDay) {
         float ambientLight = 0.4f;
 
-        float dayComponent = (float) Math.cos(timeOfDay);
+        float dayComponent = (float) -Math.cos(radialTimeOfDay);
         if (dayComponent < -0.3f) {
             ambientLight = 0.2f;
         } else if (dayComponent < 0.3) {
