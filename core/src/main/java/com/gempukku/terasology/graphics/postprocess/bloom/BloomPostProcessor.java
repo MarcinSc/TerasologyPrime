@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.postprocess.blur;
+package com.gempukku.terasology.graphics.postprocess.bloom;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -21,21 +21,21 @@ import com.gempukku.terasology.graphics.postprocess.PostProcessingRendererRegist
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT)
-public class BlurPostProcessor implements PostProcessingRenderer, LifeCycleSystem {
+public class BloomPostProcessor implements PostProcessingRenderer, LifeCycleSystem {
     @In
     private PostProcessingRendererRegistry postProcessingRendererRegistry;
 
     private ModelBatch modelBatch;
 
-    private BlurShaderProvider blurShaderProvider;
+    private BloomShaderProvider bloomShaderProvider;
     private ModelInstance modelInstance;
     private Model model;
 
     @Override
     public void preInitialize() {
-        blurShaderProvider = new BlurShaderProvider();
+        bloomShaderProvider = new BloomShaderProvider();
 
-        modelBatch = new ModelBatch(blurShaderProvider);
+        modelBatch = new ModelBatch(bloomShaderProvider);
         ModelBuilder modelBuilder = new ModelBuilder();
         modelBuilder.begin();
         MeshPartBuilder backgroundBuilder = modelBuilder.part("screen", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, new Material());
@@ -57,16 +57,16 @@ public class BlurPostProcessor implements PostProcessingRenderer, LifeCycleSyste
 
     @Override
     public boolean isEnabled(EntityRef observerEntity) {
-        return observerEntity.hasComponent(BlurComponent.class);
+        return observerEntity.hasComponent(BloomComponent.class);
     }
 
     @Override
     public void render(EntityRef observerEntity, RenderingBuffer renderingBuffer, Camera camera,
                        int sourceBoundColorTexture, int sourceBoundDepthTexture) {
-        float blurRadius = observerEntity.getComponent(BlurComponent.class).getBlurRadius();
-
-        blurShaderProvider.setSourceTextureIndex(sourceBoundColorTexture);
-        blurShaderProvider.setBlurRadius(blurRadius);
+        BloomComponent bloom = observerEntity.getComponent(BloomComponent.class);
+        bloomShaderProvider.setSourceTextureIndex(sourceBoundColorTexture);
+        bloomShaderProvider.setBlurRadius(bloom.getBlurRadius());
+        bloomShaderProvider.setMinimalBrightness(bloom.getMinimalBrightness());
 
         renderingBuffer.begin();
 
