@@ -175,9 +175,13 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
             RenderingBuffer resultBuffer = hasNext ? buffer : screenRenderingBuffer;
 
             buffer.flip();
-            buffer.getSourceBuffer().getColorBufferTexture().bind(2);
+            Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + 2);
+            Gdx.gl.glBindTexture(GL20.GL_TEXTURE_2D, buffer.getSourceBuffer().getColorBufferTexture().getTextureObjectHandle());
+//            buffer.getSourceBuffer().getColorBufferTexture().bind(2);
+            Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + 3);
+            Gdx.gl.glBindTexture(GL20.GL_TEXTURE_2D, buffer.getSourceBuffer().getDepthBufferHandle());
 
-            postProcessor.render(observerEntity, resultBuffer, camera, 2);
+            postProcessor.render(observerEntity, resultBuffer, camera, 2, 3);
         }
     }
 

@@ -61,10 +61,11 @@ public class BlurPostProcessor implements PostProcessingRenderer, LifeCycleSyste
     }
 
     @Override
-    public void render(EntityRef observerEntity, RenderingBuffer renderingBuffer, Camera camera, int sourceBoundTexture) {
+    public void render(EntityRef observerEntity, RenderingBuffer renderingBuffer, Camera camera,
+                       int sourceBoundColorTexture, int sourceBoundDepthTexture) {
         float blurRadius = observerEntity.getComponent(BlurComponent.class).getBlurRadius();
 
-        gaussianBlurShaderProvider.setSourceTextureIndex(sourceBoundTexture);
+        gaussianBlurShaderProvider.setSourceTextureIndex(sourceBoundColorTexture);
         gaussianBlurShaderProvider.setBlurRadius(blurRadius);
 
         renderingBuffer.begin();

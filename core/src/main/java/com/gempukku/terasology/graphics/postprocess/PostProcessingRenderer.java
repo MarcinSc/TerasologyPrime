@@ -7,5 +7,5 @@ import com.gempukku.terasology.graphics.environment.RenderingBuffer;
 public interface PostProcessingRenderer {
     boolean isEnabled(EntityRef observerEntity);
 
-    void render(EntityRef observerEntity, RenderingBuffer renderingBuffer, Camera camera, int sourceBoundTexture);
+    void render(EntityRef observerEntity, RenderingBuffer renderingBuffer, Camera camera, int sourceBoundColorTexture, int sourceBoundDepthTexture);
 }
