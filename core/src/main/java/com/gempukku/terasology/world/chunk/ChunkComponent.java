@@ -3,7 +3,7 @@ package com.gempukku.terasology.world.chunk;
 import com.gempukku.secsy.entity.Component;
 import com.gempukku.terasology.communication.SharedComponent;
 
-@SharedComponent
+@SharedComponent(notSharedFields = "blockIds")
 public interface ChunkComponent extends Component {
     String getWorldId();
 
@@ -12,4 +12,6 @@ public interface ChunkComponent extends Component {
     int getY();
 
     int getZ();
+
+    short[] getBlockIds();
 }

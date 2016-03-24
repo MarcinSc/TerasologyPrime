@@ -4,9 +4,12 @@ import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
+import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityManager;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
+import com.gempukku.secsy.entity.index.EntityIndex;
+import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.communication.RemoveOldChunk;
 import com.gempukku.terasology.communication.StoreNewChunk;
 import com.gempukku.terasology.world.WorldBlock;
@@ -21,11 +24,19 @@ import java.util.Map;
 
 @RegisterSystem(
         profiles = NetProfiles.CLIENT, shared = ChunkBlocksProvider.class)
-public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
+public class RemoteChunkBlocksProvider implements ChunkBlocksProvider, LifeCycleSystem {
     @In
-    public EntityManager entityManager;
+    private EntityManager entityManager;
+    @In
+    private EntityIndexManager entityIndexManager;
 
     private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = new HashMap<>();
+    private EntityIndex chunkIndex;
+
+    @Override
+    public void initialize() {
+        chunkIndex = entityIndexManager.addIndexOnComponents(ChunkComponent.class);
+    }
 
     @ReceiveEvent
     public void loadChunk(StoreNewChunk chunk, EntityRef clientEntity, ClientComponent client) {
@@ -53,6 +64,18 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider {
             if (worldId.equals(worldEntity.getComponent(WorldComponent.class).getWorldId())) {
                 return worldEntity;
             }
+        }
+        return null;
+    }
+
+    private EntityRef getChunkEntity(ChunkLocation chunkLocation) {
+        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
+            ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
+            if (chunk.getWorldId().equals(chunkLocation.getWorldId())
+                    && chunk.getX() == chunkLocation.getX()
+                    && chunk.getY() == chunkLocation.getY()
+                    && chunk.getZ() == chunkLocation.getZ())
+                return chunkEntity;
         }
         return null;
     }

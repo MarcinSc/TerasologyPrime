@@ -13,8 +13,6 @@ import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRule;
 import com.gempukku.secsy.entity.relevance.EntityRelevanceRuleRegistry;
-import com.gempukku.secsy.network.serialize.ComponentInformation;
-import com.gempukku.secsy.network.serialize.EntityInformation;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.MultiverseManager;
 import com.gempukku.terasology.world.WorldBlock;
@@ -196,10 +194,13 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     @Override
     public void newRelevantEntitiesLoaded() {
         // We have to assign to ChunkBlocks the entity that it represents
-        for (ChunkLocation chunkLocation : chunksToNotify) {
-            Gdx.app.debug("ChunkManager", "Notifying on: " + chunkLocation.getX() + "," + chunkLocation.getY() + "," + chunkLocation.getZ());
-            multiverseManager.getWorldEntity(chunkLocation.getWorldId()).send(
-                    new AfterChunkLoadedEvent(chunkLocation.getX(), chunkLocation.getY(), chunkLocation.getZ()));
+        for (ChunkBlocks chunkBlocks : chunksToNotify) {
+            EntityRef chunkEntity = getChunkEntity(chunkBlocks);
+            chunkBlocks.setBlocks(chunkEntity.getComponent(ChunkComponent.class).getBlockIds());
+
+            Gdx.app.debug("ChunkManager", "Notifying on: " + chunkBlocks.getX() + "," + chunkBlocks.getY() + "," + chunkBlocks.getZ());
+            multiverseManager.getWorldEntity(chunkBlocks.getWorldId()).send(
+                    new AfterChunkLoadedEvent(chunkBlocks.getX(), chunkBlocks.getY(), chunkBlocks.getZ()));
         }
     }
 
@@ -284,46 +285,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         }
 
         private void generateChunk(ChunkBlocks chunkBlocks) {
-            Iterable<WorldGenerator.EntityDataOrCommonBlock> chunkData = worldGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
-
-            short[] chunkBlockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
-
-            Set<StoredEntityData> entities = new HashSet<>();
-            int index = 0;
-            for (WorldGenerator.EntityDataOrCommonBlock blockInfo : chunkData) {
-                int blockInChunkX = index / (ChunkSize.Y * ChunkSize.Z);
-                int blockInChunkY = (index / ChunkSize.Z) % ChunkSize.Y;
-                int blockInChunkZ = index % ChunkSize.Z;
-
-                chunkBlockIds[index] = blockInfo.commonBlock;
-                if (blockInfo.entityData != null) {
-                    EntityInformation entityData = new EntityInformation(blockInfo.entityData);
-                    ComponentInformation locationComponentData = new ComponentInformation(LocationComponent.class);
-                    locationComponentData.addField("worldId", chunkBlocks.worldId);
-                    locationComponentData.addField("x", (float) (chunkBlocks.x * ChunkSize.X + blockInChunkX));
-                    locationComponentData.addField("y", (float) (chunkBlocks.y * ChunkSize.Y + blockInChunkY));
-                    locationComponentData.addField("z", (float) (chunkBlocks.z * ChunkSize.Z + blockInChunkZ));
-
-                    entityData.addComponent(locationComponentData);
-                    entityData.addComponent(new ComponentInformation(BlockComponent.class));
-                    entities.add(entityData);
-                }
-                index++;
-            }
-
-            chunkBlocks.setBlocks(chunkBlockIds);
-
-            EntityInformation chunkEntity = new EntityInformation();
-            ComponentInformation chunkComponent = new ComponentInformation(ChunkComponent.class);
-            chunkComponent.addField("worldId", chunkBlocks.worldId);
-            chunkComponent.addField("x", chunkBlocks.x);
-            chunkComponent.addField("y", chunkBlocks.y);
-            chunkComponent.addField("z", chunkBlocks.z);
-            chunkEntity.addComponent(chunkComponent);
-            entities.add(chunkEntity);
+            Iterable<StoredEntityData> chunkData = worldGenerator.generateChunk(chunkBlocks.worldId, chunkBlocks.x, chunkBlocks.y, chunkBlocks.z);
 
             synchronized (copyLockObject) {
-                finishedBlocksOffMainThread.put(chunkBlocks, entities);
+                finishedBlocksOffMainThread.put(chunkBlocks, chunkData);
             }
         }
 

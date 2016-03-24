@@ -4,6 +4,7 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.io.EntityData;
+import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
 import com.gempukku.secsy.network.serialize.EntityInformation;
 import com.gempukku.terasology.component.TerasologyComponentManager;
@@ -15,8 +16,11 @@ import com.gempukku.terasology.procedural.SimplexNoise;
 import com.gempukku.terasology.trees.component.IndividualTreeComponent;
 import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
+import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.chunk.WorldGenerator;
+import com.gempukku.terasology.world.component.BlockComponent;
+import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.SeedComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
@@ -73,7 +77,7 @@ public class HillsWorldGenerator implements WorldGenerator {
     }
 
     @Override
-    public Iterable<EntityDataOrCommonBlock> generateChunk(String worldId, int x, int y, int z) {
+    public Iterable<StoredEntityData> generateChunk(String worldId, int x, int y, int z) {
         if (air == -1) {
             air = commonBlockManager.getCommonBlockId("air");
             grass = commonBlockManager.getCommonBlockId("grass");
@@ -89,7 +93,9 @@ public class HillsWorldGenerator implements WorldGenerator {
 
         int mountainAmplitude = 32;
 
-        List<EntityDataOrCommonBlock> entities = new LinkedList<>();
+        List<StoredEntityData> entities = new LinkedList<>();
+        short[] blockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
+        int index = 0;
         for (int dx = 0; dx < ChunkSize.X; dx++) {
             for (int dy = 0; dy < ChunkSize.Y; dy++) {
                 int blockLevel = y * ChunkSize.Y + dy;
@@ -110,19 +116,42 @@ public class HillsWorldGenerator implements WorldGenerator {
                         seed.addField("seed", rnd.nextLong());
                         entityInformation.addComponent(seed);
 
-                        entities.add(EntityDataOrCommonBlock.entityData(tree, entityInformation));
+                        ComponentInformation block = new ComponentInformation(BlockComponent.class);
+                        entityInformation.addComponent(block);
+
+                        ComponentInformation location = new ComponentInformation(LocationComponent.class);
+                        location.addField("worldId", worldId);
+                        location.addField("x", (float) (x * ChunkSize.X + dx));
+                        location.addField("y", (float) (y * ChunkSize.Y + dy));
+                        location.addField("z", (float) (z * ChunkSize.Z + dz));
+                        entityInformation.addComponent(location);
+
+                        entities.add(entityInformation);
+                        blockIds[index] = tree;
                     } else if (blockLevel > groundLevel) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(air));
+                        blockIds[index] = air;
                     } else if (blockLevel > groundLevel - 1) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(grass));
+                        blockIds[index] = grass;
                     } else if (blockLevel > groundLevel - 3) {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(dirt));
+                        blockIds[index] = dirt;
                     } else {
-                        entities.add(EntityDataOrCommonBlock.commonBlock(stone));
+                        blockIds[index] = stone;
                     }
+                    index++;
                 }
             }
         }
+
+        EntityInformation chunkEntity = new EntityInformation();
+        ComponentInformation chunk = new ComponentInformation(ChunkComponent.class);
+        chunk.addField("worldId", worldId);
+        chunk.addField("x", x);
+        chunk.addField("y", y);
+        chunk.addField("z", z);
+        chunk.addField("blockIds", blockIds);
+        chunkEntity.addComponent(chunk);
+        entities.add(chunkEntity);
+
         return entities;
     }
 }
