@@ -11,6 +11,7 @@ public class BloomShaderProvider implements ShaderProvider {
     private int sourceTextureIndex;
     private float blurRadius;
     private float minimalBrightness;
+    private float bloomStrength;
 
     public void setSourceTextureIndex(int sourceTextureIndex) {
         this.sourceTextureIndex = sourceTextureIndex;
@@ -22,6 +23,10 @@ public class BloomShaderProvider implements ShaderProvider {
 
     public void setMinimalBrightness(float minimalBrightness) {
         this.minimalBrightness = minimalBrightness;
+    }
+
+    public void setBloomStrength(float bloomStrength) {
+        this.bloomStrength = bloomStrength;
     }
 
     @Override
@@ -37,6 +42,7 @@ public class BloomShaderProvider implements ShaderProvider {
         bloomShader.setSourceTextureIndex(sourceTextureIndex);
         bloomShader.setBlurRadius(blurRadius);
         bloomShader.setMinimalBrightness(minimalBrightness);
+        bloomShader.setBloomStrength(bloomStrength);
         return bloomShader;
     }
 

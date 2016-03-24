@@ -11,10 +11,12 @@ public class BloomShader extends DefaultShader {
     private final int u_viewportWidth = register("u_viewportWidth");
     private final int u_viewportHeight = register("u_viewportHeight");
     private final int u_blurRadius = register("u_blurRadius");
+    private final int u_bloomStrength = register("u_bloomStrength");
 
     private int sourceTextureIndex;
     private float blurRadius;
     private float minimalBrightness;
+    private float bloomStrength;
 
     public BloomShader(Renderable renderable, Config config) {
         super(renderable, config);
@@ -32,6 +34,10 @@ public class BloomShader extends DefaultShader {
         this.minimalBrightness = minimalBrightness;
     }
 
+    public void setBloomStrength(float bloomStrength) {
+        this.bloomStrength = bloomStrength;
+    }
+
     @Override
     public void begin(Camera camera, RenderContext context) {
         super.begin(camera, context);
@@ -41,11 +47,11 @@ public class BloomShader extends DefaultShader {
         set(u_blurRadius, blurRadius);
         set(u_viewportWidth, camera.viewportWidth);
         set(u_viewportHeight, camera.viewportHeight);
+        set(u_bloomStrength, bloomStrength);
     }
 
     @Override
     public void dispose() {
         super.dispose();
     }
-
 }

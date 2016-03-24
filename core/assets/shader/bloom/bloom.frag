@@ -7,6 +7,7 @@ uniform float u_minimalBrightness;
 uniform float u_viewportWidth;
 uniform float u_viewportHeight;
 uniform float u_blurRadius;
+uniform float u_bloomStrength;
 
 varying vec2 v_position;
 
@@ -41,6 +42,6 @@ vec3 getBloom() {
 
 void main() {
     vec4 color = texture2D(u_sourceTexture, v_position);
-    color.rgb += getBloom();
+    color.rgb += u_bloomStrength * getBloom();
     gl_FragColor = color;
 }

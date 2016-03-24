@@ -67,6 +67,7 @@ public class BloomPostProcessor implements PostProcessingRenderer, LifeCycleSyst
         bloomShaderProvider.setSourceTextureIndex(sourceBoundColorTexture);
         bloomShaderProvider.setBlurRadius(bloom.getBlurRadius());
         bloomShaderProvider.setMinimalBrightness(bloom.getMinimalBrightness());
+        bloomShaderProvider.setBloomStrength(bloom.getBloomStrength());
 
         renderingBuffer.begin();
 
