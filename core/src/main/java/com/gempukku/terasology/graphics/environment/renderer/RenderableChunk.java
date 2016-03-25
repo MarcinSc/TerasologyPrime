@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.gempukku.terasology.graphics.environment.ChunkMesh;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMesh;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 
 import java.util.List;

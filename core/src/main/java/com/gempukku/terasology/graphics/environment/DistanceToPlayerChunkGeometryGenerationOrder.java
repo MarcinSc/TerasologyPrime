@@ -14,8 +14,8 @@ import com.gempukku.terasology.world.component.LocationComponent;
 import java.util.Collection;
 
 @RegisterSystem(
-        profiles = NetProfiles.CLIENT, shared = ChunkMeshGenerationOrder.class)
-public class DistanceToPlayerChunkMeshGenerationOrder implements ChunkMeshGenerationOrder {
+        profiles = NetProfiles.CLIENT, shared = ChunkGeometryGenerationOrder.class)
+public class DistanceToPlayerChunkGeometryGenerationOrder implements ChunkGeometryGenerationOrder {
     private Vector3 cameraPosition;
 
     @ReceiveEvent
@@ -31,18 +31,18 @@ public class DistanceToPlayerChunkMeshGenerationOrder implements ChunkMeshGenera
     }
 
     @Override
-    public ChunkMesh getChunkMeshToProcess(Collection<ChunkMesh> chunkMeshes) {
-        ChunkMesh result = null;
+    public ChunkGeometryContainer getChunkMeshToProcess(Collection<ChunkGeometryContainer> chunkGeometryContainers) {
+        ChunkGeometryContainer result = null;
         float minDistance = Float.MAX_VALUE;
-        for (ChunkMesh chunkMesh : chunkMeshes) {
-            if (chunkMesh.getStatus() == ChunkMesh.Status.QUEUED_FOR_GENERATOR) {
+        for (ChunkGeometryContainer chunkGeometryContainer : chunkGeometryContainers) {
+            if (chunkGeometryContainer.getStatus() == ChunkGeometryContainer.Status.QUEUED_FOR_GENERATOR) {
                 float distance = cameraPosition.dst(
-                        (chunkMesh.x + 0.5f) * ChunkSize.X,
-                        (chunkMesh.y + 0.5f) * ChunkSize.Y,
-                        (chunkMesh.z + 0.5f) * ChunkSize.Z);
+                        (chunkGeometryContainer.x + 0.5f) * ChunkSize.X,
+                        (chunkGeometryContainer.y + 0.5f) * ChunkSize.Y,
+                        (chunkGeometryContainer.z + 0.5f) * ChunkSize.Z);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    result = chunkMesh;
+                    result = chunkGeometryContainer;
                 }
             }
         }

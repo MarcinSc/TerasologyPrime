@@ -1,12 +1,11 @@
 package com.gempukku.terasology.graphics.environment;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g3d.model.MeshPart;
-import com.badlogic.gdx.utils.Array;
+import com.gempukku.terasology.world.chunk.geometry.ChunkGeometry;
 
 import java.util.List;
 
-public interface ChunkMeshGenerator<T> {
+public interface ChunkGeometryGenerator<T extends ChunkGeometry> {
     boolean canPrepareChunkData(String worldId, int x, int y, int z);
 
     /**
@@ -20,14 +19,5 @@ public interface ChunkMeshGenerator<T> {
      * @return
      */
     // Would be nice to get rid of the "textures" here
-    T prepareChunkDataOffThread(List<Texture> textures, String worldId, int x, int y, int z);
-
-    /**
-     * This method will be called from the main thread to generate MeshParts based on the object created
-     * by the class.
-     *
-     * @param preparedData
-     * @return
-     */
-    Array<MeshPart> generateMeshParts(T preparedData);
+    T prepareChunkGeometryOffThread(List<Texture> textures, String worldId, int x, int y, int z);
 }

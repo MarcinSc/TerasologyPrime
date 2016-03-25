@@ -17,6 +17,7 @@ import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.component.GeneratedBlockMeshComponent;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
@@ -31,9 +32,10 @@ import java.util.List;
 import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes", shared = {ChunkMeshGenerator.class, BlockMeshGeneratorRegistry.class})
-public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshLists>, ChunkMeshGeneratorCallback,
-        BlockMeshGeneratorRegistry, LifeCycleSystem {
+        profiles = "generateChunkMeshes", shared = {ChunkGeometryGenerator.class, ChunkMeshGenerator.class,
+        BlockMeshGeneratorRegistry.class})
+public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<ListsChunkGeometry>, ChunkMeshGenerator<ListsChunkGeometry>,
+        ChunkMeshGeneratorCallback, BlockMeshGeneratorRegistry, LifeCycleSystem {
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
     @In
@@ -104,7 +106,7 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
     }
 
     @Override
-    public ChunkMeshLists prepareChunkDataOffThread(List<Texture> textures, String worldId, int x, int y, int z) {
+    public ListsChunkGeometry prepareChunkGeometryOffThread(List<Texture> textures, String worldId, int x, int y, int z) {
         init();
 
         ChunkBlocks[] chunkSector = new ChunkBlocks[blockSector.length];
@@ -147,21 +149,21 @@ public class ListsChunkMeshGenerator implements ChunkMeshGenerator<ChunkMeshList
             indicesPerTexture[i] = indices.toArray();
         }
 
-        return new ChunkMeshLists(8, verticesPerTexture, indicesPerTexture);
+        return new ListsChunkGeometry(8, verticesPerTexture, indicesPerTexture);
     }
 
     @Override
-    public Array<MeshPart> generateMeshParts(ChunkMeshLists chunkMeshLists) {
+    public Array<MeshPart> generateMeshParts(ListsChunkGeometry chunkGeometry) {
         Array<MeshPart> result = new Array<>();
-        int textureCount = chunkMeshLists.verticesPerTexture.length;
+        int textureCount = chunkGeometry.verticesPerTexture.length;
         for (int i = 0; i < textureCount; i++) {
-            float[] vertices = chunkMeshLists.verticesPerTexture[i];
-            short[] indices = chunkMeshLists.indicesPerTexture[i];
+            float[] vertices = chunkGeometry.verticesPerTexture[i];
+            short[] indices = chunkGeometry.indicesPerTexture[i];
 
             if (indices.length > 0) {
                 VertexAttribute customVertexInformation = new VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_flag");
 
-                Mesh mesh = new Mesh(true, vertices.length / chunkMeshLists.floatsPerVertex, indices.length,
+                Mesh mesh = new Mesh(true, vertices.length / chunkGeometry.floatsPerVertex, indices.length,
                         VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0),
                         customVertexInformation);
                 mesh.setVertices(vertices);
