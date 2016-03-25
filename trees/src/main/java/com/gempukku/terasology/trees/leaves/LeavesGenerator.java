@@ -2,10 +2,10 @@ package com.gempukku.terasology.trees.leaves;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
-import com.gempukku.terasology.trees.LSystemTreeBlockMeshGenerator;
+import com.gempukku.terasology.trees.LSystemTreeBlockGeometryGenerator;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
 
 public interface LeavesGenerator {
-    LSystemTreeBlockMeshGenerator.LSystemCallback createLeavesCallback(
-            EntityRef entityRef, BlockMeshGenerator.VertexOutput vertexOutput, Texture texture);
+    LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
+            EntityRef entityRef, BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture);
 }

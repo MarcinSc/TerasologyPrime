@@ -78,6 +78,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         clientProfiles.add(NetProfiles.CLIENT);
         // We use components with naming convention
         clientProfiles.add("nameConventionComponents");
+        clientProfiles.add("generateTextureAtlas");
+        // Client should generate chunk geometries
+        clientProfiles.add("generateChunkGeometry");
         // Client should generate chunk meshes
         clientProfiles.add("generateChunkMeshes");
         // Player controls movement with keyboard
@@ -102,6 +105,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         serverProfiles.add("nameConventionComponents");
         // World generator
         serverProfiles.add("hillsWorld");
+        serverProfiles.add("generateTextureAtlas");
+        // Server needs to generate chunk geometries
+        serverProfiles.add("generateChunkGeometry");
 
         serverContext = new SECSyContext(serverProfiles, new Reflections(scanBasedOnAnnotations));
         serverContext.startup();

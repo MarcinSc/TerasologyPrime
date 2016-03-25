@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.gempukku.secsy.context.annotation.In;
-import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.component.TerasologyComponentManager;
@@ -26,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RegisterSystem(
-        profiles = NetProfiles.CLIENT, shared = {TextureAtlasProvider.class, TextureAtlasRegistry.class})
+        profiles = "generateTextureAtlas", shared = {TextureAtlasProvider.class, TextureAtlasRegistry.class})
 public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, TextureAtlasRegistry, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;

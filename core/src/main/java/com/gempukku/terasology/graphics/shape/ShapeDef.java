@@ -1,7 +1,5 @@
 package com.gempukku.terasology.graphics.shape;
 
-import com.gempukku.terasology.graphics.environment.BlockSide;
-
 import java.util.List;
 
 public class ShapeDef {

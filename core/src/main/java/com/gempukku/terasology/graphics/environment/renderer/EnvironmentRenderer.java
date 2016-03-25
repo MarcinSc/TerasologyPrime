@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.graphics.environment.renderer;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;

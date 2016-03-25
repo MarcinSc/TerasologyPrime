@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.graphics.shape;
 
 import java.util.HashMap;
 import java.util.Map;

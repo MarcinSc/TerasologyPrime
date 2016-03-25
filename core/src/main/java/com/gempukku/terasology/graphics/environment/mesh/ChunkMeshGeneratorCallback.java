@@ -1,5 +1,6 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.graphics.environment.mesh;
 
+import com.gempukku.terasology.graphics.shape.BlockSide;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 
 public interface ChunkMeshGeneratorCallback {

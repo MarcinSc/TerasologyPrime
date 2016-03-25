@@ -5,9 +5,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
-import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
-import com.gempukku.terasology.graphics.environment.BlockMeshGeneratorRegistry;
-import com.gempukku.terasology.graphics.environment.ChunkMeshGeneratorCallback;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGeneratorCallback;
 import com.gempukku.terasology.trees.component.TreeGenerationComponent;
 import com.gempukku.terasology.trees.leaves.LeavesGenerator;
 import com.gempukku.terasology.trees.leaves.LeavesGeneratorRegistry;
@@ -17,6 +15,8 @@ import com.gempukku.terasology.trees.model.TreeDefinition;
 import com.gempukku.terasology.world.WorldStorage;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkSize;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGeneratorRegistry;
 import org.terasology.math.TeraMath;
 import org.terasology.math.geom.Matrix4f;
 import org.terasology.math.geom.Quat4f;
@@ -27,11 +27,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes", shared = {TreeGeneratorRegistry.class, LeavesGeneratorRegistry.class})
-public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCycleSystem,
+        profiles = "generateChunkGeometry", shared = {TreeGeneratorRegistry.class, LeavesGeneratorRegistry.class})
+public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator, LifeCycleSystem,
         TreeGeneratorRegistry, LeavesGeneratorRegistry {
     @In
-    private BlockMeshGeneratorRegistry blockMeshGeneratorRegistry;
+    private BlockGeometryGeneratorRegistry blockGeometryGeneratorRegistry;
     @In
     private WorldStorage worldStorage;
 
@@ -40,7 +40,7 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
 
     @Override
     public void initialize() {
-        blockMeshGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
+        blockGeometryGeneratorRegistry.registerBlockMeshGenerator("trees:tree", this);
     }
 
     @Override
@@ -54,9 +54,9 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
     }
 
     @Override
-    public void generateMeshForBlockFromAtlas(ChunkMeshGeneratorCallback callback,
-                                              VertexOutput vertexOutput, Texture texture,
-                                              ChunkBlocks chunkBlocks, int xInChunk, int yInChunk, int zInChunk) {
+    public void generateGeometryForBlockFromAtlas(ChunkMeshGeneratorCallback callback,
+                                                  VertexOutput vertexOutput, Texture texture,
+                                                  ChunkBlocks chunkBlocks, int xInChunk, int yInChunk, int zInChunk) {
         int treeX = chunkBlocks.x * ChunkSize.X + xInChunk;
         int treeY = chunkBlocks.y * ChunkSize.Y + yInChunk;
         int treeZ = chunkBlocks.z * ChunkSize.Z + zInChunk;

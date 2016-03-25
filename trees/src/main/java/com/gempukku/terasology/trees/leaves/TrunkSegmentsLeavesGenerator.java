@@ -10,15 +10,15 @@ import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
-import com.gempukku.terasology.graphics.environment.BlockMeshGenerator;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.prefab.PrefabManager;
-import com.gempukku.terasology.trees.LSystemTreeBlockMeshGenerator;
+import com.gempukku.terasology.trees.LSystemTreeBlockGeometryGenerator;
 import com.gempukku.terasology.trees.component.LeavesDefinitionComponent;
 import com.gempukku.terasology.trees.model.BranchDefinition;
 import com.gempukku.terasology.trees.model.BranchSegmentDefinition;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
 import org.terasology.math.geom.Matrix4f;
 import org.terasology.math.geom.Vector3f;
 
@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes")
+        profiles = "generateChunkGeometry")
 public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleSystem {
     @In
     private LeavesGeneratorRegistry leavesGeneratorRegistry;
@@ -52,8 +52,8 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
     }
 
     @Override
-    public LSystemTreeBlockMeshGenerator.LSystemCallback createLeavesCallback(
-            EntityRef entityRef, BlockMeshGenerator.VertexOutput vertexOutput, Texture texture) {
+    public LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
+            EntityRef entityRef, BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture) {
         LeavesDefinitionComponent leavesDefinition = entityRef.getComponent(LeavesDefinitionComponent.class);
         TextureRegion leavesTexture = textureAtlasProvider.getTexture(leavesDefinition.getLeavesTexture());
         if (texture == leavesTexture.getTexture()) {
@@ -63,15 +63,15 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
         }
     }
 
-    private class LeavesDrawingCallback implements LSystemTreeBlockMeshGenerator.LSystemCallback {
-        private BlockMeshGenerator.VertexOutput vertexOutput;
+    private class LeavesDrawingCallback implements LSystemTreeBlockGeometryGenerator.LSystemCallback {
+        private BlockGeometryGenerator.VertexOutput vertexOutput;
 
         private Vector3f tempVector = new Vector3f();
         private Vector3f origin = new Vector3f();
         private ShapeDef leavesShape;
         private TextureRegion texture;
 
-        public LeavesDrawingCallback(BlockMeshGenerator.VertexOutput vertexOutput, ShapeDef leavesShape, TextureRegion texture) {
+        public LeavesDrawingCallback(BlockGeometryGenerator.VertexOutput vertexOutput, ShapeDef leavesShape, TextureRegion texture) {
             this.vertexOutput = vertexOutput;
             this.leavesShape = leavesShape;
             this.texture = texture;
@@ -117,7 +117,7 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
                             vertexOutput.setTextureCoordinate(
                                     texture.getU() + textureCoords[0] * (texture.getU2() - texture.getU()),
                                     texture.getV() + textureCoords[1] * (texture.getV2() - texture.getV()));
-                            vertexOutput.setFlag(BlockMeshGenerator.INFLUENCED_BY_WIND);
+                            vertexOutput.setFlag(BlockGeometryGenerator.INFLUENCED_BY_WIND);
 
                             vertexMapping[vertex] = vertexOutput.finishVertex();
                         }

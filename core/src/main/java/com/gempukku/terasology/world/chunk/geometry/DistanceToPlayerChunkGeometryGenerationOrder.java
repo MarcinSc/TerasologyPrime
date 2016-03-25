@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.world.chunk.geometry;
 
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.NetProfiles;

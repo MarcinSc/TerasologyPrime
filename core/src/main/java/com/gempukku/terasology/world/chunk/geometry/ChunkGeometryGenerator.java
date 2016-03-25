@@ -1,7 +1,6 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.world.chunk.geometry;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.gempukku.terasology.world.chunk.geometry.ChunkGeometry;
 
 import java.util.List;
 

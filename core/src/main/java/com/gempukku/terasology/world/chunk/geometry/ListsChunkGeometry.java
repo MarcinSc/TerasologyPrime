@@ -1,7 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
-
-import com.gempukku.terasology.world.chunk.geometry.ChunkGeometry;
-import com.gempukku.terasology.world.chunk.geometry.Triangle;
+package com.gempukku.terasology.world.chunk.geometry;
 
 public class ListsChunkGeometry implements ChunkGeometry {
     public final int floatsPerVertex;

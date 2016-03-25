@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.world.chunk.geometry;
 
 import java.util.Collection;
 

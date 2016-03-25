@@ -11,8 +11,6 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
-import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
-import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.environment.mesh.AfterChunkMeshCreated;
 import com.gempukku.terasology.graphics.environment.mesh.BeforeChunkMeshRemoved;
 import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshManager;

@@ -15,7 +15,7 @@ import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.EntityRef;
-import com.gempukku.terasology.graphics.environment.RenderingBuffer;
+import com.gempukku.terasology.graphics.environment.renderer.RenderingBuffer;
 import com.gempukku.terasology.graphics.postprocess.PostProcessingRenderer;
 import com.gempukku.terasology.graphics.postprocess.PostProcessingRendererRegistry;
 

@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes")
+        profiles = "generateChunkGeometry")
 public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
     @In
     private ShapeProvider shapeProvider;

@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.world.chunk.geometry;
 
 import com.badlogic.gdx.Gdx;
 import com.gempukku.secsy.context.annotation.In;
@@ -18,13 +18,12 @@ import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
-import com.gempukku.terasology.world.chunk.geometry.ChunkGeometry;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes",
+        profiles = "generateChunkGeometry",
         shared = ChunkGeometryManager.class)
 public class OffThreadChunkGeometryManager implements ChunkGeometryManager, LifeCycleSystem, GameLoopListener {
     @In
@@ -150,10 +149,18 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
                     if (canProcess) {
                         ChunkGeometry result = chunkGeometryGenerator.prepareChunkGeometryOffThread(textureAtlasProvider.getTextures(),
                                 chunkToProcess.worldId, chunkToProcess.x, chunkToProcess.y, chunkToProcess.z);
-                        synchronized (chunkToProcess) {
-                            if (chunkToProcess.getStatus() == ChunkGeometryContainer.Status.GENERATING) {
-                                chunkToProcess.setChunkGeometry(result);
-                                chunkToProcess.setStatus(ChunkGeometryContainer.Status.GENERATED);
+                        if (result != null) {
+                            synchronized (chunkToProcess) {
+                                if (chunkToProcess.getStatus() == ChunkGeometryContainer.Status.GENERATING) {
+                                    chunkToProcess.setChunkGeometry(result);
+                                    chunkToProcess.setStatus(ChunkGeometryContainer.Status.GENERATED);
+                                }
+                            }
+                        } else {
+                            synchronized (chunkToProcess) {
+                                if (chunkToProcess.getStatus() == ChunkGeometryContainer.Status.GENERATING) {
+                                    chunkToProcess.setStatus(ChunkGeometryContainer.Status.NOT_READY);
+                                }
                             }
                         }
                     }

@@ -6,10 +6,10 @@ import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
-import com.gempukku.terasology.graphics.environment.ChunkGeometryContainer;
-import com.gempukku.terasology.graphics.environment.ChunkGeometryManager;
 import com.gempukku.terasology.graphics.environment.event.AfterChunkGeometryCreated;
 import com.gempukku.terasology.graphics.environment.event.BeforeChunkGeometryRemoved;
+import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryContainer;
+import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryManager;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 

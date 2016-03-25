@@ -1,4 +1,4 @@
-package com.gempukku.terasology.graphics.environment;
+package com.gempukku.terasology.graphics.environment.mesh;
 
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
@@ -17,7 +17,7 @@ import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.component.GeneratedBlockMeshComponent;
-import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
+import com.gempukku.terasology.graphics.shape.BlockSide;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
@@ -25,6 +25,10 @@ import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
 import com.gempukku.terasology.world.chunk.ChunkSize;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGeneratorRegistry;
+import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryGenerator;
+import com.gempukku.terasology.world.chunk.geometry.ListsChunkGeometry;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
 import java.util.HashMap;
@@ -32,10 +36,10 @@ import java.util.List;
 import java.util.Map;
 
 @RegisterSystem(
-        profiles = "generateChunkMeshes", shared = {ChunkGeometryGenerator.class, ChunkMeshGenerator.class,
-        BlockMeshGeneratorRegistry.class})
-public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<ListsChunkGeometry>, ChunkMeshGenerator<ListsChunkGeometry>,
-        ChunkMeshGeneratorCallback, BlockMeshGeneratorRegistry, LifeCycleSystem {
+        profiles = "generateChunkGeometry", shared = {ChunkGeometryGenerator.class, ChunkMeshGenerator.class,
+        BlockGeometryGeneratorRegistry.class})
+public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerator<ListsChunkGeometry>, ChunkMeshGenerator<ListsChunkGeometry>,
+        ChunkMeshGeneratorCallback, BlockGeometryGeneratorRegistry, LifeCycleSystem {
     @In
     private ChunkBlocksProvider chunkBlocksProvider;
     @In
@@ -53,7 +57,7 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
     private boolean[] opaqueByBlockId;
     private String[] blockMeshGenerators;
 
-    private Map<String, BlockMeshGenerator> registeredBlockMeshGenerators = new HashMap<>();
+    private Map<String, BlockGeometryGenerator> registeredBlockMeshGenerators = new HashMap<>();
 
     private final int[][] blockSector = new int[][]
             {
@@ -69,7 +73,7 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
             };
 
     @Override
-    public void registerBlockMeshGenerator(String generatorType, BlockMeshGenerator generator) {
+    public void registerBlockMeshGenerator(String generatorType, BlockGeometryGenerator generator) {
         registeredBlockMeshGenerators.put(generatorType, generator);
     }
 
@@ -112,8 +116,11 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
         ChunkBlocks[] chunkSector = new ChunkBlocks[blockSector.length];
 
         for (int i = 0; i < blockSector.length; i++) {
-            chunkSector[i] = chunkBlocksProvider.getChunkBlocks(worldId,
+            ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId,
                     x + blockSector[i][0], y + blockSector[i][1], z + blockSector[i][2]);
+            if (chunkBlocks == null)
+                return null;
+            chunkSector[i] = chunkBlocks;
         }
 
         int chunkX = x * ChunkSize.X;
@@ -134,7 +141,7 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
             ShortArray indices = shorts.get();
             indices.clear();
 
-            BlockMeshGenerator.VertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
+            BlockGeometryGenerator.VertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
 
             for (int dx = 0; dx < ChunkSize.X; dx++) {
                 for (int dy = 0; dy < ChunkSize.Y; dy++) {
@@ -179,7 +186,7 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
         return result;
     }
 
-    private void generateMeshForBlockFromAtlas(BlockMeshGenerator.VertexOutput vertexOutput, Texture texture, ChunkBlocks[] chunkSector,
+    private void generateMeshForBlockFromAtlas(BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture, ChunkBlocks[] chunkSector,
                                                int chunkX, int chunkY, int chunkZ,
                                                int x, int y, int z) {
         short block = chunkSector[13].getCommonBlockAt(x, y, z);
@@ -232,8 +239,8 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
                 }
             }
         } else if (blockMeshGenerators[block] != null) {
-            BlockMeshGenerator blockMeshGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
-            blockMeshGenerator.generateMeshForBlockFromAtlas(this, vertexOutput, texture, chunkSector[13],
+            BlockGeometryGenerator blockGeometryGenerator = registeredBlockMeshGenerators.get(blockMeshGenerators[block]);
+            blockGeometryGenerator.generateGeometryForBlockFromAtlas(this, vertexOutput, texture, chunkSector[13],
                     x, y, z);
         }
     }
@@ -290,7 +297,7 @@ public class ListsChunkGeometryGenerator implements ChunkGeometryGenerator<Lists
         return null;
     }
 
-    private static class ArrayVertexOutput implements BlockMeshGenerator.VertexOutput {
+    private static class ArrayVertexOutput implements BlockGeometryGenerator.VertexOutput {
         private FloatArray vertices;
         private ShortArray indices;
 

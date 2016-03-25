@@ -19,10 +19,10 @@ import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.graphics.backdrop.BackdropRenderer;
 import com.gempukku.terasology.graphics.backdrop.BackdropRendererRegistry;
 import com.gempukku.terasology.graphics.component.CameraComponent;
-import com.gempukku.terasology.graphics.environment.EnvironmentRenderer;
-import com.gempukku.terasology.graphics.environment.EnvironmentRendererRegistry;
-import com.gempukku.terasology.graphics.environment.RenderingBuffer;
+import com.gempukku.terasology.graphics.environment.renderer.EnvironmentRenderer;
+import com.gempukku.terasology.graphics.environment.renderer.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.environment.renderer.MyShaderProvider;
+import com.gempukku.terasology.graphics.environment.renderer.RenderingBuffer;
 import com.gempukku.terasology.graphics.postprocess.PostProcessingRenderer;
 import com.gempukku.terasology.graphics.postprocess.PostProcessingRendererRegistry;
 import com.gempukku.terasology.graphics.ui.UiRenderer;
@@ -177,7 +177,6 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
             buffer.flip();
             Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + 2);
             Gdx.gl.glBindTexture(GL20.GL_TEXTURE_2D, buffer.getSourceBuffer().getColorBufferTexture().getTextureObjectHandle());
-//            buffer.getSourceBuffer().getColorBufferTexture().bind(2);
             Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0 + 3);
             Gdx.gl.glBindTexture(GL20.GL_TEXTURE_2D, buffer.getSourceBuffer().getDepthBufferHandle());
 
@@ -281,8 +280,8 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
 
     private void setupLight(float radialTimeOfDay) {
         lightCamera.position.set(
-                (float) -(camera.position.x + 1.1 * camera.far * Math.sin(radialTimeOfDay)),
-                (float) -(camera.position.y + 1.1 * camera.far * Math.cos(radialTimeOfDay)),
+                (float) (camera.position.x - 1.1 * camera.far * Math.sin(radialTimeOfDay)),
+                (float) (camera.position.y - 1.1 * camera.far * Math.cos(radialTimeOfDay)),
                 camera.position.z);
         if (radialTimeOfDay == 0) {
             lightCamera.up.set(1, 0, 0);
