@@ -8,10 +8,12 @@ import com.gempukku.secsy.entity.EntityRef;
 import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.terasology.graphics.environment.event.AfterChunkGeometryCreated;
 import com.gempukku.terasology.graphics.environment.event.BeforeChunkGeometryRemoved;
+import com.gempukku.terasology.world.chunk.IntLocationKey;
 import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryContainer;
 import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryManager;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes",
@@ -22,16 +24,11 @@ public class ChunkMeshSystem implements ChunkMeshManager {
     @In
     private ChunkMeshGenerator chunkMeshGenerator;
 
-    private Multimap<String, ChunkMesh> meshesInWorld = HashMultimap.create();
+    private Map<IntLocationKey, ChunkMesh> meshesInWorld = new HashMap<>();
 
     @Override
     public ChunkMesh getChunkMesh(String worldId, int x, int y, int z) {
-        for (ChunkMesh chunkMesh : meshesInWorld.get(worldId)) {
-            if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z)
-                return chunkMesh;
-        }
-
-        return null;
+        return meshesInWorld.get(new IntLocationKey(worldId, x, y, z));
     }
 
     @ReceiveEvent
@@ -40,7 +37,7 @@ public class ChunkMeshSystem implements ChunkMeshManager {
         Array<MeshPart> array = chunkMeshGenerator.generateMeshParts(chunkGeometryContainer.getChunkGeometry());
         ChunkMesh chunkMesh = new ChunkMesh(event.worldId, event.x, event.y, event.z);
         chunkMesh.setMeshParts(array);
-        meshesInWorld.put(event.worldId, chunkMesh);
+        meshesInWorld.put(new IntLocationKey(chunkMesh), chunkMesh);
         worldEntity.send(new AfterChunkMeshCreated(event.worldId, event.x, event.y, event.z));
     }
 
@@ -48,7 +45,7 @@ public class ChunkMeshSystem implements ChunkMeshManager {
     public void chunkGeometryRemoved(BeforeChunkGeometryRemoved event, EntityRef worldEntity) {
         ChunkMesh chunkMesh = getChunkMesh(event.worldId, event.x, event.y, event.z);
         worldEntity.send(new BeforeChunkMeshRemoved(event.worldId, event.x, event.y, event.z));
-        meshesInWorld.remove(event.worldId, chunkMesh);
+        meshesInWorld.remove(new IntLocationKey(chunkMesh));
         for (MeshPart meshPart : chunkMesh.getMeshParts()) {
             if (meshPart != null && meshPart.mesh != null) {
                 meshPart.mesh.dispose();

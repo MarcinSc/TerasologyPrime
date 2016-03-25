@@ -1,7 +1,6 @@
 package com.gempukku.terasology.world.chunk;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -57,7 +56,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     private OfflineProcessingThread[] offlineProcessingThread;
 
     // This is being accessed both by main thread, as well as generating threads
-    private Map<String, Map<Vector3, ChunkBlocks>> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
+    private Map<IntLocationKey, ChunkBlocks> chunkBlocks = Collections.synchronizedMap(new HashMap<>());
 
     private List<Iterable<StoredEntityData>> entitiesToAdd = new LinkedList<>();
     private List<EntityRef> entitiesToRemove = new LinkedList<>();
@@ -119,46 +118,44 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
 
         // To avoid ConcurrentModificationException we first gather the ones to remove
         Set<ChunkBlocks> toRemove = new HashSet<>();
-        for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
-            for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
-                if (!isChunkRelevant(blocks)) {
-                    Gdx.app.debug("ChunkManager", "Unloading chunk: " + blocks.x + "," + blocks.y + "," + blocks.z);
+        for (ChunkBlocks blocks : chunkBlocks.values()) {
+            if (!isChunkRelevant(blocks)) {
+                Gdx.app.debug("ChunkManager", "Unloading chunk: " + blocks.x + "," + blocks.y + "," + blocks.z);
 
-                    if (blocks.getStatus() == ChunkBlocks.Status.READY) {
-                        multiverseManager.getWorldEntity(blocks.worldId).send(
-                                new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
-                    }
+                if (blocks.getStatus() == ChunkBlocks.Status.READY) {
+                    multiverseManager.getWorldEntity(blocks.worldId).send(
+                            new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
+                }
 
-                    synchronized (copyLockObject) {
-                        // Make sure we remove any un-merged data about that chunk
-                        finishedBlocksOffMainThread.remove(blocks);
-                        chunksToNotify.remove(blocks);
-                    }
+                synchronized (copyLockObject) {
+                    // Make sure we remove any un-merged data about that chunk
+                    finishedBlocksOffMainThread.remove(blocks);
+                    chunksToNotify.remove(blocks);
+                }
 
-                    EntityRef chunkEntity = getChunkEntity(blocks);
-                    if (chunkEntity != null) {
-                        entitiesToRemove.add(chunkEntity);
-                        for (EntityRef blockEntity : blockIndex.getEntities()) {
-                            LocationComponent location = blockEntity.getComponent(LocationComponent.class);
-                            if (location.getWorldId().equals(blocks.getWorldId())) {
-                                tempBlock.set(location.getX(), location.getY(), location.getZ());
-                                if (tempBlock.getChunkX() == blocks.x
-                                        && tempBlock.getChunkY() == blocks.y
-                                        && tempBlock.getChunkZ() == blocks.z)
-                                    entitiesToRemove.add(blockEntity);
-                            }
+                EntityRef chunkEntity = getChunkEntity(blocks);
+                if (chunkEntity != null) {
+                    entitiesToRemove.add(chunkEntity);
+                    for (EntityRef blockEntity : blockIndex.getEntities()) {
+                        LocationComponent location = blockEntity.getComponent(LocationComponent.class);
+                        if (location.getWorldId().equals(blocks.getWorldId())) {
+                            tempBlock.set(location.getX(), location.getY(), location.getZ());
+                            if (tempBlock.getChunkX() == blocks.x
+                                    && tempBlock.getChunkY() == blocks.y
+                                    && tempBlock.getChunkZ() == blocks.z)
+                                entitiesToRemove.add(blockEntity);
                         }
                     }
-
-                    toRemove.add(blocks);
                 }
+
+                toRemove.add(blocks);
             }
         }
 
         synchronized (chunkBlocks) {
             // And now remove them
             for (ChunkBlocks blocks : toRemove) {
-                chunkBlocks.get(blocks.getWorldId()).remove(new Vector3(blocks.x, blocks.y, blocks.z));
+                chunkBlocks.remove(new IntLocationKey(blocks));
             }
         }
 
@@ -225,10 +222,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     }
 
     private ChunkBlocks getChunkBlocksInternal(String worldId, int x, int y, int z) {
-        Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
-        if (chunksInWorld == null)
-            return null;
-        return chunksInWorld.get(new Vector3(x, y, z));
+        return chunkBlocks.get(new IntLocationKey(worldId, x, y, z));
     }
 
     @Override
@@ -248,12 +242,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
     private void loadOrGenerateChunk(String worldId, int x, int y, int z) {
         synchronized (chunkBlocks) {
             ChunkBlocks chunkDataHolder = new ChunkBlocks(ChunkBlocks.Status.QUEUED, worldId, x, y, z);
-            Map<Vector3, ChunkBlocks> chunksInWorld = chunkBlocks.get(worldId);
-            if (chunksInWorld == null) {
-                chunksInWorld = Collections.synchronizedMap(new HashMap<>());
-                chunkBlocks.put(worldId, chunksInWorld);
-            }
-            chunksInWorld.put(new Vector3(x, y, z), chunkDataHolder);
+            chunkBlocks.put(new IntLocationKey(chunkDataHolder), chunkDataHolder);
         }
     }
 
@@ -296,12 +285,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
 
         private ChunkBlocks selectChunkBlocksToGenerate() {
             synchronized (chunkBlocks) {
-                for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
-                    for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
-                        if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
-                            blocks.setStatus(ChunkBlocks.Status.GENERATING);
-                            return blocks;
-                        }
+                for (ChunkBlocks blocks : chunkBlocks.values()) {
+                    if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
+                        blocks.setStatus(ChunkBlocks.Status.GENERATING);
+                        return blocks;
                     }
                 }
             }

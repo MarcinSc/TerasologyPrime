@@ -156,7 +156,7 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
             indicesPerTexture[i] = indices.toArray();
         }
 
-        return new ListsChunkGeometry(8, verticesPerTexture, indicesPerTexture);
+        return new ListsChunkGeometry(9, verticesPerTexture, indicesPerTexture);
     }
 
     @Override

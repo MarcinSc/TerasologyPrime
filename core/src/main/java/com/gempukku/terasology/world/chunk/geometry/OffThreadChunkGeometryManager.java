@@ -16,11 +16,13 @@ import com.gempukku.terasology.graphics.environment.event.BeforeChunkGeometryRem
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
+import com.gempukku.terasology.world.chunk.IntLocationKey;
 import com.gempukku.terasology.world.chunk.event.AfterChunkLoadedEvent;
 import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
 import com.gempukku.terasology.world.component.WorldComponent;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RegisterSystem(
         profiles = "generateChunkGeometry",
@@ -47,7 +49,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
 
     private final int offlineThreadCount = 3;
 
-    private Multimap<String, ChunkGeometryContainer> chunkMeshesInWorld = HashMultimap.create();
+    private Map<IntLocationKey, ChunkGeometryContainer> chunkMeshesInWorld = new HashMap<>();
     private OfflineProcessingThread[] offlineProcessingThread;
 
     @Override
@@ -65,12 +67,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
 
     @Override
     public ChunkGeometryContainer getChunkGeometry(String worldId, int x, int y, int z) {
-        for (ChunkGeometryContainer chunkGeometryContainer : chunkMeshesInWorld.get(worldId)) {
-            if (chunkGeometryContainer.x == x && chunkGeometryContainer.y == y && chunkGeometryContainer.z == z) {
-                return chunkGeometryContainer;
-            }
-        }
-        return null;
+        return chunkMeshesInWorld.get(new IntLocationKey(worldId, x, y, z));
     }
 
     @Override
@@ -110,7 +107,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
 
         synchronized (chunkMeshesInWorld) {
             ChunkGeometryContainer chunkGeometryContainer = new ChunkGeometryContainer(worldId, x, y, z);
-            chunkMeshesInWorld.put(worldId, chunkGeometryContainer);
+            chunkMeshesInWorld.put(new IntLocationKey(chunkGeometryContainer), chunkGeometryContainer);
         }
     }
 
@@ -127,7 +124,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
                 Gdx.app.debug(OffThreadChunkGeometryManager.class.getSimpleName(), "Chunk mesh disposed: " + chunkGeometryContainer.x + "," + chunkGeometryContainer.y + "," + chunkGeometryContainer.z);
                 worldEntity.send(new BeforeChunkGeometryRemoved(worldId, x, y, z));
             }
-            chunkMeshesInWorld.remove(chunkGeometryContainer.getWorldId(), chunkGeometryContainer);
+            chunkMeshesInWorld.remove(new IntLocationKey(chunkGeometryContainer));
             synchronized (chunkGeometryContainer) {
                 chunkGeometryContainer.setStatus(ChunkGeometryContainer.Status.DISPOSED);
             }
