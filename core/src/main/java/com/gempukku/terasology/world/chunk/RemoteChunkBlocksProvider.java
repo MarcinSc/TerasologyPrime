@@ -1,5 +1,6 @@
 package com.gempukku.terasology.world.chunk;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
@@ -50,11 +51,13 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider, LifeCycle
         }
         chunksInWorld.put(new Vector3(chunk.x, chunk.y, chunk.z), chunkDataHolder);
 
+        Gdx.app.debug(RemoteChunkBlocksProvider.class.getSimpleName(), "Chunk loaded: " + chunk.x + "," + chunk.y + "," + chunk.z);
         getWorldEntity(worldId).send(new AfterChunkLoadedEvent(chunk.x, chunk.y, chunk.z));
     }
 
     @ReceiveEvent
     public void unloadChunk(RemoveOldChunk chunk, EntityRef clientEntity, ClientComponent client) {
+        Gdx.app.debug(RemoteChunkBlocksProvider.class.getSimpleName(), "Chunk unloaded: " + chunk.x + "," + chunk.y + "," + chunk.z);
         getWorldEntity(chunk.worldId).send(new BeforeChunkUnloadedEvent(chunk.x, chunk.y, chunk.z));
         chunkBlocks.remove(chunk.worldId, new Vector3(chunk.x, chunk.y, chunk.z));
     }
@@ -64,18 +67,6 @@ public class RemoteChunkBlocksProvider implements ChunkBlocksProvider, LifeCycle
             if (worldId.equals(worldEntity.getComponent(WorldComponent.class).getWorldId())) {
                 return worldEntity;
             }
-        }
-        return null;
-    }
-
-    private EntityRef getChunkEntity(ChunkLocation chunkLocation) {
-        for (EntityRef chunkEntity : chunkIndex.getEntities()) {
-            ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
-            if (chunk.getWorldId().equals(chunkLocation.getWorldId())
-                    && chunk.getX() == chunkLocation.getX()
-                    && chunk.getY() == chunkLocation.getY()
-                    && chunk.getZ() == chunkLocation.getZ())
-                return chunkEntity;
         }
         return null;
     }

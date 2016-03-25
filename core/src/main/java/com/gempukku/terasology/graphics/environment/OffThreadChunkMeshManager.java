@@ -1,5 +1,8 @@
 package com.gempukku.terasology.graphics.environment;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g3d.model.MeshPart;
+import com.badlogic.gdx.utils.Array;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
@@ -20,11 +23,6 @@ import com.gempukku.terasology.world.chunk.event.BeforeChunkUnloadedEvent;
 import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 @RegisterSystem(
         profiles = "generateChunkMeshes",
@@ -54,8 +52,6 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     private Multimap<String, ChunkMesh> chunkMeshesInWorld = HashMultimap.create();
     private OfflineProcessingThread[] offlineProcessingThread;
 
-    private List<ChunkMesh> notReadyChunks = new LinkedList<>();
-
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
@@ -72,32 +68,34 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
     @Override
     public ChunkMesh getChunkMesh(String worldId, int x, int y, int z) {
         for (ChunkMesh chunkMesh : chunkMeshesInWorld.get(worldId)) {
-            if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z)
+            if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z) {
+                if (chunkMesh.getStatus() == ChunkMesh.Status.DISPOSED)
+                    return null;
+
                 return chunkMesh;
+            }
         }
         return null;
     }
 
     @Override
     public void update() {
-        Iterator<ChunkMesh> notReadyMeshes = notReadyChunks.iterator();
-        while (notReadyMeshes.hasNext()) {
-            ChunkMesh notReadyMesh = notReadyMeshes.next();
-            if (chunkMeshGenerator.canPrepareChunkData(notReadyMesh.worldId,
-                    notReadyMesh.x, notReadyMesh.y, notReadyMesh.z)) {
-                notReadyMeshes.remove();
-                synchronized (chunkMeshesInWorld) {
-                    chunkMeshesInWorld.put(notReadyMesh.worldId, notReadyMesh);
+        for (ChunkMesh chunkMesh : chunkMeshesInWorld.values()) {
+            ChunkMesh.Status status = chunkMesh.getStatus();
+            if (status == ChunkMesh.Status.NOT_READY) {
+                if (chunkMeshGenerator.canPrepareChunkData(
+                        chunkMesh.worldId, chunkMesh.x, chunkMesh.y, chunkMesh.z)) {
+                    chunkMesh.setStatus(ChunkMesh.Status.QUEUED_FOR_GENERATOR);
                 }
             }
-        }
-
-        for (ChunkMesh renderableChunk : chunkMeshesInWorld.values()) {
-            boolean updated = renderableChunk.updateModelIfNeeded(chunkMeshGenerator);
-            if (updated) {
-                EntityRef worldEntity = findWorldEntity(renderableChunk.worldId);
+            if (status == ChunkMesh.Status.GENERATED) {
+                Array<MeshPart> meshParts = chunkMeshGenerator.generateMeshParts(chunkMesh.getGeneratorPreparedObject());
+                chunkMesh.setMeshParts(meshParts);
+                chunkMesh.setStatus(ChunkMesh.Status.READY);
+                EntityRef worldEntity = findWorldEntity(chunkMesh.worldId);
+                Gdx.app.debug(OffThreadChunkMeshManager.class.getSimpleName(), "Chunk mesh created: " + chunkMesh.x + "," + chunkMesh.y + "," + chunkMesh.z);
                 worldEntity.send(new AfterChunkMeshCreated(
-                        renderableChunk.worldId, renderableChunk.x, renderableChunk.y, renderableChunk.z));
+                        chunkMesh.worldId, chunkMesh.x, chunkMesh.y, chunkMesh.z));
             }
         }
     }
@@ -117,8 +115,10 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
         int y = event.y;
         int z = event.z;
 
-        ChunkMesh chunkMesh = new ChunkMesh(worldId, x, y, z);
-        notReadyChunks.add(chunkMesh);
+        synchronized (chunkMeshesInWorld) {
+            ChunkMesh chunkMesh = new ChunkMesh(worldId, x, y, z);
+            chunkMeshesInWorld.put(worldId, chunkMesh);
+        }
     }
 
     @ReceiveEvent
@@ -128,30 +128,16 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
         int y = event.y;
         int z = event.z;
 
-        Iterator<ChunkMesh> notReadyMeshes = notReadyChunks.iterator();
-        while (notReadyMeshes.hasNext()) {
-            ChunkMesh notReadyMesh = notReadyMeshes.next();
-            if (notReadyMesh.worldId.equals(worldId)
-                    && notReadyMesh.x == x && notReadyMesh.y == y && notReadyMesh.z == z)
-                notReadyMeshes.remove();
-        }
-
         synchronized (chunkMeshesInWorld) {
-            Collection<ChunkMesh> chunkMeshes = chunkMeshesInWorld.get(worldId);
-            ChunkMesh chunk = null;
-            for (ChunkMesh chunkMesh : chunkMeshes) {
-                if (chunkMesh.x == x && chunkMesh.y == y && chunkMesh.z == z) {
-                    chunk = chunkMesh;
-                    break;
-                }
+            ChunkMesh chunkMesh = getChunkMesh(worldId, x, y, z);
+            if (chunkMesh.getMeshParts() != null) {
+                Gdx.app.debug(OffThreadChunkMeshManager.class.getSimpleName(), "Chunk mesh disposed: " + chunkMesh.x + "," + chunkMesh.y + "," + chunkMesh.z);
+                worldEntity.send(new BeforeChunkMeshRemoved(worldId, x, y, z));
             }
-            if (chunk != null) {
-                if (chunk.getMeshParts() != null) {
-                    worldEntity.send(new BeforeChunkMeshRemoved(worldId, x, y, z));
-                }
-
-                chunkMeshes.remove(chunk);
-                chunk.dispose();
+            chunkMeshesInWorld.remove(chunkMesh.getWorldId(), chunkMesh);
+            synchronized (chunkMesh) {
+                chunkMesh.setStatus(ChunkMesh.Status.DISPOSED);
+                chunkMesh.dispose();
             }
         }
     }
@@ -161,7 +147,23 @@ public class OffThreadChunkMeshManager implements ChunkMeshManager, LifeCycleSys
             while (true) {
                 ChunkMesh chunkToProcess = getChunkToProcess();
                 if (chunkToProcess != null) {
-                    chunkToProcess.processOffLine(chunkMeshGenerator, textureAtlasProvider.getTextures());
+                    boolean canProcess = false;
+                    synchronized (chunkToProcess) {
+                        if (chunkToProcess.getStatus() == ChunkMesh.Status.QUEUED_FOR_GENERATOR) {
+                            chunkToProcess.setStatus(ChunkMesh.Status.GENERATING);
+                            canProcess = true;
+                        }
+                    }
+                    if (canProcess) {
+                        Object result = chunkMeshGenerator.prepareChunkDataOffThread(textureAtlasProvider.getTextures(),
+                                chunkToProcess.worldId, chunkToProcess.x, chunkToProcess.y, chunkToProcess.z);
+                        synchronized (chunkToProcess) {
+                            if (chunkToProcess.getStatus() == ChunkMesh.Status.GENERATING) {
+                                chunkToProcess.setGeneratorPreparedObject(result);
+                                chunkToProcess.setStatus(ChunkMesh.Status.GENERATED);
+                            }
+                        }
+                    }
                 } else {
                     try {
                         Thread.sleep(20);

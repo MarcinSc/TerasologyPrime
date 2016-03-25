@@ -35,7 +35,7 @@ public class DistanceToPlayerChunkMeshGenerationOrder implements ChunkMeshGenera
         ChunkMesh result = null;
         float minDistance = Float.MAX_VALUE;
         for (ChunkMesh chunkMesh : chunkMeshes) {
-            if (chunkMesh.getStatus().canOfflineProcess()) {
+            if (chunkMesh.getStatus() == ChunkMesh.Status.QUEUED_FOR_GENERATOR) {
                 float distance = cameraPosition.dst(
                         (chunkMesh.x + 0.5f) * ChunkSize.X,
                         (chunkMesh.y + 0.5f) * ChunkSize.Y,

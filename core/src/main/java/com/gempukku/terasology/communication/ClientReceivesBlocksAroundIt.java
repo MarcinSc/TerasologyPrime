@@ -26,6 +26,8 @@ import com.gempukku.terasology.world.component.ClientComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +51,9 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     private EntityIndex chunkIndex;
     private EntityIndex blockIndex;
     private EntityIndex clientAndLocationIndex;
+
+    // Client id to collection of ChunkBlocks
+    private Multimap<String, ChunkBlocks> chunksClientHas = HashMultimap.create();
 
     @Override
     public void addClientEntityRelevancyRuleListener(ClientEntityRelevancyRuleListener listener) {
@@ -152,8 +157,11 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     location.getWorldId(), playerChunkX, playerChunkY, playerChunkZ, clientComponent)) {
                 entitiesToUpdate.add(chunkEntity);
 
-                short[] blocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()).getBlocks();
+                ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
+                short[] blocks = chunkBlocks.getBlocks();
+                Gdx.app.debug("ClientReceivesBlocksAroundIt", "Sending chunk to client: " + chunk.getX() + "," + chunk.getY() + "," + chunk.getZ());
                 storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
+                chunksClientHas.put(clientComponent.getClientId(), chunkBlocks);
             }
         }
 
@@ -176,6 +184,8 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             clientEntity.send(storeNewChunk);
         }
     }
+
+    //TODO add code for client disconnecting
 
     @ReceiveEvent
     public void characterMoved(AfterComponentUpdated event, EntityRef entity, LocationComponent locationComponent) {
@@ -222,9 +232,11 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     }
                 }
 
-                short[] blocks = chunkBlocksProvider.getChunkBlocks(worldId, chunkX, chunkY, chunkZ).getBlocks();
+                ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(worldId, chunkX, chunkY, chunkZ);
+                short[] blocks = chunkBlocks.getBlocks();
                 Gdx.app.debug("ClientReceivesBlocksAroundIt", "Sending chunk to client: " + chunkX + "," + chunkY + "," + chunkZ);
                 clientEntity.send(new StoreNewChunk(worldId, chunkX, chunkY, chunkZ, blocks));
+                chunksClientHas.put(client.getClientId(), chunkBlocks);
             }
 
             if (changeRelevanceEntities.size() > 0) {
@@ -269,22 +281,26 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             for (EntityRef chunkEntity : chunkIndex.getEntities()) {
                 ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
 
-                boolean chunkInOldView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                        oldLocation.getWorldId(), oldChunkX, oldChunkY, oldChunkZ, client);
+                ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
+                if (chunkBlocks != null) {
+                    boolean clientHasChunk = doesClientHaveChunk(client.getClientId(), newLocation.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
 
-                boolean chunkInNewView = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                        newLocation.getWorldId(), newChunkX, newChunkY, newChunkZ, client);
-                if (chunkInOldView != chunkInNewView) {
-                    entitiesToUpdate.add(chunkEntity);
+                    boolean clientShouldHaveChunk = isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
+                            newLocation.getWorldId(), newChunkX, newChunkY, newChunkZ, client);
+                    if (clientHasChunk != clientShouldHaveChunk) {
+                        entitiesToUpdate.add(chunkEntity);
 
-                    appendBlocksInChunk(entitiesToUpdate, chunk, oldLocation.getWorldId());
-                    if (chunkInOldView) {
-                        removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
-                    } else {
-                        ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
-                        if (chunkBlocks != null) {
+                        appendBlocksInChunk(entitiesToUpdate, chunk, oldLocation.getWorldId());
+                        if (clientHasChunk) {
+                            if (!chunksClientHas.remove(client.getClientId(), chunkBlocks))
+                                throw new RuntimeException("Failed to remove");
+                            Gdx.app.debug("ClientReceivesBlocksAroundIt", "Removing chunk from client: " + chunk.getX() + "," + chunk.getY() + "," + chunk.getZ());
+                            removeOldChunks.add(new RemoveOldChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ()));
+                        } else {
                             short[] blocks = chunkBlocks.getBlocks();
+                            Gdx.app.debug("ClientReceivesBlocksAroundIt", "Sending chunk to client: " + chunk.getX() + "," + chunk.getY() + "," + chunk.getZ());
                             storeNewChunks.add(new StoreNewChunk(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(), blocks));
+                            chunksClientHas.put(client.getClientId(), chunkBlocks);
                         }
                     }
                 }
@@ -303,6 +319,15 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                 clientEntity.send(storeNewChunk);
             }
         }
+    }
+
+    private boolean doesClientHaveChunk(String clientId, String worldId, int x, int y, int z) {
+        for (ChunkBlocks chunkBlocks : chunksClientHas.get(clientId)) {
+            if (chunkBlocks.worldId.equals(worldId)
+                    && chunkBlocks.x == x && chunkBlocks.y == y && chunkBlocks.z == z)
+                return true;
+        }
+        return false;
     }
 
     private void appendBlocksInChunk(List<EntityRef> entitiesToUpdate, ChunkComponent chunk, String worldId) {

@@ -295,16 +295,6 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         private ChunkBlocks selectChunkBlocksToGenerate() {
             synchronized (chunkBlocks) {
                 for (Map<Vector3, ChunkBlocks> vector3ChunkBlocksMap : chunkBlocks.values()) {
-//                    int queuedCount = 0;
-//                    int generatingCount = 0;
-//                    for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
-//                        if (blocks.getStatus() == ChunkBlocks.Status.QUEUED)
-//                            queuedCount++;
-//                        else if (blocks.getStatus() == ChunkBlocks.Status.GENERATING)
-//                            generatingCount++;
-//                    }
-//                    Gdx.app.debug("ChunkManager", "Total: " + vector3ChunkBlocksMap.size() + ", Queued: " + queuedCount + ", Generating: " + generatingCount);
-
                     for (ChunkBlocks blocks : vector3ChunkBlocksMap.values()) {
                         if (blocks.getStatus() == ChunkBlocks.Status.QUEUED) {
                             blocks.setStatus(ChunkBlocks.Status.GENERATING);

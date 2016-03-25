@@ -11,7 +11,7 @@ public class FirstChunkMeshGenerationOrder implements ChunkMeshGenerationOrder {
     @Override
     public ChunkMesh getChunkMeshToProcess(Collection<ChunkMesh> chunkMeshes) {
         for (ChunkMesh chunkMesh : chunkMeshes) {
-            if (chunkMesh.getStatus().canOfflineProcess())
+            if (chunkMesh.getStatus() == ChunkMesh.Status.QUEUED_FOR_GENERATOR)
                 return chunkMesh;
         }
         return null;
