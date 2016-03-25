@@ -109,7 +109,6 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
             while (iterator.hasNext() && count < 50) {
                 Map.Entry<ChunkBlocks, Iterable<StoredEntityData>> entry = iterator.next();
                 ChunkBlocks chunkBlocks = entry.getKey();
-                chunkBlocks.setStatus(ChunkBlocks.Status.READY);
                 entitiesToAdd.add(entry.getValue());
                 chunksToNotify.add(chunkBlocks);
                 Gdx.app.debug("ChunkManager", "Merged chunk: " + chunkBlocks.x + "," + chunkBlocks.y + "," + chunkBlocks.z);
@@ -125,8 +124,10 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
                 if (!isChunkRelevant(blocks)) {
                     Gdx.app.debug("ChunkManager", "Unloading chunk: " + blocks.x + "," + blocks.y + "," + blocks.z);
 
-                    multiverseManager.getWorldEntity(blocks.worldId).send(
-                            new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
+                    if (blocks.getStatus() == ChunkBlocks.Status.READY) {
+                        multiverseManager.getWorldEntity(blocks.worldId).send(
+                                new BeforeChunkUnloadedEvent(blocks.x, blocks.y, blocks.z));
+                    }
 
                     synchronized (copyLockObject) {
                         // Make sure we remove any un-merged data about that chunk
@@ -197,6 +198,7 @@ public class ChunkManager implements EntityRelevanceRule, ChunkBlocksProvider, C
         for (ChunkBlocks chunkBlocks : chunksToNotify) {
             EntityRef chunkEntity = getChunkEntity(chunkBlocks);
             chunkBlocks.setBlocks(chunkEntity.getComponent(ChunkComponent.class).getBlockIds());
+            chunkBlocks.setStatus(ChunkBlocks.Status.READY);
 
             Gdx.app.debug("ChunkManager", "Notifying on: " + chunkBlocks.getX() + "," + chunkBlocks.getY() + "," + chunkBlocks.getZ());
             multiverseManager.getWorldEntity(chunkBlocks.getWorldId()).send(
