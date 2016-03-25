@@ -38,44 +38,6 @@ public class ChunkMesh implements ChunkLocation, Disposable {
         this.z = z;
         status = Status.NOT_READY;
     }
-//
-//    public void processOffLine(ChunkMeshGenerator chunkMeshGenerator, List<Texture> textures) {
-//        synchronized (this) {
-//            if (!status.canOfflineProcess()) {
-//                return;
-//            }
-//            status.setProcessingOffline();
-//        }
-//
-//        Object preparedObject = chunkMeshGenerator.prepareChunkDataOffThread(textures, worldId, x, y, z);
-//        synchronized (this) {
-//            generatorPreparedObject = preparedObject;
-//            status.setWaitingForModel();
-//        }
-//    }
-//
-//    public boolean updateModelIfNeeded(ChunkMeshGenerator chunkMeshGenerator) {
-//        synchronized (this) {
-//            if (status.isWaitingForMesh()) {
-//                dispose();
-//
-//                synchronized (this) {
-//                    meshParts = chunkMeshGenerator.generateMeshParts(generatorPreparedObject);
-//
-//                    generatorPreparedObject = null;
-//                }
-//                status.setHasMesh();
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    public void needsUpdate() {
-//        synchronized (this) {
-//            status.setNeedsOfflineProcessing();
-//        }
-//    }
 
     public Status getStatus() {
         return status;
