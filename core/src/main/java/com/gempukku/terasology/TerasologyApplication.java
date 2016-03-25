@@ -87,6 +87,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         clientProfiles.add("keyboardController");
         // Player controls direction with mouse
         clientProfiles.add("mouseController");
+        clientProfiles.add("basicPhysics");
 
         clientContext = new SECSyContext(clientProfiles, new Reflections(scanBasedOnAnnotations));
         clientContext.startup();
@@ -105,9 +106,10 @@ public class TerasologyApplication extends ApplicationAdapter {
         serverProfiles.add("nameConventionComponents");
         // World generator
         serverProfiles.add("hillsWorld");
-        serverProfiles.add("generateTextureAtlas");
-        // Server needs to generate chunk geometries
-        serverProfiles.add("generateChunkGeometry");
+//        serverProfiles.add("generateTextureAtlas");
+//        // Server needs to generate chunk geometries
+//        serverProfiles.add("generateChunkGeometry");
+//        serverProfiles.add("basicPhysics");
 
         serverContext = new SECSyContext(serverProfiles, new Reflections(scanBasedOnAnnotations));
         serverContext.startup();
