@@ -66,30 +66,33 @@ public class LSystemTreeBlockMeshGenerator implements BlockMeshGenerator, LifeCy
                 treeY,
                 treeZ);
 
-        TreeGenerationComponent treeGeneration = entityAndBlockId.entityRef.getComponent(TreeGenerationComponent.class);
-        TreeDefinition treeDefinition = treeGenerators.get(treeGeneration.getGenerationType()).generateTreeDefinition(entityAndBlockId.entityRef);
+        // It's possible that the chunk has been unloaded in the meantime
+        if (entityAndBlockId != null) {
+            TreeGenerationComponent treeGeneration = entityAndBlockId.entityRef.getComponent(TreeGenerationComponent.class);
+            TreeDefinition treeDefinition = treeGenerators.get(treeGeneration.getGenerationType()).generateTreeDefinition(entityAndBlockId.entityRef);
 
-        if (texture == treeDefinition.barkTexture.getTexture()) {
-            Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
-                    treeX + 0.5f,
-                    treeY,
-                    treeZ + 0.5f), 1);
+            if (texture == treeDefinition.barkTexture.getTexture()) {
+                Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
+                        treeX + 0.5f,
+                        treeY,
+                        treeZ + 0.5f), 1);
 
-            BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexOutput,
-                    treeDefinition.barkTexture);
+                BranchDrawingCallback branchCallback = new BranchDrawingCallback(vertexOutput,
+                        treeDefinition.barkTexture);
 
-            processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
-        }
+                processBranchWithCallback(branchCallback, true, treeDefinition.trunkDefinition, movingMatrix);
+            }
 
-        LeavesGenerator leavesGenerator = leavesGenerators.get(treeDefinition.leavesGenerator);
-        LSystemCallback leavesCallback = leavesGenerator.createLeavesCallback(entityAndBlockId.entityRef, vertexOutput, texture);
-        if (leavesCallback != null) {
-            Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
-                    treeX + 0.5f,
-                    treeY,
-                    treeZ + 0.5f), 1);
+            LeavesGenerator leavesGenerator = leavesGenerators.get(treeDefinition.leavesGenerator);
+            LSystemCallback leavesCallback = leavesGenerator.createLeavesCallback(entityAndBlockId.entityRef, vertexOutput, texture);
+            if (leavesCallback != null) {
+                Matrix4f movingMatrix = new Matrix4f(new Quat4f(), new Vector3f(
+                        treeX + 0.5f,
+                        treeY,
+                        treeZ + 0.5f), 1);
 
-            processBranchWithCallback(leavesCallback, true, treeDefinition.trunkDefinition, movingMatrix);
+                processBranchWithCallback(leavesCallback, true, treeDefinition.trunkDefinition, movingMatrix);
+            }
         }
     }
 
