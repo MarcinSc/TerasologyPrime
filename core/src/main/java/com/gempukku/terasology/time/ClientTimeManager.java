@@ -31,7 +31,7 @@ public class ClientTimeManager implements TimeManager, InternalGameLoopListener,
     public void preUpdate() {
         if (lastUpdateTime != -1) {
             long currentTime = System.currentTimeMillis();
-            timeSinceLastUpdate = currentTime - lastUpdateTime;
+            timeSinceLastUpdate = Math.min(1000, currentTime - lastUpdateTime);
             lastUpdateTime = currentTime;
         } else {
             long currentTime = System.currentTimeMillis();

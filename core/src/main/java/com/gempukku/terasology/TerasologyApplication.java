@@ -106,10 +106,10 @@ public class TerasologyApplication extends ApplicationAdapter {
         serverProfiles.add("nameConventionComponents");
         // World generator
         serverProfiles.add("hillsWorld");
-//        serverProfiles.add("generateTextureAtlas");
-//        // Server needs to generate chunk geometries
-//        serverProfiles.add("generateChunkGeometry");
-//        serverProfiles.add("basicPhysics");
+        serverProfiles.add("generateTextureAtlas");
+        // Server needs to generate chunk geometries
+        serverProfiles.add("generateChunkGeometry");
+        serverProfiles.add("basicPhysics");
 
         serverContext = new SECSyContext(serverProfiles, new Reflections(scanBasedOnAnnotations));
         serverContext.startup();
@@ -126,9 +126,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         EntityRef player = playerManager.createPlayer("clientId");
 
         LocationComponent playerLocation = player.createComponent(LocationComponent.class);
-        playerLocation.setX(0);
-        playerLocation.setY(0);
-        playerLocation.setZ(0);
+        playerLocation.setX(4.2f);
+        playerLocation.setY(20);
+        playerLocation.setZ(4.2f);
         playerLocation.setWorldId("world");
 
         CameraComponent playerCamera = player.createComponent(CameraComponent.class);

@@ -26,8 +26,8 @@ public class DefaultPlayerManager implements PlayerManager {
         player.setChunkVerticalDistance(3);
 
         MovementComponent movement = entity.createComponent(MovementComponent.class);
-        movement.setMaxSpeed(30f);
-        movement.setJumpSpeed(30f);
+        movement.setMaxSpeed(4f);
+        movement.setJumpSpeed(4f);
         movement.setYaw(0);
         movement.setSpeed(0);
         movement.setVerticalSpeed(0);

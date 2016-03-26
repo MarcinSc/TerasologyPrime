@@ -35,7 +35,7 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
         float rotateStep = 0.05f;
 
         float speed = 0;
-        float verticalSpeed = 0;
+        float verticalSpeed;
         float yaw = movementController.getYaw();
 
         if (isPressed(forward) && !isPressed(backward)) {
@@ -48,10 +48,12 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
         } else if (isPressed(right) && !isPressed(left)) {
             yaw += rotateStep;
         }
-        if (isPressed(jump) && !isPressed(down)) {
+        if (movementController.isGrounded() && isPressed(jump) && !isPressed(down)) {
             verticalSpeed = movementController.getJumpSpeed();
         } else if (isPressed(down) && !isPressed(jump)) {
             verticalSpeed = -movementController.getJumpSpeed();
+        } else {
+            verticalSpeed = movementController.getVerticalSpeed();
         }
 
         movementController.updateMovement(yaw, movementController.getPitch(), speed, verticalSpeed);

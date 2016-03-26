@@ -14,4 +14,6 @@ public interface MovementController {
     float getMaximumSpeed();
 
     float getJumpSpeed();
+
+    boolean isGrounded();
 }

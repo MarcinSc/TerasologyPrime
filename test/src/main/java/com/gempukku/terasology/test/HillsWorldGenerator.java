@@ -100,7 +100,10 @@ public class HillsWorldGenerator implements WorldGenerator {
             for (int dy = 0; dy < ChunkSize.Y; dy++) {
                 int blockLevel = y * ChunkSize.Y + dy;
                 for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                    float noiseForColumn = this.noise.noise(noiseScale * (x * ChunkSize.X + dx), noiseScale * (z * ChunkSize.Z + dz));
+                    int worldX = x * ChunkSize.X + dx;
+                    int worldZ = z * ChunkSize.Z + dz;
+
+                    float noiseForColumn = this.noise.noise(noiseScale * worldX, noiseScale * worldZ);
                     noiseForColumn = (noiseForColumn + 1 / 2);
                     int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
                     if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
@@ -121,16 +124,16 @@ public class HillsWorldGenerator implements WorldGenerator {
 
                         ComponentInformation location = new ComponentInformation(LocationComponent.class);
                         location.addField("worldId", worldId);
-                        location.addField("x", (float) (x * ChunkSize.X + dx));
+                        location.addField("x", (float) worldX);
                         location.addField("y", (float) (y * ChunkSize.Y + dy));
-                        location.addField("z", (float) (z * ChunkSize.Z + dz));
+                        location.addField("z", (float) worldZ);
                         entityInformation.addComponent(location);
 
                         entities.add(entityInformation);
                         blockIds[index] = tree;
                     } else if (blockLevel > groundLevel) {
                         blockIds[index] = air;
-                    } else if (blockLevel > groundLevel - 1) {
+                    } else if (blockLevel == groundLevel) {
                         blockIds[index] = grass;
                     } else if (blockLevel > groundLevel - 3) {
                         blockIds[index] = dirt;

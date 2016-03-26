@@ -34,8 +34,8 @@ public class BasicTriangle implements Triangle {
     @Override
     public void getVertices(Vector3 vertex1, Vector3 vertex2, Vector3 vertex3, Vector3 normal) {
         vertex1.set(x1, y1, z1);
-        vertex1.set(x2, y2, z2);
-        vertex1.set(x3, y3, z3);
+        vertex2.set(x2, y2, z2);
+        vertex3.set(x3, y3, z3);
         normal.set(normalX, normalY, normalZ);
     }
 }
