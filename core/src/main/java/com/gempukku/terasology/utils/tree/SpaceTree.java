@@ -51,9 +51,6 @@ public class SpaceTree<T> extends AbstractDimensionalMap<T> {
 
     private Node rootNode;
 
-    private float defaultMinValue = Float.MIN_VALUE;
-    private float defaultMaxValue = Float.MAX_VALUE;
-
     public SpaceTree(int dimensions) {
         this(dimensions, DEFAULT_BUCKET_SIZE, DEFAULT_DISTANCE_FUNCTION);
     }
@@ -78,14 +75,6 @@ public class SpaceTree<T> extends AbstractDimensionalMap<T> {
         subNodeCount = subNodes;
     }
 
-    public void setDefaultMaxValue(float defaultMaxValue) {
-        this.defaultMaxValue = defaultMaxValue;
-    }
-
-    public void setDefaultMinValue(float defaultMinValue) {
-        this.defaultMinValue = defaultMinValue;
-    }
-
     @Override
     public T add(float[] position, T value) {
         validatePosition(position);
@@ -97,8 +86,8 @@ public class SpaceTree<T> extends AbstractDimensionalMap<T> {
             float[] min = new float[dimensions];
             float[] max = new float[dimensions];
             for (int i = 0; i < dimensions; i++) {
-                min[i] = defaultMinValue;
-                max[i] = defaultMaxValue;
+                min[i] = -Float.MAX_VALUE;
+                max[i] = Float.MAX_VALUE;
             }
             rootNode = createNewNode(position, min, max, value);
             return null;

@@ -282,8 +282,6 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
 
         ChunkGeometry chunkGeometry = chunkGeometryContainer.getChunkGeometry();
         SpaceTree<Triangle> triangles = new SpaceTree<>(3);
-        triangles.setDefaultMaxValue(100000f);
-        triangles.setDefaultMinValue(-100000f);
 
         for (Triangle triangle : chunkGeometry.getTriangles()) {
             triangle.getVertices(temp1, temp2, temp3, normal);
