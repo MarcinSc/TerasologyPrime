@@ -74,6 +74,11 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     private float horizontalSpeed;
     private float verticalSpeed;
 
+    private final static float walkPadding = 0.01f;
+    private final static float stepHeight = 0.55f;
+
+    private final static float maxSimulationStep = 0.02f;
+
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
@@ -152,8 +157,7 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
                 SpaceTree<Triangle>[] chunkSector = getChunkSector(location.getWorldId(), positionX, positionY, positionZ);
                 if (chunkSector != null) {
                     while (remainingSimulationTimeInSeconds > 0) {
-                        // Max time for step is 20ms
-                        float stepLengthInSeconds = Math.min(0.02f, remainingSimulationTimeInSeconds);
+                        float stepLengthInSeconds = Math.min(maxSimulationStep, remainingSimulationTimeInSeconds);
                         remainingSimulationTimeInSeconds -= stepLengthInSeconds;
 
                         processSimulationStep(stepLengthInSeconds, entityRef, chunkSector);
@@ -206,7 +210,7 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         float y = positionY + verticalSpeed * stepLengthInSeconds;
         float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
 
-        Vector3 point = findCollision(chunkSector, positionX, positionY + 0.5f, positionZ, x, y, z, collisionNormal);
+        Vector3 point = findCollision(chunkSector, positionX, positionY, positionZ, x, y, z, collisionNormal);
 
         if (point != null) {
             positionX = point.x;
@@ -232,15 +236,26 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         float x = positionX + timeHorizontalComponent * (float) Math.cos(yaw);
         float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
 
-        Vector3 point = findCollision(chunkSector, positionX, positionY + 0.5f, positionZ, x, positionY, z, collisionNormal);
+        if (horizontalSpeed != 0) {
+            Vector3 point = findCollision(chunkSector, x, positionY + stepHeight + walkPadding, z, x, positionY, z, collisionNormal);
 
-        if (point != null) {
-            positionX = point.x;
-            positionZ = point.z;
+            if (point != null) {
+                positionX = point.x;
+                positionY = point.y;
+                positionZ = point.z;
+            } else {
+                point = findCollision(chunkSector, positionX, positionY + walkPadding, positionZ, x, positionY, z, collisionNormal);
+                if (point != null) {
+                    positionX = point.x;
+                    positionZ = point.z;
+                } else {
+                    positionX = x;
+                    positionZ = z;
+                    mode = Mode.FREE_FALL;
+                }
+            }
         } else {
-            positionX = x;
-            positionZ = z;
-            mode = Mode.FREE_FALL;
+            // TODO - check if player is falling
         }
     }
 
