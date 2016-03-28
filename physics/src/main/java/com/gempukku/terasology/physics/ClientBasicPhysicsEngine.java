@@ -97,9 +97,13 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     }
 
     @ReceiveEvent
-    public void movementSet(AfterComponentAdded event, EntityRef entity, MovementComponent movement, ClientComponent client) {
+    public void movementSet(AfterComponentAdded event, EntityRef entity, MovementComponent movement, LocationComponent location, ClientComponent client) {
         maxSpeed = movement.getMaxSpeed();
         jumpSpeed = movement.getJumpSpeed();
+
+        positionX = location.getX();
+        positionY = location.getY();
+        positionZ = location.getZ();
     }
 
     @ReceiveEvent
