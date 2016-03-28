@@ -101,6 +101,10 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         maxSpeed = movement.getMaxSpeed();
         jumpSpeed = movement.getJumpSpeed();
 
+        yaw = movement.getYaw();
+        horizontalSpeed = movement.getSpeed();
+        verticalSpeed = movement.getVerticalSpeed();
+
         positionX = location.getX();
         positionY = location.getY();
         positionZ = location.getZ();
