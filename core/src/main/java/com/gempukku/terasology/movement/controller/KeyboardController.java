@@ -34,8 +34,9 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
     public void update() {
         float rotateStep = 0.05f;
 
+        MovementController.Mode mode = movementController.getMode();
         float speed = 0;
-        float verticalSpeed;
+        float verticalSpeed = movementController.getVerticalSpeed();
         float yaw = movementController.getYaw();
 
         if (isPressed(forward) && !isPressed(backward)) {
@@ -48,15 +49,15 @@ public class KeyboardController implements GameLoopListener, LifeCycleSystem {
         } else if (isPressed(right) && !isPressed(left)) {
             yaw += rotateStep;
         }
-        if (movementController.isGrounded() && isPressed(jump) && !isPressed(down)) {
-            verticalSpeed = movementController.getJumpSpeed();
-        } else if (isPressed(down) && !isPressed(jump)) {
-            verticalSpeed = -movementController.getJumpSpeed();
-        } else {
-            verticalSpeed = movementController.getVerticalSpeed();
+        if (mode == MovementController.Mode.WALKING) {
+            if (isPressed(jump) && !isPressed(down)) {
+                verticalSpeed = movementController.getJumpSpeed();
+                mode = MovementController.Mode.FREE_FALL;
+            } else if (isPressed(down) && !isPressed(jump)) {
+                verticalSpeed = -movementController.getJumpSpeed();
+            }
         }
-
-        movementController.updateMovement(yaw, movementController.getPitch(), speed, verticalSpeed);
+        movementController.updateMovement(mode, yaw, movementController.getPitch(), speed, verticalSpeed);
     }
 
     private boolean isPressed(int[] keys) {

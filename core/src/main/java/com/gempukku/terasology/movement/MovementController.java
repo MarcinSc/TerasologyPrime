@@ -1,7 +1,11 @@
 package com.gempukku.terasology.movement;
 
 public interface MovementController {
-    void updateMovement(float yaw, float pitch, float speed, float verticalSpeed);
+    enum Mode {
+        WALKING, FREE_FALL;
+    }
+
+    void updateMovement(Mode mode, float yaw, float pitch, float speed, float verticalSpeed);
 
     float getYaw();
 
@@ -15,5 +19,5 @@ public interface MovementController {
 
     float getJumpSpeed();
 
-    boolean isGrounded();
+    Mode getMode();
 }

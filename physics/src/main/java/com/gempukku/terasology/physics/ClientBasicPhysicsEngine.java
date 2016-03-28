@@ -63,6 +63,8 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     private float maxSpeed;
     private float jumpSpeed;
 
+    private Mode mode = Mode.FREE_FALL;
+
     private float positionX;
     private float positionY;
     private float positionZ;
@@ -71,7 +73,6 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     private float pitch;
     private float horizontalSpeed;
     private float verticalSpeed;
-    private boolean grounded = false;
 
     @Override
     public void initialize() {
@@ -80,7 +81,8 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     }
 
     @Override
-    public void updateMovement(float yaw, float pitch, float speed, float verticalSpeed) {
+    public void updateMovement(Mode mode, float yaw, float pitch, float speed, float verticalSpeed) {
+        this.mode = mode;
         this.yaw = yaw;
         this.pitch = pitch;
         this.horizontalSpeed = speed;
@@ -134,53 +136,32 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     }
 
     @Override
-    public boolean isGrounded() {
-        return grounded;
+    public Mode getMode() {
+        return mode;
     }
 
     private Vector3 tmp = new Vector3();
 
-    private static final int STEPS = 10;
-
     @Override
     public void update() {
-        float timeSinceLastUpdateInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
+        float remainingSimulationTimeInSeconds = timeManager.getTimeSinceLastUpdate() / 1000f;
 
-        Vector3 collisionNormal = new Vector3();
-
-        timeSinceLastUpdateInSeconds /= STEPS;
         for (EntityRef entityRef : physicsObjectIndex.getEntities()) {
             if (entityRef.hasComponent(ClientComponent.class)) {
                 LocationComponent location = entityRef.getComponent(LocationComponent.class);
                 SpaceTree<Triangle>[] chunkSector = getChunkSector(location.getWorldId(), positionX, positionY, positionZ);
                 if (chunkSector != null) {
+                    while (remainingSimulationTimeInSeconds > 0) {
+                        // Max time for step is 20ms
+                        float stepLengthInSeconds = Math.min(0.02f, remainingSimulationTimeInSeconds);
+                        remainingSimulationTimeInSeconds -= stepLengthInSeconds;
+
+                        processSimulationStep(stepLengthInSeconds, entityRef, chunkSector);
+                    }
+
                     CameraComponent camera = entityRef.getComponent(CameraComponent.class);
                     MovementComponent movement = entityRef.getComponent(MovementComponent.class);
-                    for (int i = 0; i < STEPS; i++) {
-                        // Simulate movement based on our own values
 
-                        float timeHorizontalComponent = horizontalSpeed * timeSinceLastUpdateInSeconds;
-                        verticalSpeed += gravity * timeSinceLastUpdateInSeconds;
-
-                        float x = positionX + timeHorizontalComponent * (float) Math.cos(yaw);
-                        float y = positionY + verticalSpeed * timeSinceLastUpdateInSeconds;
-                        float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
-
-                        Vector3 point = findCollision(chunkSector, positionX, positionY + 0.5f, positionZ, x, y, z, collisionNormal);
-
-                        if (point != null) {
-                            x = point.x;
-                            y = point.y;
-                            z = point.z;
-                            grounded = true;
-                            verticalSpeed = 0;
-                        } else {
-                            grounded = false;
-                        }
-                        positionX = x;
-                        positionY = y;
-                        positionZ = z;
-                    }
                     location.setX(positionX);
                     location.setY(positionY);
                     location.setZ(positionZ);
@@ -195,10 +176,71 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
 
                     entityRef.saveComponents(location, camera, movement);
                     serverEventBus.sendEventToServer(new MovementRequestEvent(positionX, positionY, positionZ, movement.getVerticalSpeed(), movement.getSpeed(), movement.getYaw()));
+
                 } else {
                     Gdx.app.error(ClientBasicPhysicsEngine.class.getSimpleName(), "Chunks around are not loaded?");
                 }
+
             }
+        }
+    }
+
+    private void processSimulationStep(float stepLengthInSeconds, EntityRef entityRef, SpaceTree<Triangle>[] chunkSector) {
+        if (mode == Mode.WALKING) {
+            processSimulationStepForWalking(stepLengthInSeconds, entityRef, chunkSector);
+        } else if (mode == Mode.FREE_FALL) {
+            processSimulationStepForFreeFall(stepLengthInSeconds, entityRef, chunkSector);
+        }
+    }
+
+    private void processSimulationStepForFreeFall(float stepLengthInSeconds, EntityRef entityRef, SpaceTree<Triangle>[] chunkSector) {
+        Vector3 collisionNormal = new Vector3();
+
+        BasicCylinderPhysicsObjectComponent cylinderObject = entityRef.getComponent(BasicCylinderPhysicsObjectComponent.class);
+
+        // Simulate movement based on our own values
+        float timeHorizontalComponent = horizontalSpeed * stepLengthInSeconds;
+        verticalSpeed += gravity * stepLengthInSeconds;
+
+        float x = positionX + timeHorizontalComponent * (float) Math.cos(yaw);
+        float y = positionY + verticalSpeed * stepLengthInSeconds;
+        float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
+
+        Vector3 point = findCollision(chunkSector, positionX, positionY + 0.5f, positionZ, x, y, z, collisionNormal);
+
+        if (point != null) {
+            positionX = point.x;
+            positionY = point.y;
+            positionZ = point.z;
+            verticalSpeed = 0;
+            mode = Mode.WALKING;
+        } else {
+            positionX = x;
+            positionY = y;
+            positionZ = z;
+        }
+    }
+
+    private void processSimulationStepForWalking(float stepLengthInSeconds, EntityRef entityRef, SpaceTree<Triangle>[] chunkSector) {
+        Vector3 collisionNormal = new Vector3();
+
+        BasicCylinderPhysicsObjectComponent cylinderObject = entityRef.getComponent(BasicCylinderPhysicsObjectComponent.class);
+
+        // Simulate movement based on our own values
+        float timeHorizontalComponent = horizontalSpeed * stepLengthInSeconds;
+
+        float x = positionX + timeHorizontalComponent * (float) Math.cos(yaw);
+        float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
+
+        Vector3 point = findCollision(chunkSector, positionX, positionY + 0.5f, positionZ, x, positionY, z, collisionNormal);
+
+        if (point != null) {
+            positionX = point.x;
+            positionZ = point.z;
+        } else {
+            positionX = x;
+            positionZ = z;
+            mode = Mode.FREE_FALL;
         }
     }
 
