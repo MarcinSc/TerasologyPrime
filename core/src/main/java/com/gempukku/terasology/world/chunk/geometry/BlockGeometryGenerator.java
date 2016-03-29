@@ -5,7 +5,9 @@ import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGeneratorCallb
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 
 public interface BlockGeometryGenerator {
-    int INFLUENCED_BY_WIND = 1;
+    // Binary flags that can be set to a vertex
+    int DOES_NOT_PRODUCE_GEOMETRY = 1;
+    int MOVING_ON_WIND = 2;
 
     void generateGeometryForBlockFromAtlas(ChunkMeshGeneratorCallback callback, VertexOutput vertexOutput,
                                            Texture texture, ChunkBlocks chunkBlocks,

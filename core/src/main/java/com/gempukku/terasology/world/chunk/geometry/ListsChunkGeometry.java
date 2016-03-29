@@ -32,15 +32,19 @@ public class ListsChunkGeometry implements ChunkGeometry {
 
         List<Triangle> triangles = new ArrayList<>(indices.length / 3);
         for (int i = 0; i < indices.length; i += 3) {
-            int index1 = floatsPerVertex * indices[i];
-            int index2 = floatsPerVertex * indices[i + 1];
-            int index3 = floatsPerVertex * indices[i + 2];
-            triangles.add(
-                    new BasicTriangle(
-                            vertices[index1 + 0], vertices[index1 + 1], vertices[index1 + 2],
-                            vertices[index2 + 0], vertices[index2 + 1], vertices[index2 + 2],
-                            vertices[index3 + 0], vertices[index3 + 1], vertices[index3 + 2],
-                            vertices[index1 + 3], vertices[index1 + 4], vertices[index1 + 5]));
+            int vertexFlag = Math.round(vertices[floatsPerVertex * indices[i] + 8]);
+            if ((vertexFlag & BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY) == 0) {
+
+                int index1 = floatsPerVertex * indices[i];
+                int index2 = floatsPerVertex * indices[i + 1];
+                int index3 = floatsPerVertex * indices[i + 2];
+                triangles.add(
+                        new BasicTriangle(
+                                vertices[index1 + 0], vertices[index1 + 1], vertices[index1 + 2],
+                                vertices[index2 + 0], vertices[index2 + 1], vertices[index2 + 2],
+                                vertices[index3 + 0], vertices[index3 + 1], vertices[index3 + 2],
+                                vertices[index1 + 3], vertices[index1 + 4], vertices[index1 + 5]));
+            }
         }
 
         return triangles;

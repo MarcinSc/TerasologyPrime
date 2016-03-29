@@ -117,7 +117,8 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
                             vertexOutput.setTextureCoordinate(
                                     texture.getU() + textureCoords[0] * (texture.getU2() - texture.getU()),
                                     texture.getV() + textureCoords[1] * (texture.getV2() - texture.getV()));
-                            vertexOutput.setFlag(BlockGeometryGenerator.INFLUENCED_BY_WIND);
+                            vertexOutput.setFlag(BlockGeometryGenerator.MOVING_ON_WIND
+                                    + BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY);
 
                             vertexMapping[vertex] = vertexOutput.finishVertex();
                         }

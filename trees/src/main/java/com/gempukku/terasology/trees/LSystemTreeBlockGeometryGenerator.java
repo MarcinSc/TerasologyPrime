@@ -211,6 +211,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         vertexOutput.setTextureCoordinate(
                 texture.getU() + 1 * (texture.getU2() - texture.getU()),
                 texture.getV() + 0 * (texture.getV2() - texture.getV()));
+        vertexOutput.setFlag(BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY);
         short firstIndex = vertexOutput.finishVertex();
 
         vertexOutput.setPosition(second.x, second.y, second.z);
@@ -218,6 +219,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         vertexOutput.setTextureCoordinate(
                 texture.getU() + 1 * (texture.getU2() - texture.getU()),
                 texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        vertexOutput.setFlag(BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY);
         short secondIndex = vertexOutput.finishVertex();
 
         vertexOutput.setPosition(third.x, third.y, third.z);
@@ -225,6 +227,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         vertexOutput.setTextureCoordinate(
                 texture.getU() + 0 * (texture.getU2() - texture.getU()),
                 texture.getV() + 1 * (texture.getV2() - texture.getV()));
+        vertexOutput.setFlag(BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY);
         short thirdIndex = vertexOutput.finishVertex();
 
         vertexOutput.setPosition(fourth.x, fourth.y, fourth.z);
@@ -232,6 +235,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         vertexOutput.setTextureCoordinate(
                 texture.getU() + 0 * (texture.getU2() - texture.getU()),
                 texture.getV() + 0 * (texture.getV2() - texture.getV()));
+        vertexOutput.setFlag(BlockGeometryGenerator.DOES_NOT_PRODUCE_GEOMETRY);
         short fourthIndex = vertexOutput.finishVertex();
 
         vertexOutput.addVertexIndex(firstIndex);
