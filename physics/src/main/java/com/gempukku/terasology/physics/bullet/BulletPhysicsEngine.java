@@ -1,4 +1,4 @@
-package com.gempukku.terasology.physics;
+package com.gempukku.terasology.physics.bullet;
 
 import com.gempukku.secsy.context.annotation.RegisterSystem;
 

@@ -67,7 +67,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
                 treeZ);
 
         // It's possible that the chunk has been unloaded in the meantime
-        if (entityAndBlockId != null) {
+        if (entityAndBlockId != null & entityAndBlockId.entityRef != null) {
             TreeGenerationComponent treeGeneration = entityAndBlockId.entityRef.getComponent(TreeGenerationComponent.class);
             TreeDefinition treeDefinition = treeGenerators.get(treeGeneration.getGenerationType()).generateTreeDefinition(entityAndBlockId.entityRef);
 

@@ -1,4 +1,4 @@
-package com.gempukku.terasology.physics;
+package com.gempukku.terasology.physics.basic;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Intersector;
@@ -38,8 +38,6 @@ import com.gempukku.terasology.world.component.LocationComponent;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 @RegisterSystem(
@@ -77,7 +75,7 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     private float verticalSpeed;
 
     private final static float walkPadding = 0.01f;
-    private final static float stepHeight = 0.55f;
+    private final static float stepHeight = 1.1f;
 
     private final static float maxSimulationStep = 0.02f;
 
@@ -166,13 +164,13 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
                 LocationComponent location = entityRef.getComponent(LocationComponent.class);
                 SpaceTree<Triangle>[] chunkSector = getChunkSector(location.getWorldId(), positionX, positionY, positionZ);
                 if (chunkSector != null) {
-                    Iterable<Vector3> shapeControlPoints = getShapeControlPoints(entityRef);
+                    CharacterShape characterShape = getCharacterShape(entityRef);
 
                     while (remainingSimulationTimeInSeconds > 0) {
                         float stepLengthInSeconds = Math.min(maxSimulationStep, remainingSimulationTimeInSeconds);
                         remainingSimulationTimeInSeconds -= stepLengthInSeconds;
 
-                        processSimulationStep(stepLengthInSeconds, chunkSector, shapeControlPoints);
+                        processSimulationStep(stepLengthInSeconds, chunkSector, characterShape);
                     }
 
                     CameraComponent camera = entityRef.getComponent(CameraComponent.class);
@@ -193,47 +191,28 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
                     entityRef.saveComponents(location, camera, movement);
                     serverEventBus.sendEventToServer(new MovementRequestEvent(positionX, positionY, positionZ, movement.getVerticalSpeed(), movement.getSpeed(), movement.getYaw()));
                 } else {
-                    Gdx.app.error(ClientBasicPhysicsEngine.class.getSimpleName(), "Chunks around are not loaded?");
+                    Gdx.app.debug(ClientBasicPhysicsEngine.class.getSimpleName(), "Chunks around are not loaded?");
                 }
             }
         }
     }
 
-    public Iterable<Vector3> getShapeControlPoints(EntityRef entityRef) {
+    private CharacterShape getCharacterShape(EntityRef entityRef) {
         BasicCylinderPhysicsObjectComponent cylinderObject = entityRef.getComponent(BasicCylinderPhysicsObjectComponent.class);
-        float cylinderHeight = cylinderObject.getHeight();
-        float cylinderRadius = cylinderObject.getRadius();
-
-        List<Vector3> result = new LinkedList<>();
-
-        for (int i = 0; i < 3; i++) {
-            float dy = i * cylinderHeight / 2f;
-            for (int j = 0; j < 8; j++) {
-                float dx = cylinderRadius * (float) Math.sin(j * Math.PI / 4f);
-                float dz = cylinderRadius * (float) Math.cos(j * Math.PI / 4f);
-                result.add(new Vector3(dx, dy, dz));
-            }
-        }
-
-        result.add(new Vector3(0, 0, 0));
-        result.add(new Vector3(0, cylinderHeight, 0));
-
-        return result;
+        return new CylinderCharacterShape(cylinderObject);
     }
 
     private void processSimulationStep(float stepLengthInSeconds, SpaceTree<Triangle>[] chunkSector,
-                                       Iterable<Vector3> shapeControlPoints) {
+                                       CharacterShape characterShape) {
         if (mode == Mode.WALKING) {
-            processSimulationStepForWalking(stepLengthInSeconds, chunkSector, shapeControlPoints);
+            processSimulationStepForWalking(stepLengthInSeconds, chunkSector, characterShape);
         } else if (mode == Mode.FREE_FALL) {
-            processSimulationStepForFreeFall(stepLengthInSeconds, chunkSector, shapeControlPoints);
+            processSimulationStepForFreeFall(stepLengthInSeconds, chunkSector, characterShape);
         }
     }
 
     private void processSimulationStepForFreeFall(float stepLengthInSeconds, SpaceTree<Triangle>[] chunkSector,
-                                                  Iterable<Vector3> shapeControlPoints) {
-        Vector3 collisionNormal = new Vector3();
-
+                                                  CharacterShape characterShape) {
         // Simulate movement based on our own values
         float timeHorizontalComponent = horizontalSpeed * stepLengthInSeconds;
         verticalSpeed += gravity * stepLengthInSeconds;
@@ -242,14 +221,12 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         float y = positionY + verticalSpeed * stepLengthInSeconds;
         float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
 
-//        Vector3 firstCollisionPoint = getFirstCollisionPoint(chunkSector, shapeControlPoints, positionX, positionY, positionZ, x, y, z);
+        Vector3 firstCollisionPoint = getFirstCollisionPoint(chunkSector, characterShape.getAllControlPoints(), positionX, positionY, positionZ, x, y, z);
 
-        Vector3 point = findCollision(chunkSector, positionX, positionY, positionZ, x, y, z, collisionNormal);
-
-        if (point != null) {
-            positionX = point.x;
-            positionY = point.y;
-            positionZ = point.z;
+        if (firstCollisionPoint != null) {
+            positionX = firstCollisionPoint.x;
+            positionY = firstCollisionPoint.y;
+            positionZ = firstCollisionPoint.z;
             verticalSpeed = 0;
             mode = Mode.WALKING;
         } else {
@@ -262,13 +239,13 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     private Vector3 getFirstCollisionPoint(SpaceTree<Triangle>[] chunkSector, Iterable<Vector3> shapeControlPoints,
                                            float positionX, float positionY, float positionZ,
                                            float x, float y, float z) {
-        Vector3 collisionNormal = new Vector3();
         float minDistance = Float.MAX_VALUE;
         Vector3 result = null;
 
         for (Vector3 shapeControlPoint : shapeControlPoints) {
-            Vector3 collision = findCollision(chunkSector, positionX + shapeControlPoint.x, positionY + shapeControlPoint.y, positionZ + shapeControlPoint.z,
-                    x + shapeControlPoint.x, y + shapeControlPoint.y, z + shapeControlPoint.z, collisionNormal);
+            Vector3 collision = findCollision(chunkSector,
+                    positionX + shapeControlPoint.x, positionY + shapeControlPoint.y, positionZ + shapeControlPoint.z,
+                    x + shapeControlPoint.x, y + shapeControlPoint.y, z + shapeControlPoint.z, null);
             if (collision != null) {
                 collision.sub(shapeControlPoint);
                 float distance = collision.dst(positionX, positionY, positionZ);
@@ -283,9 +260,7 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
     }
 
     private void processSimulationStepForWalking(float stepLengthInSeconds, SpaceTree<Triangle>[] chunkSector,
-                                                 Iterable<Vector3> shapeControlPoints) {
-        Vector3 collisionNormal = new Vector3();
-
+                                                 CharacterShape characterShape) {
         // Simulate movement based on our own values
         float timeHorizontalComponent = horizontalSpeed * stepLengthInSeconds;
 
@@ -293,18 +268,19 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         float z = positionZ + timeHorizontalComponent * (float) Math.sin(yaw);
 
         if (horizontalSpeed != 0) {
-            Vector3 point = findCollision(chunkSector, x, positionY + stepHeight + walkPadding, z, x, positionY - stepHeight, z, collisionNormal);
+            Vector3 point = getFirstCollisionPoint(chunkSector, characterShape.getBottomControlPoints(), x, positionY + stepHeight + walkPadding, z, x, positionY - stepHeight, z);
 
             if (point != null) {
-                positionX = point.x;
-                positionY = point.y;
-                positionZ = point.z;
-            } else {
-                point = findCollision(chunkSector, positionX, positionY + walkPadding, positionZ, x, positionY, z, collisionNormal);
-                if (point != null) {
+                if (canFitShapeAtPoint(chunkSector, characterShape, point)) {
                     positionX = point.x;
+                    positionY = point.y;
                     positionZ = point.z;
                 } else {
+                    Gdx.app.debug(ClientBasicPhysicsEngine.class.getSimpleName(), "Can't fit shape");
+                }
+            } else {
+                point = getFirstCollisionPoint(chunkSector, characterShape.getAllControlPoints(), positionX, positionY + walkPadding, positionZ, x, positionY, z);
+                if (point == null) {
                     positionX = x;
                     positionZ = z;
                     mode = Mode.FREE_FALL;
@@ -313,6 +289,23 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
         } else {
             // TODO - check if player is falling
         }
+    }
+
+    private boolean canFitShapeAtPoint(SpaceTree<Triangle>[] chunkSector, CharacterShape characterShape, Vector3 point) {
+        float height = characterShape.getHeight();
+        for (Vector3 vector3 : characterShape.getBottomControlPoints()) {
+            Vector3 collisionPoint = findCollision(chunkSector,
+                    point.x + vector3.x,
+                    point.y + vector3.y + walkPadding,
+                    point.z + vector3.z,
+                    point.x + vector3.x,
+                    point.y + vector3.y + height,
+                    point.z + vector3.z, null);
+            if (collisionPoint != null)
+                return false;
+        }
+
+        return true;
     }
 
     private WorldBlock block = new WorldBlock();
@@ -377,7 +370,8 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
                     if (dst < lowestDistance) {
                         closestPoint = result;
                         lowestDistance = dst;
-                        resultNormal.set(normal);
+                        if (resultNormal != null)
+                            resultNormal.set(normal);
                     }
                 }
             }
