@@ -39,7 +39,7 @@ public class LAndDWorldGenerator implements WorldGenerator {
     @In
     private CommonBlockManager commonBlockManager;
 
-    private float noiseScale = 0.005f;
+    private float noiseScale = 0.001f;
     private Noise noise = new SimplexNoise(0);
 
     private short air = -1;
@@ -50,6 +50,12 @@ public class LAndDWorldGenerator implements WorldGenerator {
 
     private EntityData oakPrefab;
     private EntityData pinePrefab;
+
+    private int worldSizeChunks = 20;
+    private int baseSize = 20;
+    private int evenTerrainSize = 10;
+    private int evenTerrainSoftness = 5 * evenTerrainSize;
+    private int mountainAmplitude = 32;
 
     @Override
     public EntityData createMultiverseEntity() {
@@ -66,9 +72,10 @@ public class LAndDWorldGenerator implements WorldGenerator {
         chunkLoading.addField("minimumChunkY", -3);
         chunkLoading.addField("minimumChunkZ", -2);
 
-        chunkLoading.addField("maximumChunkX", 10);
+        chunkLoading.addField("maximumChunkX", worldSizeChunks + 2);
         chunkLoading.addField("maximumChunkY", 3);
-        chunkLoading.addField("maximumChunkZ", 10);
+        chunkLoading.addField("maximumChunkZ", worldSizeChunks + 2);
+
         entityInformation.addComponent(chunkLoading);
 
         return entityInformation;
@@ -78,7 +85,7 @@ public class LAndDWorldGenerator implements WorldGenerator {
     public EntityData createWorldEntity(String worldId) {
         EntityInformation entityInformation = new EntityInformation();
 
-        int dayLength = 1 * 60 * 1000;
+        int dayLength = 30 * 60 * 1000;
 
         ComponentInformation world = new ComponentInformation(WorldComponent.class);
         world.addField("worldId", worldId);
@@ -105,56 +112,61 @@ public class LAndDWorldGenerator implements WorldGenerator {
 
         FastRandom rnd = new FastRandom(x + 153 * y + 3121 * z);
 
-        int mountainAmplitude = 32;
-
         List<StoredEntityData> entities = new LinkedList<>();
         short[] blockIds = new short[ChunkSize.X * ChunkSize.Y * ChunkSize.Z];
-        int index = 0;
-        for (int dx = 0; dx < ChunkSize.X; dx++) {
-            for (int dy = 0; dy < ChunkSize.Y; dy++) {
-                int blockLevel = y * ChunkSize.Y + dy;
-                for (int dz = 0; dz < ChunkSize.Z; dz++) {
-                    int worldX = x * ChunkSize.X + dx;
-                    int worldZ = z * ChunkSize.Z + dz;
+        if (x < 0 || x >= worldSizeChunks || z < 0 || z >= worldSizeChunks) {
+            for (int i = 0; i < blockIds.length; i++) {
+                blockIds[i] = air;
+            }
+        } else {
+            int index = 0;
+            for (int dx = 0; dx < ChunkSize.X; dx++) {
+                for (int dy = 0; dy < ChunkSize.Y; dy++) {
+                    int blockLevel = y * ChunkSize.Y + dy;
+                    for (int dz = 0; dz < ChunkSize.Z; dz++) {
+                        int worldX = x * ChunkSize.X + dx;
+                        int worldZ = z * ChunkSize.Z + dz;
 
-                    float noiseForColumn = this.noise.noise(noiseScale * worldX, noiseScale * worldZ);
-                    noiseForColumn = (noiseForColumn + 1 / 2);
-                    int groundLevel = FastMath.floor(noiseForColumn * mountainAmplitude);
-                    if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
-                        EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
-                        int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
-                        EntityInformation entityInformation = new EntityInformation(prefab);
+                        float noiseForColumn = this.noise.noise(noiseScale * worldX, noiseScale * worldZ);
+                        noiseForColumn = (noiseForColumn + 1 / 2);
+                        int groundLevel = getGroundLevel(mountainAmplitude, noiseForColumn,
+                                x * ChunkSize.X + dx, z * ChunkSize.Z + dz);
+                        if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
+                            EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
+                            int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
+                            EntityInformation entityInformation = new EntityInformation(prefab);
 
-                        ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
-                        individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
-                        entityInformation.addComponent(individual);
+                            ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
+                            individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
+                            entityInformation.addComponent(individual);
 
-                        ComponentInformation seed = new ComponentInformation(SeedComponent.class);
-                        seed.addField("seed", rnd.nextLong());
-                        entityInformation.addComponent(seed);
+                            ComponentInformation seed = new ComponentInformation(SeedComponent.class);
+                            seed.addField("seed", rnd.nextLong());
+                            entityInformation.addComponent(seed);
 
-                        ComponentInformation block = new ComponentInformation(BlockComponent.class);
-                        entityInformation.addComponent(block);
+                            ComponentInformation block = new ComponentInformation(BlockComponent.class);
+                            entityInformation.addComponent(block);
 
-                        ComponentInformation location = new ComponentInformation(LocationComponent.class);
-                        location.addField("worldId", worldId);
-                        location.addField("x", (float) worldX);
-                        location.addField("y", (float) (y * ChunkSize.Y + dy));
-                        location.addField("z", (float) worldZ);
-                        entityInformation.addComponent(location);
+                            ComponentInformation location = new ComponentInformation(LocationComponent.class);
+                            location.addField("worldId", worldId);
+                            location.addField("x", (float) worldX);
+                            location.addField("y", (float) (y * ChunkSize.Y + dy));
+                            location.addField("z", (float) worldZ);
+                            entityInformation.addComponent(location);
 
-                        entities.add(entityInformation);
-                        blockIds[index] = tree;
-                    } else if (blockLevel > groundLevel) {
-                        blockIds[index] = air;
-                    } else if (blockLevel == groundLevel) {
-                        blockIds[index] = grass;
-                    } else if (blockLevel > groundLevel - 3) {
-                        blockIds[index] = dirt;
-                    } else {
-                        blockIds[index] = stone;
+                            entities.add(entityInformation);
+                            blockIds[index] = tree;
+                        } else if (blockLevel > groundLevel) {
+                            blockIds[index] = air;
+                        } else if (blockLevel == groundLevel) {
+                            blockIds[index] = grass;
+                        } else if (blockLevel > groundLevel - 3) {
+                            blockIds[index] = dirt;
+                        } else {
+                            blockIds[index] = stone;
+                        }
+                        index++;
                     }
-                    index++;
                 }
             }
         }
@@ -170,5 +182,22 @@ public class LAndDWorldGenerator implements WorldGenerator {
         entities.add(chunkEntity);
 
         return entities;
+    }
+
+    private int getGroundLevel(int mountainAmplitude, float noiseForColumn, int x, int z) {
+        int distanceFromEdge =
+                Math.min(Math.min(x, z), Math.min(worldSizeChunks * ChunkSize.X - x, worldSizeChunks * ChunkSize.Z - z));
+        int distanceFromDiagonal = Math.abs(x - z);
+
+        int distanceFromForcedEvenTerrain = Math.min(distanceFromEdge, distanceFromDiagonal);
+
+        float distanceFromCorner = (float) Math.sqrt(Math.min(x * x + z * z, (worldSizeChunks * ChunkSize.X - x) * (worldSizeChunks * ChunkSize.X - x) + (worldSizeChunks * ChunkSize.Z - z) * (worldSizeChunks * ChunkSize.Z - z)));
+
+        float multiplierFromLanes = (distanceFromForcedEvenTerrain < evenTerrainSize) ? 0 : Math.min((distanceFromForcedEvenTerrain - evenTerrainSize) * 1f / evenTerrainSoftness, 1f);
+        float multiplierFromBase = (distanceFromCorner < baseSize) ? 0 : Math.min((distanceFromCorner - baseSize) * 1f / evenTerrainSoftness, 1f);
+
+        float multiplier = Math.min(multiplierFromLanes, multiplierFromBase);
+
+        return Math.round(multiplier * FastMath.floor(noiseForColumn * mountainAmplitude));
     }
 }

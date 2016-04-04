@@ -13,7 +13,7 @@
     "trunkSegmentRotateZDist": "n,0,2",
     "trunkSegmentLengthIncreasePerGenerationDist": "n,0.25,0",
     "trunkSegmentRadiusIncreasePerGenerationDist": "n,0.03,0",
-    "branchCountDist": "u,2,0",
+    "branchCountDist": "u,0,0",
     "branchLengthDist": "n,0.2,0.0075",
     "branchRadiusDist": "n,0.01,0.001",
     "branchInitialAngleAddYDist": "n,137.5,10",

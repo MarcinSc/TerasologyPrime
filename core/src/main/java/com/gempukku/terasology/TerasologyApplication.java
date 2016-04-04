@@ -126,9 +126,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         EntityRef player = playerManager.createPlayer("clientId");
 
         LocationComponent playerLocation = player.createComponent(LocationComponent.class);
-        playerLocation.setX(0f);
+        playerLocation.setX(5f);
         playerLocation.setY(20);
-        playerLocation.setZ(0f);
+        playerLocation.setZ(5f);
         playerLocation.setWorldId("world");
 
         CameraComponent playerCamera = player.createComponent(CameraComponent.class);
