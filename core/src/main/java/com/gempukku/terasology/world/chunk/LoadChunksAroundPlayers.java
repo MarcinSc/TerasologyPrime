@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @RegisterSystem(
-        profiles = NetProfiles.AUTHORITY)
+        profiles = {"chunksAroundPlayers", NetProfiles.AUTHORITY})
 public class LoadChunksAroundPlayers implements ChunkRelevanceRule, LifeCycleSystem {
     @In
     private ChunkRelevanceRuleRegistry chunkRelevanceRuleRegistry;

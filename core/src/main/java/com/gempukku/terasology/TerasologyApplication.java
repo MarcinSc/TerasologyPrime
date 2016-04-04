@@ -105,7 +105,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         // We use components with naming convention
         serverProfiles.add("nameConventionComponents");
         // World generator
-        serverProfiles.add("hillsWorld");
+        serverProfiles.add("lAndDWorld");
         serverProfiles.add("generateTextureAtlas");
         // Server needs to generate chunk geometries
         serverProfiles.add("generateChunkGeometry");
@@ -126,9 +126,9 @@ public class TerasologyApplication extends ApplicationAdapter {
         EntityRef player = playerManager.createPlayer("clientId");
 
         LocationComponent playerLocation = player.createComponent(LocationComponent.class);
-        playerLocation.setX(4.2f);
+        playerLocation.setX(0f);
         playerLocation.setY(20);
-        playerLocation.setZ(4.2f);
+        playerLocation.setZ(0f);
         playerLocation.setWorldId("world");
 
         CameraComponent playerCamera = player.createComponent(CameraComponent.class);

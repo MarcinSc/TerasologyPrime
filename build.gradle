@@ -41,6 +41,7 @@ project(":desktop") {
     dependencies {
         compile project(":physics")
         compile project(":test")
+        compile project(":l-and-d")
 
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
@@ -48,6 +49,15 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
         compile "com.googlecode.json-simple:json-simple:1.1"
+    }
+}
+
+project(":l-and-d") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":trees")
+        compile project(":celestial-bodies")
     }
 }
 
