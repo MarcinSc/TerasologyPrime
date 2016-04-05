@@ -13,9 +13,6 @@ import java.util.List;
 public class CelestialBodyShaderProvider implements ShaderProvider {
     private CelestialBodyShader celestialBodyShader;
 
-    private float viewportWidth;
-    private float viewportHeight;
-
     private String functionReplacement;
     private String functionDispatch;
 
@@ -44,14 +41,6 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
         }
     }
 
-    public void setViewportWidth(float viewportWidth) {
-        this.viewportWidth = viewportWidth;
-    }
-
-    public void setViewportHeight(float viewportHeight) {
-        this.viewportHeight = viewportHeight;
-    }
-
     public boolean hasBodiesToRender() {
         return celestialBodyShader == null || celestialBodyShader.hasBodiesToRender();
     }
@@ -69,8 +58,6 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
                     config);
             celestialBodyShader.init();
         }
-        celestialBodyShader.setViewportWidth(viewportWidth);
-        celestialBodyShader.setViewportHeight(viewportHeight);
         return celestialBodyShader;
     }
 

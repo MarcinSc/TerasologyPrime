@@ -18,22 +18,12 @@ public class CelestialBodyShader extends DefaultShader {
 
     private Iterator<CelestialBody> celestialBodies;
     private CelestialBody nextBody;
-    private float viewportWidth;
-    private float viewportHeight;
 
     private float[] celestialBodyParams = new float[BODY_ARRAY_SIZE];
 
     public CelestialBodyShader(Renderable renderable, Config config) {
         super(renderable, config);
         celestialBodyParamsLocation = program.fetchUniformLocation("u_celestialBodiesParams[0]", false);
-    }
-
-    public void setViewportWidth(float viewportWidth) {
-        this.viewportWidth = viewportWidth;
-    }
-
-    public void setViewportHeight(float viewportHeight) {
-        this.viewportHeight = viewportHeight;
     }
 
     public void prepareCelestialBodies(Iterable<CelestialBody> celestialBodies) {
@@ -77,8 +67,8 @@ public class CelestialBodyShader extends DefaultShader {
 
         program.setUniform1fv(celestialBodyParamsLocation, celestialBodyParams, 0, celestialBodyParams.length);
 
-        set(u_viewportWidth, viewportWidth);
-        set(u_viewportHeight, viewportHeight);
+        set(u_viewportWidth, camera.viewportWidth);
+        set(u_viewportHeight, camera.viewportHeight);
     }
 
     @Override
