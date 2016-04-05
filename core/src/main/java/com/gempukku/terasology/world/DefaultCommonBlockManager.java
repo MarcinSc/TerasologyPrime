@@ -41,7 +41,7 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
                     texturePaths.add(partTexture);
                 }
             }
-            textureAtlasRegistry.registerTextures(texturePaths);
+            textureAtlasRegistry.registerTextures("terrain", texturePaths);
         }
     }
 

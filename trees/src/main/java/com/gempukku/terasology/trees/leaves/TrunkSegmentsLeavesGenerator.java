@@ -48,14 +48,14 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
             ComponentData component = entityData.getComponent(LeavesDefinitionComponent.class);
             texturesToLoad.add((String) component.getFields().get("leavesTexture"));
         }
-        textureAtlasRegistry.registerTextures(texturesToLoad);
+        textureAtlasRegistry.registerTextures("terrain", texturesToLoad);
     }
 
     @Override
     public LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
             EntityRef entityRef, BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture) {
         LeavesDefinitionComponent leavesDefinition = entityRef.getComponent(LeavesDefinitionComponent.class);
-        TextureRegion leavesTexture = textureAtlasProvider.getTexture(leavesDefinition.getLeavesTexture());
+        TextureRegion leavesTexture = textureAtlasProvider.getTexture("terrain", leavesDefinition.getLeavesTexture());
         if (texture == leavesTexture.getTexture()) {
             return new LeavesDrawingCallback(vertexOutput, shapeProvider.getShapeById(leavesDefinition.getLeavesShape()), leavesTexture);
         } else {

@@ -207,7 +207,7 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
                 List<String> textureIds = shapePart.getTextures();
 
                 String textureToUse = findFirstTexture(textureIds, availableTextures);
-                TextureRegion textureRegion = textureAtlasProvider.getTexture(textureToUse);
+                TextureRegion textureRegion = textureAtlasProvider.getTexture("terrain", textureToUse);
                 if (textureRegion.getTexture() == texture) {
                     int vertexCount = shapePart.getVertices().size();
 

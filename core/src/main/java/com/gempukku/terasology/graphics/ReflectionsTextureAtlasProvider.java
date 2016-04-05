@@ -11,7 +11,9 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.prefab.PrefabManager;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 
 import java.io.File;
 import java.net.URL;
@@ -19,10 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @RegisterSystem(
         profiles = "generateTextureAtlas", shared = {TextureAtlasProvider.class, TextureAtlasRegistry.class})
@@ -32,33 +32,20 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Te
     @In
     private TerasologyComponentManager terasologyComponentManager;
 
-    private TextureAtlas textureAtlas;
-    private List<Texture> textureList;
-    private Map<String, TextureRegion> textures = new HashMap<>();
+    private Map<String, TextureAtlas> textureAtlases;
+    private Map<String, List<Texture>> textureList;
+    private Map<String, Map<String, TextureRegion>> textures;
 
-    private Set<String> texturesToRegister = new HashSet<>();
+    private Multimap<String, String> texturesToRegister = HashMultimap.create();
 
     @Override
-    public void registerTextures(Collection<String> textures) {
-        texturesToRegister.addAll(textures);
+    public void registerTextures(String textureAtlasId, Collection<String> textures) {
+        texturesToRegister.putAll(textureAtlasId, textures);
     }
 
     @Override
     public void postInitialize() {
-        TexturePacker.Settings settings = new TexturePacker.Settings();
-        settings.maxWidth = 512;
-        settings.maxHeight = 512;
-        settings.silent = true;
-        settings.duplicatePadding = true;
-
-        File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile().getParentFile();
-        TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);
-
-        for (String texturePath : texturesToRegister) {
-            URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + texturePath);
-            texturePacker.addImage(new File(textureResource.getPath()));
-        }
-
+        // Delete everything from the temp directory
         FileHandle temp = Gdx.files.local("temp");
         if (temp.exists()) {
             File atlasLocation = temp.file();
@@ -68,30 +55,55 @@ public class ReflectionsTextureAtlasProvider implements TextureAtlasProvider, Te
             }
         }
 
-        FileHandle atlasFileHandle = Gdx.files.local("temp/blocks.atlas");
+        textureList = new HashMap<>();
+        textures = new HashMap<>();
+        textureAtlases = new HashMap<>();
 
-        texturePacker.pack(temp.file(), "blocks");
+        for (String textureAtlasId : texturesToRegister.keySet()) {
+            TexturePacker.Settings settings = new TexturePacker.Settings();
+            settings.maxWidth = 512;
+            settings.maxHeight = 512;
+            settings.silent = true;
+            settings.duplicatePadding = true;
 
-        textureAtlas = new TextureAtlas(atlasFileHandle);
+            File resourceRoot = new File(ReflectionsTextureAtlasProvider.class.getResource("/badlogic.jpg").getPath()).getParentFile().getParentFile();
+            TexturePacker texturePacker = new TexturePacker(resourceRoot, settings);
 
-        for (TextureAtlas.AtlasRegion atlasRegion : textureAtlas.getRegions()) {
-            String name = atlasRegion.name;
-            textures.put(name.substring(name.indexOf('/') + 1), atlasRegion);
+            for (String texturePath : texturesToRegister.get(textureAtlasId)) {
+                URL textureResource = ReflectionsTextureAtlasProvider.class.getResource("/" + texturePath);
+                texturePacker.addImage(new File(textureResource.getPath()));
+            }
+
+            FileHandle atlasFileHandle = Gdx.files.local("temp/" + textureAtlasId + ".atlas");
+
+            texturePacker.pack(temp.file(), textureAtlasId);
+
+            TextureAtlas textureAtlas = new TextureAtlas(atlasFileHandle);
+
+            Map<String, TextureRegion> textureMapInAtlas = new HashMap<>();
+            for (TextureAtlas.AtlasRegion atlasRegion : textureAtlas.getRegions()) {
+                String name = atlasRegion.name;
+                textureMapInAtlas.put(name.substring(name.indexOf('/') + 1), atlasRegion);
+            }
+
+            List<Texture> texturesInAtlas = new ArrayList<>();
+            Iterables.addAll(texturesInAtlas, textureAtlas.getTextures());
+
+            textureList.put(textureAtlasId, texturesInAtlas);
+            textures.put(textureAtlasId, textureMapInAtlas);
+            textureAtlases.put(textureAtlasId, textureAtlas);
         }
-
-        textureList = new ArrayList<>();
-        Iterables.addAll(textureList, textureAtlas.getTextures());
 
         texturesToRegister = null;
     }
 
     @Override
-    public List<Texture> getTextures() {
-        return Collections.unmodifiableList(textureList);
+    public List<Texture> getTextures(String textureAtlasId) {
+        return Collections.unmodifiableList(textureList.get(textureAtlasId));
     }
 
     @Override
-    public TextureRegion getTexture(String name) {
-        return textures.get(name.substring(0, name.lastIndexOf('.')));
+    public TextureRegion getTexture(String textureAtlasId, String name) {
+        return textures.get(textureAtlasId).get(name.substring(0, name.lastIndexOf('.')));
     }
 }

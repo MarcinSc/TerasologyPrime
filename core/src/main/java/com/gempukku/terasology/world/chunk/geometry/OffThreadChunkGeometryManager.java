@@ -144,7 +144,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
                         }
                     }
                     if (canProcess) {
-                        ChunkGeometry result = chunkGeometryGenerator.prepareChunkGeometryOffThread(textureAtlasProvider.getTextures(),
+                        ChunkGeometry result = chunkGeometryGenerator.prepareChunkGeometryOffThread(textureAtlasProvider.getTextures("terrain"),
                                 chunkToProcess.worldId, chunkToProcess.x, chunkToProcess.y, chunkToProcess.z);
                         if (result != null) {
                             synchronized (chunkToProcess) {

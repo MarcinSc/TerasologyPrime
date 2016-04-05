@@ -45,7 +45,7 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
             ComponentData component = entityData.getComponent(SimpleTreeDefinitionComponent.class);
             texturesToLoad.add((String) component.getFields().get("barkTexture"));
         }
-        textureAtlasRegistry.registerTextures(texturesToLoad);
+        textureAtlasRegistry.registerTextures("terrain", texturesToLoad);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
         }
 
         return new TreeDefinition(tree,
-                textureAtlasProvider.getTexture(simpleTreeDefinition.getBarkTexture()),
+                textureAtlasProvider.getTexture("terrain", simpleTreeDefinition.getBarkTexture()),
                 simpleTreeDefinition.getLeavesGenerator());
     }
 

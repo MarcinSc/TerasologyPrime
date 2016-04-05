@@ -1,1 +1,1 @@
-include 'desktop', 'physics', 'l-and-d', 'trees', 'celestial-bodies', 'test', 'core', 'secsy-context', 'secsy-entity', 'secsy-network'
+include 'desktop', 'physics', 'l-and-d', 'trees', 'particle', 'celestial-bodies', 'test', 'core', 'secsy-context', 'secsy-entity', 'secsy-network'

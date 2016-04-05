@@ -38,9 +38,9 @@ import java.util.List;
 @RegisterSystem(
         profiles = NetProfiles.CLIENT,
         shared = {RenderingEngine.class, EnvironmentRendererRegistry.class, UiRendererRegistry.class, BackdropRendererRegistry.class,
-                PostProcessingRendererRegistry.class})
+                PostEnvironmentRendererRegistry.class, PostProcessingRendererRegistry.class})
 public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRendererRegistry, UiRendererRegistry, BackdropRendererRegistry,
-        PostProcessingRendererRegistry, LifeCycleSystem {
+        PostEnvironmentRendererRegistry, PostProcessingRendererRegistry, LifeCycleSystem {
     @In
     private EntityManager entityManager;
     @In
@@ -52,8 +52,9 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
 
     private PriorityCollection<BackdropRenderer> backdropRenderers = new PriorityCollection<>();
     private PriorityCollection<EnvironmentRenderer> environmentRenderers = new PriorityCollection<>();
-    private PriorityCollection<UiRenderer> uiRenderers = new PriorityCollection<>();
+    private PriorityCollection<PostEnvironmentRenderer> postEnvironmentRenderers = new PriorityCollection<>();
     private PriorityCollection<PostProcessingRenderer> postProcessingRenderers = new PriorityCollection<>();
+    private PriorityCollection<UiRenderer> uiRenderers = new PriorityCollection<>();
 
     private PerspectiveCamera camera;
     private MyShaderProvider myShaderProvider;
@@ -72,23 +73,28 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
     private RenderingBuffer lightsRenderingBuffer;
 
     @Override
-    public void registerEnvironmentRendered(EnvironmentRenderer environmentRenderer) {
-        environmentRenderers.add(environmentRenderer);
-    }
-
-    @Override
-    public void registerUiRenderer(UiRenderer uiRenderer) {
-        uiRenderers.add(uiRenderer);
-    }
-
-    @Override
     public void registerBackdropRenderer(BackdropRenderer backdropRenderer) {
         backdropRenderers.add(backdropRenderer);
     }
 
     @Override
+    public void registerEnvironmentRendered(EnvironmentRenderer environmentRenderer) {
+        environmentRenderers.add(environmentRenderer);
+    }
+
+    @Override
+    public void registerPostEnvironmentRenderer(PostEnvironmentRenderer postEnvironmentRenderer) {
+        postEnvironmentRenderers.add(postEnvironmentRenderer);
+    }
+
+    @Override
     public void registerPostProcessingRenderer(PostProcessingRenderer postProcessingRenderer) {
         postProcessingRenderers.add(postProcessingRenderer);
+    }
+
+    @Override
+    public void registerUiRenderer(UiRenderer uiRenderer) {
+        uiRenderers.add(uiRenderer);
     }
 
     @Override
@@ -189,6 +195,7 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
         cleanBuffer();
         renderBackdrop(worldId);
         normalRenderPass(worldId);
+        renderPostEnvironment(worldId);
         mainPassBuffer.end();
     }
 
@@ -319,6 +326,12 @@ public class FourPhaseMasterRenderer implements RenderingEngine, EnvironmentRend
             environmentRenderer.renderEnvironment(camera, worldId, modelBatch);
         }
         modelBatch.end();
+    }
+
+    private void renderPostEnvironment(String worldId) {
+        for (PostEnvironmentRenderer postEnvironmentRenderer : postEnvironmentRenderers) {
+            postEnvironmentRenderer.renderPostEnvironment(camera, worldId);
+        }
     }
 
     private class ScreenRenderingBuffer implements RenderingBuffer {
