@@ -14,16 +14,11 @@ import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.FastRandom;
 import com.gempukku.terasology.procedural.Noise;
 import com.gempukku.terasology.procedural.SimplexNoise;
-import com.gempukku.terasology.trees.component.IndividualTreeComponent;
-import com.gempukku.terasology.trees.component.SimpleTreeDefinitionComponent;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.chunk.WorldGenerator;
-import com.gempukku.terasology.world.component.BlockComponent;
-import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
-import com.gempukku.terasology.world.component.SeedComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
 import java.util.LinkedList;
@@ -51,7 +46,7 @@ public class LAndDWorldGenerator implements WorldGenerator {
     private EntityData oakPrefab;
     private EntityData pinePrefab;
 
-    private int worldSizeChunks = 20;
+    private int worldSizeChunks = 10;
     private int baseSize = 20;
     private int evenTerrainSize = 10;
     private int evenTerrainSoftness = 5 * evenTerrainSize;
@@ -131,32 +126,33 @@ public class LAndDWorldGenerator implements WorldGenerator {
                         noiseForColumn = (noiseForColumn + 1 / 2);
                         int groundLevel = getGroundLevel(mountainAmplitude, noiseForColumn,
                                 x * ChunkSize.X + dx, z * ChunkSize.Z + dz);
-                        if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
-                            EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
-                            int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
-                            EntityInformation entityInformation = new EntityInformation(prefab);
-
-                            ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
-                            individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
-                            entityInformation.addComponent(individual);
-
-                            ComponentInformation seed = new ComponentInformation(SeedComponent.class);
-                            seed.addField("seed", rnd.nextLong());
-                            entityInformation.addComponent(seed);
-
-                            ComponentInformation block = new ComponentInformation(BlockComponent.class);
-                            entityInformation.addComponent(block);
-
-                            ComponentInformation location = new ComponentInformation(LocationComponent.class);
-                            location.addField("worldId", worldId);
-                            location.addField("x", (float) worldX);
-                            location.addField("y", (float) (y * ChunkSize.Y + dy));
-                            location.addField("z", (float) worldZ);
-                            entityInformation.addComponent(location);
-
-                            entities.add(entityInformation);
-                            blockIds[index] = tree;
-                        } else if (blockLevel > groundLevel) {
+//                        if (blockLevel == groundLevel + 1 && dx % (ChunkSize.X / 2) == 0 && dz % (ChunkSize.Z / 2) == 0) {
+//                            EntityData prefab = (dx == 0) ? oakPrefab : pinePrefab;
+//                            int maxGenerations = ((Number) prefab.getComponent(SimpleTreeDefinitionComponent.class).getFields().get("maxGenerations")).intValue();
+//                            EntityInformation entityInformation = new EntityInformation(prefab);
+//
+//                            ComponentInformation individual = new ComponentInformation(IndividualTreeComponent.class);
+//                            individual.addField("generation", rnd.nextInt(maxGenerations) + 1);
+//                            entityInformation.addComponent(individual);
+//
+//                            ComponentInformation seed = new ComponentInformation(SeedComponent.class);
+//                            seed.addField("seed", rnd.nextLong());
+//                            entityInformation.addComponent(seed);
+//
+//                            ComponentInformation block = new ComponentInformation(BlockComponent.class);
+//                            entityInformation.addComponent(block);
+//
+//                            ComponentInformation location = new ComponentInformation(LocationComponent.class);
+//                            location.addField("worldId", worldId);
+//                            location.addField("x", (float) worldX);
+//                            location.addField("y", (float) (y * ChunkSize.Y + dy));
+//                            location.addField("z", (float) worldZ);
+//                            entityInformation.addComponent(location);
+//
+//                            entities.add(entityInformation);
+//                            blockIds[index] = tree;
+//                        } else if (blockLevel > groundLevel) {
+                        if (blockLevel>groundLevel) {
                             blockIds[index] = air;
                         } else if (blockLevel == groundLevel) {
                             blockIds[index] = grass;

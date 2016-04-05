@@ -153,40 +153,40 @@ public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSyste
             if (particle != null) {
                 TextureRegion textureRegion = particle.particleTextureSelector.getTextureRegion(particle);
                 for (int corner = 0; corner < 4; corner++) {
-                    vertices[i * 8 * 4 + corner * 4] = particle.location.x;
-                    vertices[i * 8 * 4 + corner * 4 + 1] = particle.location.x;
-                    vertices[i * 8 * 4 + corner * 4 + 2] = particle.location.x;
-                    vertices[i * 8 * 4 + corner * 4 + 3] = particle.rotation;
-                    vertices[i * 8 * 4 + corner * 4 + 4] = particle.scale;
-                    vertices[i * 8 * 4 + corner * 4 + 5] = corner + 1;
+                    vertices[i * 8 * 4 + corner * 8] = particle.location.x;
+                    vertices[i * 8 * 4 + corner * 8 + 1] = particle.location.y;
+                    vertices[i * 8 * 4 + corner * 8 + 2] = particle.location.z;
+                    vertices[i * 8 * 4 + corner * 8 + 3] = particle.rotation;
+                    vertices[i * 8 * 4 + corner * 8 + 4] = particle.scale;
+                    vertices[i * 8 * 4 + corner * 8 + 5] = corner + 1;
                     if (corner == 0) {
-                        vertices[i * 8 * 4 + corner * 4 + 6] = textureRegion.getRegionX();
-                        vertices[i * 8 * 4 + corner * 4 + 7] = textureRegion.getRegionY();
+                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU();
+                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV2();
                     } else if (corner == 1) {
-                        vertices[i * 8 * 4 + corner * 4 + 6] = textureRegion.getRegionX() + textureRegion.getRegionWidth();
-                        vertices[i * 8 * 4 + corner * 4 + 7] = textureRegion.getRegionY();
+                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU2();
+                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV2();
                     } else if (corner == 2) {
-                        vertices[i * 8 * 4 + corner * 4 + 6] = textureRegion.getRegionX() + textureRegion.getRegionWidth();
-                        vertices[i * 8 * 4 + corner * 4 + 7] = textureRegion.getRegionY() + textureRegion.getRegionHeight();
+                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU2();
+                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV();
                     } else {
-                        vertices[i * 8 * 4 + corner * 4 + 6] = textureRegion.getRegionX();
-                        vertices[i * 8 * 4 + corner * 4 + 7] = textureRegion.getRegionY() + textureRegion.getRegionHeight();
+                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU();
+                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV();
                     }
                 }
             } else {
                 for (int corner = 0; corner < 4; corner++) {
-                    vertices[i * 8 * 4 + corner * 4] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 1] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 2] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 3] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 4] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 5] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 6] = 0;
-                    vertices[i * 8 * 4 + corner * 4 + 7] = 0;
+                    vertices[i * 8 * 4 + corner * 8] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 1] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 2] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 3] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 4] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 5] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 6] = 0;
+                    vertices[i * 8 * 4 + corner * 8 + 7] = 0;
                 }
             }
         }
 
-        mesh.updateVertices(0, vertices);
+        mesh.setVertices(vertices);
     }
 }
