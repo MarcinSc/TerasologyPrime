@@ -53,7 +53,7 @@ public class SimpleParticle implements Particle {
 
     @Override
     public boolean updateParticle(float gravity, float timeSinceLastUpdateInSeconds) {
-        velocity.add(gravityInfluence * gravity * timeSinceLastUpdateInSeconds);
+        velocity.add(0, gravityInfluence * gravity * timeSinceLastUpdateInSeconds, 0);
         location.add(
                 velocity.x * timeSinceLastUpdateInSeconds,
                 velocity.y * timeSinceLastUpdateInSeconds,

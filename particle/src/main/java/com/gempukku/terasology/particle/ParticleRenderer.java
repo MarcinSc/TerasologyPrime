@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
@@ -24,10 +26,9 @@ import com.gempukku.terasology.graphics.PostEnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.time.TimeManager;
 
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Particle renderer uses a Mesh with a limit of 4000 vertices (1000 particles).
@@ -57,7 +58,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
     private Model model;
     private ModelInstance modelInstance;
 
-    private Set<Particle> particles = new HashSet<>();
+    private LinkedList<Particle> particles = new LinkedList<>();
 
     // 4 vertices per particle, 8 floats per vertex
     private float[] vertices = new float[4 * MAX_PARTICLE_COUNT * 8];
@@ -121,7 +122,8 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
             modelBuilder.begin();
 
             MeshPart meshPart = new MeshPart("particles", mesh, 0, 6 * MAX_PARTICLE_COUNT, GL20.GL_TRIANGLES);
-            modelBuilder.part(meshPart, new Material(TextureAttribute.createDiffuse(particles.get(0))));
+            modelBuilder.part(meshPart, new Material(TextureAttribute.createDiffuse(particles.get(0)),
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE), new DepthTestAttribute(false)));
             model = modelBuilder.end();
             modelInstance = new ModelInstance(model);
         }
@@ -139,7 +141,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
     }
 
     private void updateModel() {
-        Iterator<Particle> particleIterator = particles.iterator();
+        Iterator<Particle> particleIterator = particles.descendingIterator();
         for (int i = 0; i < MAX_PARTICLE_COUNT; i++) {
             Particle particle = null;
             if (particleIterator.hasNext()) {
