@@ -6,6 +6,7 @@ import com.gempukku.terasology.particle.Particle;
 import com.gempukku.terasology.particle.selector.ParticleTextureSelector;
 
 public class SimpleParticle implements Particle {
+    public final String worldId;
     public final Vector3 location;
     public float rotation;
     public float scale;
@@ -19,7 +20,8 @@ public class SimpleParticle implements Particle {
 
     public float elapsedTime;
 
-    public SimpleParticle(Vector3 location, Vector3 velocity, float gravityInfluence, float rotation, float rotationVelocity, float scale, float scaleDiff, float lifeLength, ParticleTextureSelector particleTextureSelector) {
+    public SimpleParticle(String worldId, Vector3 location, Vector3 velocity, float gravityInfluence, float rotation, float rotationVelocity, float scale, float scaleDiff, float lifeLength, ParticleTextureSelector particleTextureSelector) {
+        this.worldId = worldId;
         this.location = location;
         this.velocity = velocity;
         this.gravityInfluence = gravityInfluence;
@@ -29,6 +31,11 @@ public class SimpleParticle implements Particle {
         this.scaleDiff = scaleDiff;
         this.lifeLength = lifeLength;
         this.particleTextureSelector = particleTextureSelector;
+    }
+
+    @Override
+    public String getWorldId() {
+        return worldId;
     }
 
     @Override

@@ -56,7 +56,7 @@ public class ParticleTest implements GameLoopListener, LifeCycleSystem {
             float x = (float) Math.cos(angle);
             float z = (float) Math.sin(angle);
             particleEmitter.emitParticle(
-                    new SimpleParticle(new Vector3(5, 2, 5), new Vector3(0.1f * x, 2, 0.1f * z), 0.05f, 0, 0, 1, 0, 10,
+                    new SimpleParticle("world", new Vector3(5, 2, 5), new Vector3(0.1f * x, 2, 0.1f * z), 0.05f, 0, 0, 1, 0, 10,
                             explosionTexture));
         }
     }
