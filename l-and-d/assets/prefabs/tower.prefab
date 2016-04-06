@@ -9,7 +9,7 @@
   },
   "RangedAttackCharacterComponent": {
     "firingRange": 15,
-    "firingCooldown": 1000,
+    "firingCooldown": 800,
     "lastFired": 0,
     "missileSpeed": 10
   },
