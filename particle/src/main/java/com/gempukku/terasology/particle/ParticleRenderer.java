@@ -91,7 +91,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
     public void renderPostEnvironment(Camera camera, String worldId) {
         initModel();
         updateParticles();
-        updateModel(worldId);
+        updateModel(camera, worldId);
 
         modelBatch.begin(camera);
         modelBatch.render(modelInstance);
@@ -142,14 +142,15 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
         }
     }
 
-    private void updateModel(String worldId) {
+    private void updateModel(Camera camera, String worldId) {
         int particleCount = 0;
         Iterator<Particle> particleIterator = particles.descendingIterator();
         for (int i = 0; i < MAX_PARTICLE_COUNT; i++) {
             Particle particle = null;
             while (particleIterator.hasNext()) {
                 Particle untestedParticle = particleIterator.next();
-                if (untestedParticle.getWorldId().equals(worldId)) {
+                if (untestedParticle.getWorldId().equals(worldId)
+                        && camera.frustum.pointInFrustum(untestedParticle.getLocation())) {
                     particle = untestedParticle;
                     break;
                 }
