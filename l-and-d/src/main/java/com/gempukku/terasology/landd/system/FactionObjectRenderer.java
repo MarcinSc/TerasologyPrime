@@ -30,7 +30,7 @@ import com.gempukku.terasology.graphics.environment.renderer.EnvironmentRenderer
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
-import com.gempukku.terasology.landd.component.FactionObjectComponent;
+import com.gempukku.terasology.landd.component.RenderedObjectComponent;
 import com.gempukku.terasology.world.component.LocationComponent;
 import org.terasology.math.geom.Vector3f;
 
@@ -56,7 +56,7 @@ public class FactionObjectRenderer implements EnvironmentRenderer, LifeCycleSyst
     public void initialize() {
         environmentRendererRegistry.registerEnvironmentRendered(this);
         textureAtlasRegistry.registerTextures("terrain", Arrays.asList("blockTiles/bars/GoldBar.png"));
-        factionObjectIndex = entityIndexManager.addIndexOnComponents(LocationComponent.class, FactionObjectComponent.class);
+        factionObjectIndex = entityIndexManager.addIndexOnComponents(LocationComponent.class, RenderedObjectComponent.class);
     }
 
     @Override

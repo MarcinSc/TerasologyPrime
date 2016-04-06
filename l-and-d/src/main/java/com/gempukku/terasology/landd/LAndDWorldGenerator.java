@@ -3,20 +3,16 @@ package com.gempukku.terasology.landd;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
+import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
 import com.gempukku.secsy.network.serialize.EntityInformation;
-import com.gempukku.terasology.communication.SendToClientComponent;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.faction.FactionComponent;
 import com.gempukku.terasology.faction.FactionMemberComponent;
-import com.gempukku.terasology.landd.component.AiCharacterComponent;
-import com.gempukku.terasology.landd.component.FactionObjectComponent;
 import com.gempukku.terasology.landd.component.MovingCharacterComponent;
 import com.gempukku.terasology.landd.component.PermanentChunkLoadingComponent;
-import com.gempukku.terasology.landd.component.RangedAttackCharacterComponent;
-import com.gempukku.terasology.landd.component.TargetingComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.FastRandom;
@@ -38,7 +34,7 @@ import java.util.Set;
 
 @RegisterSystem(
         profiles = {NetProfiles.AUTHORITY, "lAndDWorld"}, shared = WorldGenerator.class)
-public class LAndDWorldGenerator implements WorldGenerator {
+public class LAndDWorldGenerator implements WorldGenerator, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;
     @In
@@ -55,14 +51,20 @@ public class LAndDWorldGenerator implements WorldGenerator {
     private short stone = -1;
     private short tree = -1;
 
-    private EntityData oakPrefab;
-    private EntityData pinePrefab;
+    private EntityData towerPrefab;
+    private EntityData pawnPrefab;
 
     private int worldSizeChunks = 10;
     private int baseSize = 20;
     private int evenTerrainSize = 10;
     private int evenTerrainSoftness = 5 * evenTerrainSize;
     private int mountainAmplitude = 32;
+
+    @Override
+    public void postInitialize() {
+        towerPrefab = prefabManager.getPrefabByName("tower");
+        pawnPrefab = prefabManager.getPrefabByName("pawn");
+    }
 
     @Override
     public EntityData createMultiverseEntity() {
@@ -93,21 +95,32 @@ public class LAndDWorldGenerator implements WorldGenerator {
         return Arrays.asList(
                 createFactionEntity("black", "white"),
                 createFactionEntity("white", "black"),
-                createFactionMovingRangedEntity("white", "world", 10, 1, 10, 10),
-                createFactionRangedEntity("black", "world", 50, 1, 50, 15));
+                createPeonEntity("white", "world", 10, 1, 10, 3, 0, 3),
+                createTowerEntity("black", "world", 50, 1, 50));
     }
 
-    private EntityInformation createFactionMovingRangedEntity(String factionId, String worldId, float x, float y, float z,
-                                                              float firingRange) {
-        EntityInformation object = createFactionRangedEntity(factionId, worldId, x, y, z, firingRange);
+    private EntityInformation createPeonEntity(String factionId, String worldId, float x, float y, float z,
+                                               float speedX, float speedY, float speedZ) {
+        EntityInformation result = new EntityInformation(pawnPrefab);
+
+        ComponentInformation factionComp = new ComponentInformation(FactionMemberComponent.class);
+        factionComp.addField("factionId", factionId);
+        result.addComponent(factionComp);
+
+        ComponentInformation location = new ComponentInformation(LocationComponent.class);
+        location.addField("worldId", worldId);
+        location.addField("x", x);
+        location.addField("y", y);
+        location.addField("z", z);
+        result.addComponent(location);
 
         ComponentInformation moving = new ComponentInformation(MovingCharacterComponent.class);
-        moving.addField("speedX", 3f);
-        moving.addField("speedY", 0f);
-        moving.addField("speedZ", 3f);
-        object.addComponent(moving);
+        moving.addField("speedX", speedX);
+        moving.addField("speedY", speedY);
+        moving.addField("speedZ", speedZ);
+        result.addComponent(moving);
 
-        return object;
+        return result;
     }
 
     private EntityInformation createFactionEntity(String factionId, String opposingFactionId) {
@@ -121,16 +134,12 @@ public class LAndDWorldGenerator implements WorldGenerator {
         return faction;
     }
 
-    private EntityInformation createFactionRangedEntity(String factionId, String worldId, float x, float y, float z,
-                                                        float firingRange) {
-        EntityInformation result = new EntityInformation();
+    private EntityInformation createTowerEntity(String factionId, String worldId, float x, float y, float z) {
+        EntityInformation result = new EntityInformation(towerPrefab);
 
         ComponentInformation factionComp = new ComponentInformation(FactionMemberComponent.class);
         factionComp.addField("factionId", factionId);
         result.addComponent(factionComp);
-
-        ComponentInformation factionObject = new ComponentInformation(FactionObjectComponent.class);
-        result.addComponent(factionObject);
 
         ComponentInformation location = new ComponentInformation(LocationComponent.class);
         location.addField("worldId", worldId);
@@ -138,25 +147,6 @@ public class LAndDWorldGenerator implements WorldGenerator {
         location.addField("y", y);
         location.addField("z", z);
         result.addComponent(location);
-
-        ComponentInformation ai = new ComponentInformation(AiCharacterComponent.class);
-        result.addComponent(ai);
-
-        ComponentInformation targeting = new ComponentInformation(TargetingComponent.class);
-        targeting.addField("translateFromLocationX", 0f);
-        targeting.addField("translateFromLocationY", 1.75f);
-        targeting.addField("translateFromLocationZ", 0f);
-        result.addComponent(targeting);
-
-        ComponentInformation ranged = new ComponentInformation(RangedAttackCharacterComponent.class);
-        ranged.addField("firingRange", firingRange);
-        ranged.addField("firingCooldown", 1000L);
-        ranged.addField("lastFired", 0L);
-        ranged.addField("missileSpeed", 10f);
-        result.addComponent(ranged);
-
-        ComponentInformation sendToClient = new ComponentInformation(SendToClientComponent.class);
-        result.addComponent(sendToClient);
 
         return result;
     }
@@ -185,9 +175,6 @@ public class LAndDWorldGenerator implements WorldGenerator {
             dirt = commonBlockManager.getCommonBlockId("dirt");
             stone = commonBlockManager.getCommonBlockId("stone");
             tree = commonBlockManager.getCommonBlockId("tree");
-
-            oakPrefab = prefabManager.getPrefabByName("oak");
-            pinePrefab = prefabManager.getPrefabByName("pine");
         }
 
         FastRandom rnd = new FastRandom(x + 153 * y + 3121 * z);

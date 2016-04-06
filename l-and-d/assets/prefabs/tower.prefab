@@ -1,0 +1,16 @@
+{
+  "SendToClientComponent": {},
+  "RenderedObjectComponent": {},
+  "AiCharacterComponent": {},
+  "TargetingComponent": {
+    "translateFromLocationX": 0,
+    "translateFromLocationY": 1.75,
+    "translateFromLocationZ": 0
+  },
+  "RangedAttackCharacterComponent": {
+    "firingRange": 15,
+    "firingCooldown": 1000,
+    "lastFired": 0,
+    "missileSpeed": 10
+  }
+}
