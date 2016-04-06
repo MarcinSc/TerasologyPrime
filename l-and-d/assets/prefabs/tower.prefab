@@ -12,5 +12,19 @@
     "firingCooldown": 1000,
     "lastFired": 0,
     "missileSpeed": 10
+  },
+  "FiresMissileParticleComponent": {
+    "missileTexture": "particle/magicMissile.png",
+    "rowCount": 1,
+    "columnCount": 1,
+    "colorR": 1,
+    "colorG": 0,
+    "colorB": 0,
+    "rotation": 0,
+    "rotationVelocity": 0,
+    "scale": 1,
+    "scaleDiff": 4,
+    "particleLifeLength": 0.5,
+    "gravityInfluence": 0
   }
 }
