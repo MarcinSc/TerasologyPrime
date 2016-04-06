@@ -95,11 +95,13 @@ public class LAndDWorldGenerator implements WorldGenerator, LifeCycleSystem {
         return Arrays.asList(
                 createFactionEntity("black", "white"),
                 createFactionEntity("white", "black"),
-                createPeonEntity("white", "world", 10, 1, 10, 3, 0, 3),
+                createPawnEntity("white", "world", 9, 1, 5, 2, 0, 2),
+                createPawnEntity("white", "world", 5, 1, 9, 2, 0, 2),
+                createPawnEntity("white", "world", 10, 1, 10, 3, 0, 3),
                 createTowerEntity("black", "world", 50, 1, 50));
     }
 
-    private EntityInformation createPeonEntity(String factionId, String worldId, float x, float y, float z,
+    private EntityInformation createPawnEntity(String factionId, String worldId, float x, float y, float z,
                                                float speedX, float speedY, float speedZ) {
         EntityInformation result = new EntityInformation(pawnPrefab);
 
