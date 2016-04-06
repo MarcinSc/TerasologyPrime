@@ -8,6 +8,7 @@ import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
 import com.gempukku.secsy.network.serialize.EntityInformation;
 import com.gempukku.terasology.component.TerasologyComponentManager;
+import com.gempukku.terasology.faction.FactionComponent;
 import com.gempukku.terasology.landd.component.PermanentChunkLoadingComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
@@ -21,8 +22,11 @@ import com.gempukku.terasology.world.chunk.WorldGenerator;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @RegisterSystem(
         profiles = {NetProfiles.AUTHORITY, "lAndDWorld"}, shared = WorldGenerator.class)
@@ -74,6 +78,24 @@ public class LAndDWorldGenerator implements WorldGenerator {
         entityInformation.addComponent(chunkLoading);
 
         return entityInformation;
+    }
+
+    @Override
+    public Iterable<EntityData> createStartingEntities() {
+        return Arrays.asList(
+                createFactionEntity("black", "white"),
+                createFactionEntity("white", "black"));
+    }
+
+    private EntityInformation createFactionEntity(String factionId, String opposingFactionId) {
+        EntityInformation faction = new EntityInformation();
+        ComponentInformation factionComp = new ComponentInformation(FactionComponent.class);
+        factionComp.addField("factionId", factionId);
+        Set<String> opposingFactions = new HashSet<>();
+        opposingFactions.add(opposingFactionId);
+        factionComp.addField("opposingFactions", opposingFactions);
+        faction.addComponent(factionComp);
+        return faction;
     }
 
     @Override

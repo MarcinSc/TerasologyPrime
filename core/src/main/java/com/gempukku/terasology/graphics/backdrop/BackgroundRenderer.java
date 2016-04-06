@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
@@ -37,7 +38,8 @@ public class BackgroundRenderer implements BackdropRenderer, LifeCycleSystem {
         modelBatch = new ModelBatch(backgroundShaderProvider);
         ModelBuilder modelBuilder = new ModelBuilder();
         modelBuilder.begin();
-        MeshPartBuilder backgroundBuilder = modelBuilder.part("background", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position, new Material());
+        MeshPartBuilder backgroundBuilder = modelBuilder.part("background", GL20.GL_TRIANGLES, VertexAttributes.Usage.Position,
+                new Material(new DepthTestAttribute(false)));
         backgroundBuilder.rect(
                 -1, 1, 1,
                 -1, -1, 1,

@@ -1,7 +1,6 @@
 package com.gempukku.terasology.graphics.backdrop;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
@@ -22,7 +21,6 @@ public class BackgroundShaderProvider implements ShaderProvider {
             DefaultShader.Config config = new DefaultShader.Config(
                     Gdx.files.internal("shader/background.vert").readString(),
                     Gdx.files.internal("shader/background.frag").readString());
-            config.defaultDepthFunc = GL20.GL_ALWAYS;
             backgroundShader = new BackgroundShader(renderable,
                     config);
             backgroundShader.init();

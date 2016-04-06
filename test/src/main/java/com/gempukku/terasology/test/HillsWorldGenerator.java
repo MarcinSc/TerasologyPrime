@@ -25,6 +25,7 @@ import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.SeedComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -58,6 +59,11 @@ public class HillsWorldGenerator implements WorldGenerator {
         entityInformation.addComponent(multiverse);
 
         return entityInformation;
+    }
+
+    @Override
+    public Iterable<EntityData> createStartingEntities() {
+        return Collections.emptySet();
     }
 
     @Override

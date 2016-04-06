@@ -53,7 +53,6 @@ public class CelestialBodyShaderProvider implements ShaderProvider {
             DefaultShader.Config config = new DefaultShader.Config(
                     Gdx.files.internal("shader/celestial.vert").readString(),
                     fragmentShader);
-            config.defaultDepthFunc = 0;
             celestialBodyShader = new CelestialBodyShader(renderable,
                     config);
             celestialBodyShader.init();

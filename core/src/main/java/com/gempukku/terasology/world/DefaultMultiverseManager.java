@@ -32,6 +32,10 @@ public class DefaultMultiverseManager implements MultiverseManager {
     private void createMultiverseEntity() {
         EntityData multiverseData = worldGenerator.createMultiverseEntity();
         entityManager.createEntity(multiverseData);
+
+        for (EntityData entityData : worldGenerator.createStartingEntities()) {
+            entityManager.createEntity(entityData);
+        }
     }
 
     @Override
