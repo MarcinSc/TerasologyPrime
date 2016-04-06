@@ -55,13 +55,15 @@ void main() {
         position.z += (smoothTriangleWave(u_time * 0.1 + position.x * -0.01 + position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
 
+    position = u_worldTrans * position;
+
     v_distanceToLight = dot(position.xyz, u_lightDirection) + u_lightPlaneDistance;
     v_lightingComponent = clamp(dot(a_normal, normalize(u_lightPosition-position.xyz)), 0.0, 1.0);
 
     v_positionLightTrans = u_lightTrans * position;
     v_position = position.xyz;
 
-    vec4 positionRelativeToCamera = u_projViewTrans * u_worldTrans * position;
+    vec4 positionRelativeToCamera = u_projViewTrans * position;
 
     float distanceFromCamera = length(positionRelativeToCamera.xyz);
     v_visibility = clamp(exp(-pow((distanceFromCamera * fogDensity), fogGradient)), 0.0, 1.0);

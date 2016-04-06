@@ -39,5 +39,7 @@ void main()
         v_position.z += (smoothTriangleWave(u_time * 0.1 + v_position.x * -0.01 + v_position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
 
-    gl_Position = u_projViewTrans * u_worldTrans * v_position;
+    v_position = u_worldTrans * v_position;
+
+    gl_Position = u_projViewTrans * v_position;
 }
