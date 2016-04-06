@@ -26,6 +26,7 @@ import com.gempukku.terasology.graphics.PostEnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.time.TimeManager;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -183,20 +184,11 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
                 particleCount++;
             } else if (i < lastUsedParticleCount) {
                 // This is to write over any old particles in the array
-                for (int corner = 0; corner < 4; corner++) {
-                    vertices[i * 8 * 4 + corner * 8] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 1] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 2] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 3] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 4] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 5] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 6] = 0;
-                    vertices[i * 8 * 4 + corner * 8 + 7] = 0;
-                }
+                Arrays.fill(vertices, i * 8 * 4, (i + 1) * 8 * 4, 0);
             }
         }
 
+        mesh.updateVertices(0, vertices, 0, 4 * lastUsedParticleCount * 8);
         lastUsedParticleCount = particleCount;
-        mesh.updateVertices(0, vertices, 0, 4 * particleCount * 8);
     }
 }
