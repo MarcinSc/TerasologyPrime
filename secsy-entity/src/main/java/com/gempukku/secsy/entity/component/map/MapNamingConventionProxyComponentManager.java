@@ -154,7 +154,7 @@ public class MapNamingConventionProxyComponentManager implements ComponentManage
             final Class<?> fieldType = method.getReturnType();
 
             addFieldType(fieldName, fieldType);
-            handlerMap.put(method.getName(), new GetMethodHandler(fieldName));
+            handlerMap.put(method.getName(), new GetMethodHandler(fieldName, fieldType));
         }
 
         private void addFieldType(String fieldName, Class<?> fieldType) {
@@ -201,9 +201,11 @@ public class MapNamingConventionProxyComponentManager implements ComponentManage
 
     private static class GetMethodHandler implements MethodHandler {
         private String fieldName;
+        private Class<?> resultClass;
 
-        public GetMethodHandler(String fieldName) {
+        public GetMethodHandler(String fieldName, Class<?> resultClass) {
             this.fieldName = fieldName;
+            this.resultClass = resultClass;
         }
 
         @Override
@@ -211,13 +213,61 @@ public class MapNamingConventionProxyComponentManager implements ComponentManage
             final Object changedValue = changes.get(fieldName);
             if (changedValue != null) {
                 if (changedValue == NULL_VALUE) {
-                    return null;
+                    return convertToResult(null, resultClass);
                 } else {
-                    return changedValue;
+                    return convertToResult(changedValue, resultClass);
                 }
             } else {
-                return storedValues.get(fieldName);
+                return convertToResult(storedValues.get(fieldName), resultClass);
             }
+        }
+
+        private Object convertToResult(Object value, Class<?> resultClass) {
+            if (value == null)
+                return null;
+            if (resultClass.isPrimitive()) {
+                if (resultClass == boolean.class) {
+                    return value;
+                }
+                Number numberValue = (Number) value;
+                if (resultClass == float.class) {
+                    return numberValue.floatValue();
+                } else if (resultClass == double.class) {
+                    return numberValue.doubleValue();
+                } else if (resultClass == long.class) {
+                    return numberValue.longValue();
+                } else if (resultClass == int.class) {
+                    return numberValue.intValue();
+                } else if (resultClass == short.class) {
+                    return numberValue.shortValue();
+                } else if (resultClass == char.class) {
+                    return (char) numberValue.intValue();
+                } else if (resultClass == byte.class) {
+                    return numberValue.byteValue();
+                }
+            }
+            if (resultClass.isAssignableFrom(Number.class)) {
+                if (resultClass == Boolean.class) {
+                    return value;
+                }
+                Number numberValue = (Number) value;
+                if (resultClass == Float.class) {
+                    return numberValue.floatValue();
+                } else if (resultClass == Double.class) {
+                    return numberValue.doubleValue();
+                } else if (resultClass == Long.class) {
+                    return numberValue.longValue();
+                } else if (resultClass == Integer.class) {
+                    return numberValue.intValue();
+                } else if (resultClass == Short.class) {
+                    return numberValue.shortValue();
+                } else if (resultClass == Character.class) {
+                    return (char) numberValue.intValue();
+                } else if (resultClass == Byte.class) {
+                    return numberValue.byteValue();
+                }
+            }
+            return value;
         }
     }
 
