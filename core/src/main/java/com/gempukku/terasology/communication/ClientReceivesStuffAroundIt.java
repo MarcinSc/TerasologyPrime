@@ -29,12 +29,13 @@ import com.gempukku.terasology.world.component.WorldComponent;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 @RegisterSystem(
         profiles = NetProfiles.AUTHORITY)
-public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, LifeCycleSystem {
+public class ClientReceivesStuffAroundIt implements ClientEntityRelevanceRule, LifeCycleSystem {
     @In
     private EntityManager entityManager;
     @In
@@ -50,6 +51,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     private EntityIndex worldIndex;
     private EntityIndex chunkIndex;
     private EntityIndex blockIndex;
+    private EntityIndex sendToClientAndLocationIndex;
     private EntityIndex clientAndLocationIndex;
 
     // Client id to collection of ChunkBlocks
@@ -71,7 +73,8 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         multiverseIndex = entityIndexManager.addIndexOnComponents(MultiverseComponent.class);
         worldIndex = entityIndexManager.addIndexOnComponents(WorldComponent.class);
         chunkIndex = entityIndexManager.addIndexOnComponents(ChunkComponent.class);
-        blockIndex = entityIndexManager.addIndexOnComponents(BlockComponent.class);
+        blockIndex = entityIndexManager.addIndexOnComponents(BlockComponent.class, LocationComponent.class);
+        sendToClientAndLocationIndex = entityIndexManager.addIndexOnComponents(SendToClientComponent.class, LocationComponent.class);
         clientAndLocationIndex = entityIndexManager.addIndexOnComponents(ClientComponent.class, LocationComponent.class);
     }
 
@@ -112,6 +115,8 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             return location.getWorldId().equals(world.getWorldId());
         } else if (entity.hasComponent(MultiverseComponent.class)) {
             return true;
+        } else if (entity.hasComponent(SendToClientComponent.class) && entity.hasComponent(LocationComponent.class)) {
+            return true;
         }
         return false;
     }
@@ -140,8 +145,9 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
             entitiesToUpdate.add(multiverseEntity);
         }
 
+        String clientWorldId = location.getWorldId();
         for (EntityRef worldEntity : worldIndex.getEntities()) {
-            if (location.getWorldId().equals(worldEntity.getComponent(WorldComponent.class).getWorldId()))
+            if (clientWorldId.equals(worldEntity.getComponent(WorldComponent.class).getWorldId()))
                 entitiesToUpdate.add(worldEntity);
         }
 
@@ -154,7 +160,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         for (EntityRef chunkEntity : chunkIndex.getEntities()) {
             ChunkComponent chunk = chunkEntity.getComponent(ChunkComponent.class);
             if (isChunkInViewDistance(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ(),
-                    location.getWorldId(), playerChunkX, playerChunkY, playerChunkZ, clientComponent)) {
+                    clientWorldId, playerChunkX, playerChunkY, playerChunkZ, clientComponent)) {
                 entitiesToUpdate.add(chunkEntity);
 
                 ChunkBlocks chunkBlocks = chunkBlocksProvider.getChunkBlocks(chunk.getWorldId(), chunk.getX(), chunk.getY(), chunk.getZ());
@@ -167,11 +173,22 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
 
         for (EntityRef blockEntity : blockIndex.getEntities()) {
             LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
+            if (blockLocation.getWorldId().equals(clientWorldId)) {
+                worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
 
-            worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
+                if (isWithinPlayerDistance(worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), playerChunkX, playerChunkY, playerChunkZ, clientComponent))
+                    entitiesToUpdate.add(blockEntity);
+            }
+        }
 
-            if (isWithinPlayerDistance(worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), playerChunkX, playerChunkY, playerChunkZ, clientComponent))
-                entitiesToUpdate.add(blockEntity);
+        for (EntityRef entityRef : sendToClientAndLocationIndex.getEntities()) {
+            LocationComponent entityLocation = entityRef.getComponent(LocationComponent.class);
+            if (entityLocation.getWorldId().equals(clientWorldId)) {
+                worldBlock.set(entityLocation.getX(), entityLocation.getY(), entityLocation.getZ());
+
+                if (isWithinPlayerDistance(worldBlock.getChunkX(), worldBlock.getChunkY(), worldBlock.getChunkZ(), playerChunkX, playerChunkY, playerChunkZ, clientComponent))
+                    entitiesToUpdate.add(entityRef);
+            }
         }
 
         if (!entitiesToUpdate.isEmpty()) {
@@ -188,7 +205,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
     //TODO add code for client disconnecting
 
     @ReceiveEvent
-    public void characterMoved(AfterComponentUpdated event, EntityRef entity, LocationComponent locationComponent) {
+    public void objectMoved(AfterComponentUpdated event, EntityRef entity, LocationComponent locationComponent) {
         ClientComponent client = entity.getComponent(ClientComponent.class);
         if (client != null) {
             LocationComponent oldLocation = event.getOldComponent(LocationComponent.class);
@@ -199,6 +216,43 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     processPlayerMovedBetweenWorlds(entity, client, oldLocation, newLocation);
                 } else {
                     processPlayerMovedWithinWorld(entity, client, oldLocation, newLocation);
+                }
+            }
+        }
+
+        if (entity.hasComponent(SendToClientComponent.class)) {
+            LocationComponent oldLocation = event.getOldComponent(LocationComponent.class);
+            LocationComponent newLocation = event.getNewComponent(LocationComponent.class);
+
+            if (oldLocation != null && newLocation != null) {
+                boolean changedWorld = !oldLocation.getWorldId().equals(newLocation.getWorldId());
+                if (changedWorld) {
+                    for (EntityRef clientEntity : clientAndLocationIndex.getEntities()) {
+                        ClientComponent clientComp = clientEntity.getComponent(ClientComponent.class);
+                        for (ClientEntityRelevancyRuleListener listener : listeners) {
+                            listener.entityRelevancyChanged(clientComp.getClientId(), Arrays.asList(entity));
+                        }
+                    }
+                } else {
+                    worldBlock.set(oldLocation.getX(), oldLocation.getY(), oldLocation.getZ());
+                    int oldChunkX = worldBlock.getChunkX();
+                    int oldChunkY = worldBlock.getChunkY();
+                    int oldChunkZ = worldBlock.getChunkZ();
+
+                    worldBlock.set(newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                    int newChunkX = worldBlock.getChunkX();
+                    int newChunkY = worldBlock.getChunkY();
+                    int newChunkZ = worldBlock.getChunkZ();
+
+                    // Object moved from chunk to chunk
+                    if (oldChunkX != newChunkX || oldChunkY != newChunkY || oldChunkZ != newChunkZ) {
+                        for (EntityRef clientEntity : clientAndLocationIndex.getEntities()) {
+                            ClientComponent clientComp = clientEntity.getComponent(ClientComponent.class);
+                            for (ClientEntityRelevancyRuleListener listener : listeners) {
+                                listener.entityRelevancyChanged(clientComp.getClientId(), Arrays.asList(entity));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -290,7 +344,7 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
                     if (clientHasChunk != clientShouldHaveChunk) {
                         entitiesToUpdate.add(chunkEntity);
 
-                        appendBlocksInChunk(entitiesToUpdate, chunk, oldLocation.getWorldId());
+                        appendObjectsInChunk(entitiesToUpdate, chunk, oldLocation.getWorldId());
                         if (clientHasChunk) {
                             if (!chunksClientHas.remove(client.getClientId(), chunkBlocks))
                                 throw new RuntimeException("Failed to remove");
@@ -330,13 +384,22 @@ public class ClientReceivesBlocksAroundIt implements ClientEntityRelevanceRule, 
         return false;
     }
 
-    private void appendBlocksInChunk(List<EntityRef> entitiesToUpdate, ChunkComponent chunk, String worldId) {
+    private void appendObjectsInChunk(List<EntityRef> entitiesToUpdate, ChunkComponent chunk, String worldId) {
         for (EntityRef blockEntity : blockIndex.getEntities()) {
             LocationComponent blockLocation = blockEntity.getComponent(LocationComponent.class);
             if (blockLocation.getWorldId().equals(worldId)) {
                 worldBlock.set(blockLocation.getX(), blockLocation.getY(), blockLocation.getZ());
                 if (worldBlock.getChunkX() == chunk.getX() && worldBlock.getChunkY() == chunk.getY() && worldBlock.getChunkZ() == chunk.getZ())
                     entitiesToUpdate.add(blockEntity);
+            }
+        }
+
+        for (EntityRef entityRef : sendToClientAndLocationIndex.getEntities()) {
+            LocationComponent entityLocation = entityRef.getComponent(LocationComponent.class);
+            if (entityLocation.getWorldId().equals(worldId)) {
+                worldBlock.set(entityLocation.getX(), entityLocation.getY(), entityLocation.getZ());
+                if (worldBlock.getChunkX() == chunk.getX() && worldBlock.getChunkY() == chunk.getY() && worldBlock.getChunkZ() == chunk.getZ())
+                    entitiesToUpdate.add(entityRef);
             }
         }
     }

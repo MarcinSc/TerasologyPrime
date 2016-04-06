@@ -4,6 +4,7 @@ attribute vec2 a_texCoord0;
 attribute float a_flag;
 
 uniform mat4 u_projViewTrans;
+uniform mat4 u_worldTrans;
 uniform mat4 u_lightTrans;
 uniform vec3 u_lightDirection;
 uniform float u_lightPlaneDistance;
@@ -60,7 +61,7 @@ void main() {
     v_positionLightTrans = u_lightTrans * position;
     v_position = position.xyz;
 
-    vec4 positionRelativeToCamera = u_projViewTrans * position;
+    vec4 positionRelativeToCamera = u_projViewTrans * u_worldTrans * position;
 
     float distanceFromCamera = length(positionRelativeToCamera.xyz);
     v_visibility = clamp(exp(-pow((distanceFromCamera * fogDensity), fogGradient)), 0.0, 1.0);

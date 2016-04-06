@@ -7,8 +7,11 @@ import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.secsy.entity.io.StoredEntityData;
 import com.gempukku.secsy.network.serialize.ComponentInformation;
 import com.gempukku.secsy.network.serialize.EntityInformation;
+import com.gempukku.terasology.communication.SendToClientComponent;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.faction.FactionComponent;
+import com.gempukku.terasology.faction.FactionMemberComponent;
+import com.gempukku.terasology.landd.component.FactionObjectComponent;
 import com.gempukku.terasology.landd.component.PermanentChunkLoadingComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
@@ -19,6 +22,7 @@ import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkComponent;
 import com.gempukku.terasology.world.chunk.ChunkSize;
 import com.gempukku.terasology.world.chunk.WorldGenerator;
+import com.gempukku.terasology.world.component.LocationComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
 import com.gempukku.terasology.world.component.WorldComponent;
 
@@ -84,7 +88,8 @@ public class LAndDWorldGenerator implements WorldGenerator {
     public Iterable<EntityData> createStartingEntities() {
         return Arrays.asList(
                 createFactionEntity("black", "white"),
-                createFactionEntity("white", "black"));
+                createFactionEntity("white", "black"),
+                createFactionObjectEntity("white", "world", 10, 1, 10));
     }
 
     private EntityInformation createFactionEntity(String factionId, String opposingFactionId) {
@@ -96,6 +101,29 @@ public class LAndDWorldGenerator implements WorldGenerator {
         factionComp.addField("opposingFactions", opposingFactions);
         faction.addComponent(factionComp);
         return faction;
+    }
+
+    private EntityInformation createFactionObjectEntity(String factionId, String worldId, float x, float y, float z) {
+        EntityInformation result = new EntityInformation();
+
+        ComponentInformation factionComp = new ComponentInformation(FactionMemberComponent.class);
+        factionComp.addField("factionId", factionId);
+        result.addComponent(factionComp);
+
+        ComponentInformation factionObject = new ComponentInformation(FactionObjectComponent.class);
+        result.addComponent(factionObject);
+
+        ComponentInformation location = new ComponentInformation(LocationComponent.class);
+        location.addField("worldId", worldId);
+        location.addField("x", x);
+        location.addField("y", y);
+        location.addField("z", z);
+        result.addComponent(location);
+
+        ComponentInformation sendToClient = new ComponentInformation(SendToClientComponent.class);
+        result.addComponent(sendToClient);
+
+        return result;
     }
 
     @Override

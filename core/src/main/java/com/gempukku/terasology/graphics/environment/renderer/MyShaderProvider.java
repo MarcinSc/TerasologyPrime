@@ -105,8 +105,8 @@ public class MyShaderProvider implements ShaderProvider {
 
     private EnvironmentShader createEnvironmentShader(Renderable renderable) {
         DefaultShader.Config config = new DefaultShader.Config(
-                Gdx.files.internal("shader/chunk.vert").readString(),
-                Gdx.files.internal("shader/chunk.frag").readString());
+                Gdx.files.internal("shader/environment.vert").readString(),
+                Gdx.files.internal("shader/environment.frag").readString());
         EnvironmentShader environmentShader = new EnvironmentShader(renderable, config);
         environmentShader.init();
         return environmentShader;
@@ -114,8 +114,8 @@ public class MyShaderProvider implements ShaderProvider {
 
     private EnvironmentShadowShader createEnvironmentShadowShader(Renderable renderable) {
         DefaultShader.Config config = new DefaultShader.Config(
-                Gdx.files.internal("shader/chunkShadow.vert").readString(),
-                Gdx.files.internal("shader/chunkShadow.frag").readString());
+                Gdx.files.internal("shader/environmentShadow.vert").readString(),
+                Gdx.files.internal("shader/environmentShadow.frag").readString());
         EnvironmentShadowShader environmentShadowShader = new EnvironmentShadowShader(renderable, config);
         environmentShadowShader.init();
         return environmentShadowShader;

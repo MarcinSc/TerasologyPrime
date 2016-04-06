@@ -2,6 +2,7 @@ attribute vec3 a_position;
 attribute float a_flag;
 
 uniform mat4 u_projViewTrans;
+uniform mat4 u_worldTrans;
 uniform float u_time;
 
 varying vec4 v_position;
@@ -38,5 +39,5 @@ void main()
         v_position.z += (smoothTriangleWave(u_time * 0.1 + v_position.x * -0.01 + v_position.z * -0.01) * 2.0 - 1.0) * 0.03;
     }
 
-    gl_Position = u_projViewTrans * v_position;
+    gl_Position = u_projViewTrans * u_worldTrans * v_position;
 }
