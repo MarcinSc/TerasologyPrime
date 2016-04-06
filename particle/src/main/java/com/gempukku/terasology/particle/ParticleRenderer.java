@@ -62,6 +62,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
 
     // 4 vertices per particle, 8 floats per vertex
     private float[] vertices = new float[4 * MAX_PARTICLE_COUNT * 8];
+    private int lastUsedParticleCount = 0;
 
     @Override
     public void preInitialize() {
@@ -113,6 +114,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
                 indices[6 * i + 5] = (short) (i * 4);
             }
             mesh.setIndices(indices);
+            mesh.setVertices(vertices);
 
             List<Texture> particles = textureAtlasProvider.getTextures("particles");
             if (particles.size() > 1)
@@ -141,6 +143,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
     }
 
     private void updateModel(String worldId) {
+        int particleCount = 0;
         Iterator<Particle> particleIterator = particles.descendingIterator();
         for (int i = 0; i < MAX_PARTICLE_COUNT; i++) {
             Particle particle = null;
@@ -176,7 +179,9 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
                         vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV();
                     }
                 }
-            } else {
+                particleCount++;
+            } else if (i < lastUsedParticleCount) {
+                // This is to write over any old particles in the array
                 for (int corner = 0; corner < 4; corner++) {
                     vertices[i * 8 * 4 + corner * 8] = 0;
                     vertices[i * 8 * 4 + corner * 8 + 1] = 0;
@@ -190,6 +195,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
             }
         }
 
-        mesh.setVertices(vertices);
+        lastUsedParticleCount = particleCount;
+        mesh.updateVertices(0, vertices, 0, 4 * particleCount * 8);
     }
 }
