@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -36,8 +37,8 @@ import java.util.Set;
  * a_texCoord0 - stores texture coordinates UV for that vertex
  */
 @RegisterSystem(
-        profiles = NetProfiles.CLIENT)
-public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSystem {
+        profiles = NetProfiles.CLIENT, shared = ParticleEmitter.class)
+public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitter, LifeCycleSystem {
     @In
     private PostEnvironmentRendererRegistry postEnvironmentRendererRegistry;
     @In
@@ -45,7 +46,8 @@ public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSyste
     @In
     private TimeManager timeManager;
 
-    public static final int MAX_PARTICLE_COUNT = 1000;
+    private static final int MAX_PARTICLE_COUNT = 1000;
+    private static final float GRAVITY = -9.81f;
 
     private ParticleShaderProvider particleShaderProvider;
     private ModelBatch modelBatch;
@@ -79,16 +81,19 @@ public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSyste
     }
 
     @Override
-    public void renderPostEnvironment(Camera camera, String worldId) {
-        if (particles.size() > 0) {
-            initModel();
-            updateParticles();
-            updateModel();
+    public void emitParticle(Particle particle) {
+        particles.add(particle);
+    }
 
-            modelBatch.begin(camera);
-            modelBatch.render(modelInstance);
-            modelBatch.end();
-        }
+    @Override
+    public void renderPostEnvironment(Camera camera, String worldId) {
+        initModel();
+        updateParticles();
+        updateModel();
+
+        modelBatch.begin(camera);
+        modelBatch.render(modelInstance);
+        modelBatch.end();
     }
 
     private void initModel() {
@@ -128,18 +133,9 @@ public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSyste
         Iterator<Particle> iterator = particles.iterator();
         while (iterator.hasNext()) {
             Particle particle = iterator.next();
-            updateParticle(particle, timeSinceLastUpdateInSeconds);
-            if (particle.elapsedTime >= particle.lifeLength)
+            if (!particle.updateParticle(GRAVITY, timeSinceLastUpdateInSeconds))
                 iterator.remove();
         }
-    }
-
-    private void updateParticle(Particle particle, float timeSinceLastUpdateInSeconds) {
-        particle.location.add(
-                particle.velocity.x * timeSinceLastUpdateInSeconds,
-                particle.velocity.y * timeSinceLastUpdateInSeconds,
-                particle.velocity.z * timeSinceLastUpdateInSeconds);
-        particle.elapsedTime += timeSinceLastUpdateInSeconds;
     }
 
     private void updateModel() {
@@ -151,13 +147,14 @@ public class ParticleRenderer implements PostEnvironmentRenderer, LifeCycleSyste
             }
 
             if (particle != null) {
-                TextureRegion textureRegion = particle.particleTextureSelector.getTextureRegion(particle);
+                TextureRegion textureRegion = particle.getTexture();
+                Vector3 location = particle.getLocation();
                 for (int corner = 0; corner < 4; corner++) {
-                    vertices[i * 8 * 4 + corner * 8] = particle.location.x;
-                    vertices[i * 8 * 4 + corner * 8 + 1] = particle.location.y;
-                    vertices[i * 8 * 4 + corner * 8 + 2] = particle.location.z;
-                    vertices[i * 8 * 4 + corner * 8 + 3] = particle.rotation;
-                    vertices[i * 8 * 4 + corner * 8 + 4] = particle.scale;
+                    vertices[i * 8 * 4 + corner * 8] = location.x;
+                    vertices[i * 8 * 4 + corner * 8 + 1] = location.y;
+                    vertices[i * 8 * 4 + corner * 8 + 2] = location.z;
+                    vertices[i * 8 * 4 + corner * 8 + 3] = particle.getRotation();
+                    vertices[i * 8 * 4 + corner * 8 + 4] = particle.getScale();
                     vertices[i * 8 * 4 + corner * 8 + 5] = corner + 1;
                     if (corner == 0) {
                         vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU();

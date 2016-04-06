@@ -2,17 +2,16 @@ package com.gempukku.terasology.particle.selector;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.gempukku.terasology.particle.Particle;
-import com.gempukku.terasology.particle.ParticleTextureSelector;
 
-public class SingleParticleTextureSelector implements ParticleTextureSelector {
+public class ParticleSingleTextureSelector implements ParticleTextureSelector {
     private TextureRegion textureRegion;
 
-    public SingleParticleTextureSelector(TextureRegion textureRegion) {
+    public ParticleSingleTextureSelector(TextureRegion textureRegion) {
         this.textureRegion = textureRegion;
     }
 
     @Override
-    public TextureRegion getTextureRegion(Particle particle) {
+    public TextureRegion getTextureRegion(Particle particle, float elapsedTime, float lifeLength) {
         return textureRegion;
     }
 }

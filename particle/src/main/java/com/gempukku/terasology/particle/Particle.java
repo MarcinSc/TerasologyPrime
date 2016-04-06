@@ -1,24 +1,16 @@
 package com.gempukku.terasology.particle;
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 
-public class Particle {
-    public final Vector3 location;
-    public final float rotation;
-    public final float scale;
-    public final ParticleTextureSelector particleTextureSelector;
+public interface Particle {
+    boolean updateParticle(float gravity, float timeSinceLastUpdateInSeconds);
 
-    public final Vector3 velocity;
-    public final float lifeLength;
+    Vector3 getLocation();
 
-    public float elapsedTime;
+    float getRotation();
 
-    public Particle(Vector3 location, Vector3 velocity, float lifeLength, float rotation, float scale, ParticleTextureSelector particleTextureSelector) {
-        this.location = location;
-        this.velocity = velocity;
-        this.lifeLength = lifeLength;
-        this.rotation = rotation;
-        this.scale = scale;
-        this.particleTextureSelector = particleTextureSelector;
-    }
+    float getScale();
+
+    TextureRegion getTexture();
 }
