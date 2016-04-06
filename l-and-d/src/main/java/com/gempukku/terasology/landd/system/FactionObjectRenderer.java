@@ -55,7 +55,7 @@ public class FactionObjectRenderer implements EnvironmentRenderer, LifeCycleSyst
     @Override
     public void initialize() {
         environmentRendererRegistry.registerEnvironmentRendered(this);
-        textureAtlasRegistry.registerTextures("terrain", Arrays.asList("blockTiles/trees/OakBark.png"));
+        textureAtlasRegistry.registerTextures("terrain", Arrays.asList("blockTiles/bars/GoldBar.png"));
         factionObjectIndex = entityIndexManager.addIndexOnComponents(LocationComponent.class, FactionObjectComponent.class);
     }
 
@@ -86,7 +86,7 @@ public class FactionObjectRenderer implements EnvironmentRenderer, LifeCycleSyst
             FloatArray vertices = new FloatArray();
             ShortArray indices = new ShortArray();
 
-            TextureRegion texture = textureAtlasProvider.getTexture("terrain", "blockTiles/trees/OakBark.png");
+            TextureRegion texture = textureAtlasProvider.getTexture("terrain", "blockTiles/bars/GoldBar.png");
 
             ArrayVertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
             ShapeDef cube = shapeProvider.getShapeById("cube");

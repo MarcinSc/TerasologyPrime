@@ -1,9 +1,7 @@
 package com.gempukku.terasology.movement;
 
 import com.gempukku.secsy.entity.event.Event;
-import com.gempukku.secsy.network.ToServerEvent;
 
-@ToServerEvent
 public class MovementRequestEvent extends Event {
     public final float positionX;
     public final float positionY;

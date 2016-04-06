@@ -65,7 +65,7 @@ public class FactionSystem implements FactionManager, LifeCycleSystem {
         List<EntityRef> result = new LinkedList<>();
         for (DimensionalMap.Entry<EntityRef> entityRefEntry : factionMembers.findNearest(new float[]{position.x, position.y, position.z}, 100, distance)) {
             EntityRef factionMember = entityRefEntry.value;
-            FactionComponent factionComp = factionMember.getComponent(FactionComponent.class);
+            FactionMemberComponent factionComp = factionMember.getComponent(FactionMemberComponent.class);
             if (enemyFactions.contains(factionComp.getFactionId()))
                 result.add(factionMember);
         }

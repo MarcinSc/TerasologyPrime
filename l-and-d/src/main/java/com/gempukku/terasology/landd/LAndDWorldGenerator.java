@@ -11,8 +11,11 @@ import com.gempukku.terasology.communication.SendToClientComponent;
 import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.faction.FactionComponent;
 import com.gempukku.terasology.faction.FactionMemberComponent;
+import com.gempukku.terasology.landd.component.AiCharacterComponent;
 import com.gempukku.terasology.landd.component.FactionObjectComponent;
+import com.gempukku.terasology.landd.component.MovingCharacterComponent;
 import com.gempukku.terasology.landd.component.PermanentChunkLoadingComponent;
+import com.gempukku.terasology.landd.component.RangedAttackCharacterComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.FastRandom;
@@ -89,7 +92,26 @@ public class LAndDWorldGenerator implements WorldGenerator {
         return Arrays.asList(
                 createFactionEntity("black", "white"),
                 createFactionEntity("white", "black"),
-                createFactionObjectEntity("white", "world", 10, 1, 10));
+                createFactionRangedEntity("white", "world", 10, 1, 10),
+                createFactionObjectEntity("black", "world", 50, 1, 50));
+    }
+
+    private EntityInformation createFactionRangedEntity(String factionId, String worldId, float x, float y, float z) {
+        EntityInformation object = createFactionObjectEntity(factionId, worldId, x, y, z);
+
+        ComponentInformation moving = new ComponentInformation(MovingCharacterComponent.class);
+        moving.addField("speedX", 1.5f);
+        moving.addField("speedY", 0f);
+        moving.addField("speedZ", 1.5f);
+        object.addComponent(moving);
+
+        ComponentInformation ranged = new ComponentInformation(RangedAttackCharacterComponent.class);
+        ranged.addField("firingRange", 10f);
+        ranged.addField("firingCooldown", 1000L);
+        ranged.addField("lastFired", 0L);
+        object.addComponent(ranged);
+
+        return object;
     }
 
     private EntityInformation createFactionEntity(String factionId, String opposingFactionId) {
@@ -119,6 +141,9 @@ public class LAndDWorldGenerator implements WorldGenerator {
         location.addField("y", y);
         location.addField("z", z);
         result.addComponent(location);
+
+        ComponentInformation ai = new ComponentInformation(AiCharacterComponent.class);
+        result.addComponent(ai);
 
         ComponentInformation sendToClient = new ComponentInformation(SendToClientComponent.class);
         result.addComponent(sendToClient);
