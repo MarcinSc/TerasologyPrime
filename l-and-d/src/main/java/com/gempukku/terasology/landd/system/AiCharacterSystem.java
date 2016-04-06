@@ -65,14 +65,15 @@ public class AiCharacterSystem implements GameLoopListener, LifeCycleSystem {
                     rangedAttack.setLastFired(multiverseTime);
                     entityRef.saveComponents(rangedAttack);
 
-                    float speed = 1f;
+                    float speed = 5f;
                     Vector3 start = new Vector3(location.getX(), location.getY(), location.getZ());
                     Vector3 destination = new Vector3(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ());
 
                     entityRef.send(
                             new FireMissileEvent(
                                     location.getWorldId(), start.x, start.y, start.z,
-                                    destination.x, destination.y, destination.z, start.dst(destination) / speed));
+                                    destination.x, destination.y, destination.z,
+                                    multiverseTime, start.dst(destination) / speed));
                 }
                 return;
             }

@@ -12,9 +12,11 @@ public class FireMissileEvent extends Event {
     public final float endX;
     public final float endY;
     public final float endZ;
+    public final long fireTime;
     public final float duration;
 
-    public FireMissileEvent(String worldId, float startX, float startY, float startZ, float endX, float endY, float endZ, float duration) {
+    public FireMissileEvent(String worldId, float startX, float startY, float startZ, float endX, float endY, float endZ,
+                            long fireTime, float duration) {
         this.worldId = worldId;
         this.startX = startX;
         this.startY = startY;
@@ -22,6 +24,7 @@ public class FireMissileEvent extends Event {
         this.endX = endX;
         this.endY = endY;
         this.endZ = endZ;
+        this.fireTime = fireTime;
         this.duration = duration;
     }
 }

@@ -100,9 +100,9 @@ public class LAndDWorldGenerator implements WorldGenerator {
         EntityInformation object = createFactionObjectEntity(factionId, worldId, x, y, z);
 
         ComponentInformation moving = new ComponentInformation(MovingCharacterComponent.class);
-        moving.addField("speedX", 1.5f);
+        moving.addField("speedX", 3f);
         moving.addField("speedY", 0f);
-        moving.addField("speedZ", 1.5f);
+        moving.addField("speedZ", 3f);
         object.addComponent(moving);
 
         ComponentInformation ranged = new ComponentInformation(RangedAttackCharacterComponent.class);

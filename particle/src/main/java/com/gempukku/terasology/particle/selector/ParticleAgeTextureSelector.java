@@ -14,6 +14,9 @@ public class ParticleAgeTextureSelector implements ParticleTextureSelector {
     @Override
     public TextureRegion getTextureRegion(Particle particle, float elapsedTime, float lifeLength) {
         float textureTime = lifeLength / textures.length;
-        return textures[FastMath.floor(elapsedTime / textureTime)];
+        int index = FastMath.floor(elapsedTime / textureTime);
+        if (index >= textures.length)
+            index = textures.length - 1;
+        return textures[index];
     }
 }
