@@ -7,6 +7,8 @@ public interface RangedAttackCharacterComponent extends Component {
 
     long getFiringCooldown();
 
+    float getMissileSpeed();
+
     void setLastFired(long time);
 
     long getLastFired();

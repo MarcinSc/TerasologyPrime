@@ -16,6 +16,7 @@ import com.gempukku.terasology.landd.component.FactionObjectComponent;
 import com.gempukku.terasology.landd.component.MovingCharacterComponent;
 import com.gempukku.terasology.landd.component.PermanentChunkLoadingComponent;
 import com.gempukku.terasology.landd.component.RangedAttackCharacterComponent;
+import com.gempukku.terasology.landd.component.TargetingComponent;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastMath;
 import com.gempukku.terasology.procedural.FastRandom;
@@ -92,24 +93,19 @@ public class LAndDWorldGenerator implements WorldGenerator {
         return Arrays.asList(
                 createFactionEntity("black", "white"),
                 createFactionEntity("white", "black"),
-                createFactionRangedEntity("white", "world", 10, 1, 10),
-                createFactionObjectEntity("black", "world", 50, 1, 50));
+                createFactionMovingRangedEntity("white", "world", 10, 1, 10, 10),
+                createFactionRangedEntity("black", "world", 50, 1, 50, 15));
     }
 
-    private EntityInformation createFactionRangedEntity(String factionId, String worldId, float x, float y, float z) {
-        EntityInformation object = createFactionObjectEntity(factionId, worldId, x, y, z);
+    private EntityInformation createFactionMovingRangedEntity(String factionId, String worldId, float x, float y, float z,
+                                                              float firingRange) {
+        EntityInformation object = createFactionRangedEntity(factionId, worldId, x, y, z, firingRange);
 
         ComponentInformation moving = new ComponentInformation(MovingCharacterComponent.class);
         moving.addField("speedX", 3f);
         moving.addField("speedY", 0f);
         moving.addField("speedZ", 3f);
         object.addComponent(moving);
-
-        ComponentInformation ranged = new ComponentInformation(RangedAttackCharacterComponent.class);
-        ranged.addField("firingRange", 10f);
-        ranged.addField("firingCooldown", 1000L);
-        ranged.addField("lastFired", 0L);
-        object.addComponent(ranged);
 
         return object;
     }
@@ -125,7 +121,8 @@ public class LAndDWorldGenerator implements WorldGenerator {
         return faction;
     }
 
-    private EntityInformation createFactionObjectEntity(String factionId, String worldId, float x, float y, float z) {
+    private EntityInformation createFactionRangedEntity(String factionId, String worldId, float x, float y, float z,
+                                                        float firingRange) {
         EntityInformation result = new EntityInformation();
 
         ComponentInformation factionComp = new ComponentInformation(FactionMemberComponent.class);
@@ -144,6 +141,19 @@ public class LAndDWorldGenerator implements WorldGenerator {
 
         ComponentInformation ai = new ComponentInformation(AiCharacterComponent.class);
         result.addComponent(ai);
+
+        ComponentInformation targeting = new ComponentInformation(TargetingComponent.class);
+        targeting.addField("translateFromLocationX", 0f);
+        targeting.addField("translateFromLocationY", 1.75f);
+        targeting.addField("translateFromLocationZ", 0f);
+        result.addComponent(targeting);
+
+        ComponentInformation ranged = new ComponentInformation(RangedAttackCharacterComponent.class);
+        ranged.addField("firingRange", firingRange);
+        ranged.addField("firingCooldown", 1000L);
+        ranged.addField("lastFired", 0L);
+        ranged.addField("missileSpeed", 10f);
+        result.addComponent(ranged);
 
         ComponentInformation sendToClient = new ComponentInformation(SendToClientComponent.class);
         result.addComponent(sendToClient);
@@ -227,7 +237,7 @@ public class LAndDWorldGenerator implements WorldGenerator {
 //                            entities.add(entityInformation);
 //                            blockIds[index] = tree;
 //                        } else if (blockLevel > groundLevel) {
-                        if (blockLevel>groundLevel) {
+                        if (blockLevel > groundLevel) {
                             blockIds[index] = air;
                         } else if (blockLevel == groundLevel) {
                             blockIds[index] = grass;

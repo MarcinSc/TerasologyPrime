@@ -64,7 +64,7 @@ public class MissileClientSystem implements GameLoopListener, LifeCycleSystem {
                 float diff = (multiverseTime - event.fireTime) / 1000f / event.duration;
                 Vector3 location = new Vector3(
                         event.startX + diff * (event.endX - event.startX),
-                        event.startY + diff * (event.endY - event.startY) + 1.5f,
+                        event.startY + diff * (event.endY - event.startY),
                         event.startZ + diff * (event.endZ - event.startZ));
                 particleEmitter.emitParticle(
                         new SimpleParticle(event.worldId, location, new Vector3(), 0f, 0f, 0f, 2f, 0f, 1f, explosionTexture));

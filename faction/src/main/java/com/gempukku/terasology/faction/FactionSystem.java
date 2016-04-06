@@ -42,7 +42,7 @@ public class FactionSystem implements FactionManager, LifeCycleSystem {
 
     @ReceiveEvent
     public void factionMemberMoved(AfterComponentUpdated componentUpdated, EntityRef member, LocationComponent location) {
-        if (member.hasComponent(FactionComponent.class)) {
+        if (member.hasComponent(FactionMemberComponent.class)) {
             LocationComponent oldLocation = componentUpdated.getOldComponent(LocationComponent.class);
             LocationComponent newLocation = componentUpdated.getNewComponent(LocationComponent.class);
             factionMembers.remove(new float[]{oldLocation.getX(), oldLocation.getY(), oldLocation.getZ()});

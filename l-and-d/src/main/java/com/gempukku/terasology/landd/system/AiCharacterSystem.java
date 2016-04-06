@@ -15,6 +15,7 @@ import com.gempukku.terasology.faction.FactionMemberComponent;
 import com.gempukku.terasology.landd.component.AiCharacterComponent;
 import com.gempukku.terasology.landd.component.MovingCharacterComponent;
 import com.gempukku.terasology.landd.component.RangedAttackCharacterComponent;
+import com.gempukku.terasology.landd.component.TargetingComponent;
 import com.gempukku.terasology.landd.event.FireMissileEvent;
 import com.gempukku.terasology.time.TimeManager;
 import com.gempukku.terasology.world.component.LocationComponent;
@@ -65,15 +66,30 @@ public class AiCharacterSystem implements GameLoopListener, LifeCycleSystem {
                     rangedAttack.setLastFired(multiverseTime);
                     entityRef.saveComponents(rangedAttack);
 
-                    float speed = 5f;
+                    float missileSpeed = rangedAttack.getMissileSpeed();
                     Vector3 start = new Vector3(location.getX(), location.getY(), location.getZ());
                     Vector3 destination = new Vector3(targetLocation.getX(), targetLocation.getY(), targetLocation.getZ());
+
+                    TargetingComponent sourceTargeting = entityRef.getComponent(TargetingComponent.class);
+                    TargetingComponent targetTargeting = closestEnemy.getComponent(TargetingComponent.class);
+
+                    if (sourceTargeting != null)
+                        start.add(
+                                sourceTargeting.getTranslateFromLocationX(),
+                                sourceTargeting.getTranslateFromLocationY(),
+                                sourceTargeting.getTranslateFromLocationZ());
+
+                    if (targetTargeting != null)
+                        destination.add(
+                                targetTargeting.getTranslateFromLocationX(),
+                                targetTargeting.getTranslateFromLocationY(),
+                                targetTargeting.getTranslateFromLocationZ());
 
                     entityRef.send(
                             new FireMissileEvent(
                                     location.getWorldId(), start.x, start.y, start.z,
                                     destination.x, destination.y, destination.z,
-                                    multiverseTime, start.dst(destination) / speed));
+                                    multiverseTime, start.dst(destination) / missileSpeed));
                 }
                 return;
             }
