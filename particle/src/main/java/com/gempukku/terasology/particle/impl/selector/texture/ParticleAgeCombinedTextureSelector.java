@@ -1,4 +1,4 @@
-package com.gempukku.terasology.particle.selector;
+package com.gempukku.terasology.particle.impl.selector.texture;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 

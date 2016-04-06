@@ -24,6 +24,7 @@ import com.gempukku.secsy.context.annotation.RegisterSystem;
 import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.terasology.graphics.PostEnvironmentRenderer;
 import com.gempukku.terasology.graphics.PostEnvironmentRendererRegistry;
+import com.gempukku.terasology.graphics.SkyColorProvider;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.time.TimeManager;
 
@@ -48,6 +49,8 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
     private TextureAtlasProvider textureAtlasProvider;
     @In
     private TimeManager timeManager;
+    @In
+    private SkyColorProvider skyColorProvider;
 
     private static final int MAX_PARTICLE_COUNT = 1000;
     private static final float GRAVITY = -9.81f;
@@ -94,6 +97,9 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
         initModel();
         updateParticles();
         updateModel(camera, worldId);
+
+        particleShaderProvider.setFogColor(skyColorProvider.getSkyColor(
+                worldId, camera.position.x, camera.position.y, camera.position.z));
 
         modelBatch.begin(camera);
         modelBatch.render(modelInstance);

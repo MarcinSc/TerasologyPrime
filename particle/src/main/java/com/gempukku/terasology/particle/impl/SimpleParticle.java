@@ -4,7 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.terasology.particle.Particle;
-import com.gempukku.terasology.particle.selector.ParticleTextureSelector;
+import com.gempukku.terasology.particle.impl.selector.color.ParticleColorSelector;
+import com.gempukku.terasology.particle.impl.selector.texture.ParticleTextureSelector;
 
 public class SimpleParticle implements Particle {
     public final String worldId;
@@ -12,7 +13,7 @@ public class SimpleParticle implements Particle {
     public float rotation;
     public float scale;
     public final ParticleTextureSelector particleTextureSelector;
-    public final Color color;
+    public final ParticleColorSelector particleColorSelector;
 
     public final Vector3 velocity;
     public final float gravityInfluence;
@@ -25,7 +26,7 @@ public class SimpleParticle implements Particle {
     public SimpleParticle(String worldId, Vector3 location, Vector3 velocity, float gravityInfluence,
                           float rotation, float rotationVelocity,
                           float scale, float scaleDiff, float lifeLength,
-                          ParticleTextureSelector particleTextureSelector, Color color) {
+                          ParticleTextureSelector particleTextureSelector, ParticleColorSelector particleColorSelector) {
         this.worldId = worldId;
         this.location = location;
         this.velocity = velocity;
@@ -36,7 +37,7 @@ public class SimpleParticle implements Particle {
         this.scaleDiff = scaleDiff;
         this.lifeLength = lifeLength;
         this.particleTextureSelector = particleTextureSelector;
-        this.color = color;
+        this.particleColorSelector = particleColorSelector;
     }
 
     @Override
@@ -51,7 +52,7 @@ public class SimpleParticle implements Particle {
 
     @Override
     public Color getColor() {
-        return color;
+        return particleColorSelector.getColor(this);
     }
 
     @Override
@@ -66,7 +67,7 @@ public class SimpleParticle implements Particle {
 
     @Override
     public TextureRegion getTexture() {
-        return particleTextureSelector.getTextureRegion(this, elapsedTime, lifeLength);
+        return particleTextureSelector.getTextureRegion(this);
     }
 
     @Override

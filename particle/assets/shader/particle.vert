@@ -10,6 +10,10 @@ uniform float u_viewportHeight;
 varying float v_exists;
 varying vec2 v_texCoord0;
 varying vec4 v_color;
+varying float v_visibility;
+
+const float fogDensity = 0.005;
+const float fogGradient = 5.0;
 
 void main() {
     v_texCoord0 = a_texCoord0;
@@ -44,5 +48,8 @@ void main() {
                     diff.x * sin(rotation) + diff.y * cos(rotation));
 
         gl_Position = particleScreenCoords + vec4(diff.x / perspective_factor, diff.y * (u_viewportWidth/u_viewportHeight) / perspective_factor, 0.0, 0.0);
+
+        float distanceFromCamera = length(gl_Position.xyz);
+        v_visibility = clamp(exp(-pow((distanceFromCamera * fogDensity), fogGradient)), 0.0, 1.0);
     }
 }

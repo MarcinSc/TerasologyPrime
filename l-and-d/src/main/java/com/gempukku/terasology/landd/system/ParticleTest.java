@@ -12,8 +12,9 @@ import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.particle.ParticleEmitter;
 import com.gempukku.terasology.particle.impl.SimpleParticle;
-import com.gempukku.terasology.particle.selector.ParticleAgeCombinedTextureSelector;
-import com.gempukku.terasology.particle.selector.ParticleTextureSelector;
+import com.gempukku.terasology.particle.impl.selector.color.ConstantParticleColorSelector;
+import com.gempukku.terasology.particle.impl.selector.texture.ParticleAgeCombinedTextureSelector;
+import com.gempukku.terasology.particle.impl.selector.texture.ParticleTextureSelector;
 import com.gempukku.terasology.time.TimeManager;
 
 import java.util.Arrays;
@@ -58,7 +59,7 @@ public class ParticleTest implements GameLoopListener, LifeCycleSystem {
             float z = (float) Math.sin(angle);
             particleEmitter.emitParticle(
                     new SimpleParticle("world", new Vector3(5, 2, 5), new Vector3(0.1f * x, 2, 0.1f * z), 0.05f, 0, 0, 1, 0, 10,
-                            explosionTexture, Color.GREEN));
+                            explosionTexture, new ConstantParticleColorSelector(Color.GREEN)));
         }
     }
 }

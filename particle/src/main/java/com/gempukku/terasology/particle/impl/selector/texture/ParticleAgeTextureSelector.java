@@ -1,7 +1,7 @@
-package com.gempukku.terasology.particle.selector;
+package com.gempukku.terasology.particle.impl.selector.texture;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.gempukku.terasology.particle.Particle;
+import com.gempukku.terasology.particle.impl.SimpleParticle;
 import com.gempukku.terasology.procedural.FastMath;
 
 public class ParticleAgeTextureSelector implements ParticleTextureSelector {
@@ -12,9 +12,9 @@ public class ParticleAgeTextureSelector implements ParticleTextureSelector {
     }
 
     @Override
-    public TextureRegion getTextureRegion(Particle particle, float elapsedTime, float lifeLength) {
-        float textureTime = lifeLength / textures.length;
-        int index = FastMath.floor(elapsedTime / textureTime);
+    public TextureRegion getTextureRegion(SimpleParticle particle) {
+        float textureTime = particle.lifeLength / textures.length;
+        int index = FastMath.floor(particle.elapsedTime / textureTime);
         if (index >= textures.length)
             index = textures.length - 1;
         return textures[index];
