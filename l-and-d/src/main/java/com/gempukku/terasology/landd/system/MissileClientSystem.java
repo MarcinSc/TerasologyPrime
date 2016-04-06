@@ -1,5 +1,6 @@
 package com.gempukku.terasology.landd.system;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.NetProfiles;
@@ -67,7 +68,7 @@ public class MissileClientSystem implements GameLoopListener, LifeCycleSystem {
                         event.startY + diff * (event.endY - event.startY),
                         event.startZ + diff * (event.endZ - event.startZ));
                 particleEmitter.emitParticle(
-                        new SimpleParticle(event.worldId, location, new Vector3(), 0f, 0f, 0f, 2f, 0f, 1f, explosionTexture));
+                        new SimpleParticle(event.worldId, location, new Vector3(), 0f, 0f, 0f, 2f, 0f, 1f, explosionTexture, Color.WHITE));
             }
         }
     }

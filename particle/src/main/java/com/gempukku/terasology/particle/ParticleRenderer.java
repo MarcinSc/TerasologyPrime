@@ -1,6 +1,7 @@
 package com.gempukku.terasology.particle;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -61,8 +62,8 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
 
     private LinkedList<Particle> particles = new LinkedList<>();
 
-    // 4 vertices per particle, 8 floats per vertex
-    private float[] vertices = new float[4 * MAX_PARTICLE_COUNT * 8];
+    // 4 vertices per particle, 12 floats per vertex
+    private float[] vertices = new float[4 * MAX_PARTICLE_COUNT * 12];
     private int lastUsedParticleCount = 0;
 
     @Override
@@ -103,7 +104,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
         if (model == null) {
             // Each particle takes 4 vertices (corners) and 6 indices (two triangles)
             mesh = new Mesh(false, true, 4 * MAX_PARTICLE_COUNT, 6 * MAX_PARTICLE_COUNT, new VertexAttributes(
-                    VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0)));
+                    VertexAttribute.Position(), VertexAttribute.Normal(), VertexAttribute.TexCoords(0), VertexAttribute.ColorUnpacked()));
 
             short[] indices = new short[6 * MAX_PARTICLE_COUNT];
             for (int i = 0; i < MAX_PARTICLE_COUNT; i++) {
@@ -160,35 +161,40 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
             if (particle != null) {
                 TextureRegion textureRegion = particle.getTexture();
                 Vector3 location = particle.getLocation();
+                Color color = particle.getColor();
                 for (int corner = 0; corner < 4; corner++) {
-                    vertices[i * 8 * 4 + corner * 8] = location.x;
-                    vertices[i * 8 * 4 + corner * 8 + 1] = location.y;
-                    vertices[i * 8 * 4 + corner * 8 + 2] = location.z;
-                    vertices[i * 8 * 4 + corner * 8 + 3] = particle.getRotation();
-                    vertices[i * 8 * 4 + corner * 8 + 4] = particle.getScale();
-                    vertices[i * 8 * 4 + corner * 8 + 5] = corner + 1;
+                    vertices[i * 12 * 4 + corner * 12] = location.x;
+                    vertices[i * 12 * 4 + corner * 12 + 1] = location.y;
+                    vertices[i * 12 * 4 + corner * 12 + 2] = location.z;
+                    vertices[i * 12 * 4 + corner * 12 + 3] = particle.getRotation();
+                    vertices[i * 12 * 4 + corner * 12 + 4] = particle.getScale();
+                    vertices[i * 12 * 4 + corner * 12 + 5] = corner + 1;
                     if (corner == 0) {
-                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU();
-                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV2();
+                        vertices[i * 12 * 4 + corner * 12 + 6] = textureRegion.getU();
+                        vertices[i * 12 * 4 + corner * 12 + 7] = textureRegion.getV2();
                     } else if (corner == 1) {
-                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU2();
-                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV2();
+                        vertices[i * 12 * 4 + corner * 12 + 6] = textureRegion.getU2();
+                        vertices[i * 12 * 4 + corner * 12 + 7] = textureRegion.getV2();
                     } else if (corner == 2) {
-                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU2();
-                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV();
+                        vertices[i * 12 * 4 + corner * 12 + 6] = textureRegion.getU2();
+                        vertices[i * 12 * 4 + corner * 12 + 7] = textureRegion.getV();
                     } else {
-                        vertices[i * 8 * 4 + corner * 8 + 6] = textureRegion.getU();
-                        vertices[i * 8 * 4 + corner * 8 + 7] = textureRegion.getV();
+                        vertices[i * 12 * 4 + corner * 12 + 6] = textureRegion.getU();
+                        vertices[i * 12 * 4 + corner * 12 + 7] = textureRegion.getV();
                     }
+                    vertices[i * 12 * 4 + corner * 12 + 8] = color.r;
+                    vertices[i * 12 * 4 + corner * 12 + 9] = color.g;
+                    vertices[i * 12 * 4 + corner * 12 + 10] = color.b;
+                    vertices[i * 12 * 4 + corner * 12 + 11] = color.a;
                 }
                 particleCount++;
             } else if (i < lastUsedParticleCount) {
                 // This is to write over any old particles in the array
-                Arrays.fill(vertices, i * 8 * 4, (i + 1) * 8 * 4, 0);
+                Arrays.fill(vertices, i * 12 * 4, (i + 1) * 12 * 4, 0);
             }
         }
 
-        mesh.updateVertices(0, vertices, 0, 4 * lastUsedParticleCount * 8);
+        mesh.updateVertices(0, vertices, 0, 4 * lastUsedParticleCount * 12);
         lastUsedParticleCount = particleCount;
     }
 }

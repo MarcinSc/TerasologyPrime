@@ -1,6 +1,7 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec2 a_texCoord0;
+attribute vec4 a_color;
 
 uniform mat4 u_projViewTrans;
 uniform float u_viewportWidth;
@@ -8,9 +9,11 @@ uniform float u_viewportHeight;
 
 varying float v_exists;
 varying vec2 v_texCoord0;
+varying vec4 v_color;
 
 void main() {
     v_texCoord0 = a_texCoord0;
+    v_color = a_color;
 
     float rotation = a_normal.x;
     float scale = a_normal.y;

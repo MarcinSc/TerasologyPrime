@@ -1,5 +1,6 @@
 package com.gempukku.terasology.particle.impl;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.gempukku.terasology.particle.Particle;
@@ -11,6 +12,7 @@ public class SimpleParticle implements Particle {
     public float rotation;
     public float scale;
     public final ParticleTextureSelector particleTextureSelector;
+    public final Color color;
 
     public final Vector3 velocity;
     public final float gravityInfluence;
@@ -20,7 +22,10 @@ public class SimpleParticle implements Particle {
 
     public float elapsedTime;
 
-    public SimpleParticle(String worldId, Vector3 location, Vector3 velocity, float gravityInfluence, float rotation, float rotationVelocity, float scale, float scaleDiff, float lifeLength, ParticleTextureSelector particleTextureSelector) {
+    public SimpleParticle(String worldId, Vector3 location, Vector3 velocity, float gravityInfluence,
+                          float rotation, float rotationVelocity,
+                          float scale, float scaleDiff, float lifeLength,
+                          ParticleTextureSelector particleTextureSelector, Color color) {
         this.worldId = worldId;
         this.location = location;
         this.velocity = velocity;
@@ -31,6 +36,7 @@ public class SimpleParticle implements Particle {
         this.scaleDiff = scaleDiff;
         this.lifeLength = lifeLength;
         this.particleTextureSelector = particleTextureSelector;
+        this.color = color;
     }
 
     @Override
@@ -41,6 +47,11 @@ public class SimpleParticle implements Particle {
     @Override
     public Vector3 getLocation() {
         return location;
+    }
+
+    @Override
+    public Color getColor() {
+        return color;
     }
 
     @Override
