@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.gempukku.secsy.context.annotation.In;
 import com.gempukku.secsy.context.annotation.RegisterSystem;
@@ -129,11 +130,14 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
 
         int textureCount = textures.size();
 
+        int[][] blocksPerTexture = new int[textureCount][];
         float[][] verticesPerTexture = new float[textureCount][];
         short[][] indicesPerTexture = new short[textureCount][];
 
         for (int i = 0; i < textureCount; i++) {
             Texture texture = textures.get(i);
+
+            IntArray blocks = new IntArray();
 
             FloatArray vertices = floats.get();
             vertices.clear();
@@ -141,7 +145,7 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
             ShortArray indices = shorts.get();
             indices.clear();
 
-            BlockGeometryGenerator.VertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
+            BlockGeometryGenerator.BlockVertexOutput vertexOutput = new ArrayBlockVertexOutput(blocks, vertices, indices);
 
             for (int dx = 0; dx < ChunkSize.X; dx++) {
                 for (int dy = 0; dy < ChunkSize.Y; dy++) {
@@ -152,11 +156,12 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
                     }
                 }
             }
+            blocksPerTexture[i] = blocks.toArray();
             verticesPerTexture[i] = vertices.toArray();
             indicesPerTexture[i] = indices.toArray();
         }
 
-        return new ListsChunkGeometry(9, verticesPerTexture, indicesPerTexture);
+        return new ListsChunkGeometry(9, verticesPerTexture, blocksPerTexture, indicesPerTexture);
     }
 
     @Override
@@ -186,9 +191,15 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
         return result;
     }
 
-    private void generateMeshForBlockFromAtlas(BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture, ChunkBlocks[] chunkSector,
+    private void generateMeshForBlockFromAtlas(BlockGeometryGenerator.BlockVertexOutput vertexOutput, Texture texture, ChunkBlocks[] chunkSector,
                                                int chunkX, int chunkY, int chunkZ,
                                                int x, int y, int z) {
+        int blockX = chunkX + x;
+        int blockY = chunkY + y;
+        int blockZ = chunkZ + z;
+
+        vertexOutput.setBlock(blockX, blockY, blockZ);
+
         short block = chunkSector[13].getCommonBlockAt(x, y, z);
 
         if (shapesByBlockId[block] != null && texturesByBlockId[block] != null) {

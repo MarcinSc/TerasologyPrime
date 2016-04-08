@@ -1,11 +1,18 @@
 package com.gempukku.terasology.graphics.environment.mesh;
 
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.ShortArray;
+import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
 
-public class ArrayVertexOutput implements VertexOutput {
+public class ArrayBlockVertexOutput implements BlockGeometryGenerator.BlockVertexOutput {
+    private IntArray blocks;
     private FloatArray vertices;
     private ShortArray indices;
+
+    private int blockX;
+    private int blockY;
+    private int blockZ;
 
     private short vertexIndex;
     private float x;
@@ -18,9 +25,17 @@ public class ArrayVertexOutput implements VertexOutput {
     private float textureCoordY;
     private int flag;
 
-    public ArrayVertexOutput(FloatArray vertices, ShortArray indices) {
+    public ArrayBlockVertexOutput(IntArray blocks, FloatArray vertices, ShortArray indices) {
+        this.blocks = blocks;
         this.vertices = vertices;
         this.indices = indices;
+    }
+
+    @Override
+    public void setBlock(int x, int y, int z) {
+        blockX = x;
+        blockY = y;
+        blockZ = z;
     }
 
     @Override
@@ -67,6 +82,9 @@ public class ArrayVertexOutput implements VertexOutput {
 
     @Override
     public void addVertexIndex(short vertexIndex) {
+        blocks.add(blockX);
+        blocks.add(blockY);
+        blocks.add(blockZ);
         indices.add(vertexIndex);
     }
 }

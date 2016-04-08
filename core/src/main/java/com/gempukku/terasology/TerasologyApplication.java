@@ -127,7 +127,7 @@ public class TerasologyApplication extends ApplicationAdapter {
 
         LocationComponent playerLocation = player.createComponent(LocationComponent.class);
         playerLocation.setX(5f);
-        playerLocation.setY(20);
+        playerLocation.setY(1.5f);
         playerLocation.setZ(5f);
         playerLocation.setWorldId("world");
 

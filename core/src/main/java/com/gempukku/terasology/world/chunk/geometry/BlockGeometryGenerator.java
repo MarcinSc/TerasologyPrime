@@ -9,11 +9,13 @@ public interface BlockGeometryGenerator {
     int DOES_NOT_PRODUCE_GEOMETRY = 1;
     int MOVING_ON_WIND = 2;
 
-    void generateGeometryForBlockFromAtlas(ChunkMeshGeneratorCallback callback, VertexOutput vertexOutput,
+    void generateGeometryForBlockFromAtlas(ChunkMeshGeneratorCallback callback, BlockVertexOutput vertexOutput,
                                            Texture texture, ChunkBlocks chunkBlocks,
                                            int xInChunk, int yInChunk, int zInChunk);
 
-    interface VertexOutput {
+    interface BlockVertexOutput {
+        void setBlock(int x, int y, int z);
+
         void setPosition(float x, float y, float z);
 
         void setNormal(float x, float y, float z);

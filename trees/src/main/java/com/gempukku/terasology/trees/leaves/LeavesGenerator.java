@@ -7,5 +7,5 @@ import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
 
 public interface LeavesGenerator {
     LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
-            EntityRef entityRef, BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture);
+            EntityRef entityRef, BlockGeometryGenerator.BlockVertexOutput vertexOutput, Texture texture);
 }

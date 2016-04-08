@@ -55,11 +55,13 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
 
     @Override
     public void generateGeometryForBlockFromAtlas(ChunkMeshGeneratorCallback callback,
-                                                  VertexOutput vertexOutput, Texture texture,
+                                                  BlockVertexOutput vertexOutput, Texture texture,
                                                   ChunkBlocks chunkBlocks, int xInChunk, int yInChunk, int zInChunk) {
         int treeX = chunkBlocks.x * ChunkSize.X + xInChunk;
         int treeY = chunkBlocks.y * ChunkSize.Y + yInChunk;
         int treeZ = chunkBlocks.z * ChunkSize.Z + zInChunk;
+
+        vertexOutput.setBlock(treeX, treeY, treeZ);
 
         WorldStorage.EntityRefAndCommonBlockId entityAndBlockId = worldStorage.getBlockEntityAndBlockIdAt(chunkBlocks.worldId,
                 treeX,
@@ -109,10 +111,10 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         private Vector3f thirdTop = new Vector3f();
         private Vector3f fourthTop = new Vector3f();
 
-        private VertexOutput vertexOutput;
+        private BlockVertexOutput vertexOutput;
         private TextureRegion texture;
 
-        public BranchDrawingCallback(VertexOutput vertexOutput, TextureRegion texture) {
+        public BranchDrawingCallback(BlockVertexOutput vertexOutput, TextureRegion texture) {
             this.vertexOutput = vertexOutput;
             this.texture = texture;
         }
@@ -202,7 +204,7 @@ public class LSystemTreeBlockGeometryGenerator implements BlockGeometryGenerator
         callback.branchEnd(trunk, segmentCount, branchDefinition, movingMatrix);
     }
 
-    private void addQuad(VertexOutput vertexOutput,
+    private void addQuad(BlockVertexOutput vertexOutput,
                          Vector3f normal,
                          Vector3f first, Vector3f second, Vector3f third, Vector3f fourth, TextureRegion texture) {
 

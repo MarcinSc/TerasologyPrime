@@ -53,7 +53,7 @@ public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSys
 
     @Override
     public LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
-            EntityRef entityRef, BlockGeometryGenerator.VertexOutput vertexOutput, Texture texture) {
+            EntityRef entityRef, BlockGeometryGenerator.BlockVertexOutput vertexOutput, Texture texture) {
         LeavesDefinitionComponent leavesDefinition = entityRef.getComponent(LeavesDefinitionComponent.class);
         TextureRegion leavesTexture = textureAtlasProvider.getTexture("terrain", leavesDefinition.getLeavesTexture());
         if (texture == leavesTexture.getTexture()) {
@@ -64,14 +64,14 @@ public class LastSegmentLeavesGenerator implements LeavesGenerator, LifeCycleSys
     }
 
     private class LeavesDrawingCallback implements LSystemTreeBlockGeometryGenerator.LSystemCallback {
-        private BlockGeometryGenerator.VertexOutput vertexOutput;
+        private BlockGeometryGenerator.BlockVertexOutput vertexOutput;
 
         private Vector3f tempVector = new Vector3f();
         private Vector3f origin = new Vector3f();
         private ShapeDef leavesShape;
         private TextureRegion texture;
 
-        public LeavesDrawingCallback(BlockGeometryGenerator.VertexOutput vertexOutput, ShapeDef leavesShape, TextureRegion texture) {
+        public LeavesDrawingCallback(BlockGeometryGenerator.BlockVertexOutput vertexOutput, ShapeDef leavesShape, TextureRegion texture) {
             this.vertexOutput = vertexOutput;
             this.leavesShape = leavesShape;
             this.texture = texture;
