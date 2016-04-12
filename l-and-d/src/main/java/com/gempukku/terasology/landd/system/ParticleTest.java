@@ -41,14 +41,14 @@ public class ParticleTest implements GameLoopListener, LifeCycleSystem {
     @Override
     public void initialize() {
         gameLoop.addGameLoopListener(this);
-        textureAtlasRegistry.registerTextures("particles", Arrays.asList("particle/explosion.png"));
+        textureAtlasRegistry.registerTextures(ParticleEmitter.PARTICLES_ATLAS_NAME, Arrays.asList("particle/explosion.png"));
     }
 
     @Override
     public void update() {
         if (explosionTexture == null) {
             explosionTexture = new ParticleAgeCombinedTextureSelector(
-                    textureAtlasProvider.getTexture("particles", "particle/explosion.png"), 5, 5);
+                    textureAtlasProvider.getTexture(ParticleEmitter.PARTICLES_ATLAS_NAME, "particle/explosion.png"), 5, 5);
         }
 
         timeSinceLastEmit += timeManager.getTimeSinceLastUpdate() / 1000f;

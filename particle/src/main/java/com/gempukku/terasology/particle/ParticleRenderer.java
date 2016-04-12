@@ -124,7 +124,7 @@ public class ParticleRenderer implements PostEnvironmentRenderer, ParticleEmitte
             mesh.setIndices(indices);
             mesh.setVertices(vertices);
 
-            List<Texture> particles = textureAtlasProvider.getTextures("particles");
+            List<Texture> particles = textureAtlasProvider.getTextures(PARTICLES_ATLAS_NAME);
             if (particles.size() > 1)
                 throw new RuntimeException("At the moment particles have to be on one underlying texture");
 

@@ -55,7 +55,7 @@ public class MissileClientSystem implements GameLoopListener, LifeCycleSystem {
             particleTextures.add((String) entityData.getComponent(FiresMissileParticleComponent.class).getFields().get("missileTexture"));
         }
 
-        textureAtlasRegistry.registerTextures("particles", particleTextures);
+        textureAtlasRegistry.registerTextures(ParticleEmitter.PARTICLES_ATLAS_NAME, particleTextures);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class MissileClientSystem implements GameLoopListener, LifeCycleSystem {
                                 missile.getRotation(), missile.getRotationVelocity(), missile.getScale(), missile.getScaleDiff(),
                                 missile.getParticleLifeLength(),
                                 new ParticleAgeCombinedTextureSelector(
-                                        textureAtlasProvider.getTexture("particles", missile.getMissileTexture()), missile.getRowCount(), missile.getColumnCount()),
+                                        textureAtlasProvider.getTexture(ParticleEmitter.PARTICLES_ATLAS_NAME, missile.getMissileTexture()), missile.getRowCount(), missile.getColumnCount()),
                                 new FadeParticleColorSelector(
                                         new Color(missile.getColorR(), missile.getColorG(), missile.getColorB(), 1f))));
             }
