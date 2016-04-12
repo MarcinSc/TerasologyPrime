@@ -61,7 +61,7 @@ public class DelayedActionSystemTest {
 
         Mockito.verify(entity).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).createComponent(DelayedActionComponent.class);
-        Mockito.verify(entity).saveComponents(dac);
+        Mockito.verify(entity).saveChanges();
         Mockito.verifyNoMoreInteractions(entity);
 
         assertEquals(1, dac.getActionIdWakeUp().size());
@@ -85,6 +85,7 @@ public class DelayedActionSystemTest {
         Mockito.verify(entity).exists();
         Mockito.verify(entity, Mockito.times(2)).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).removeComponents(DelayedActionComponent.class);
+        Mockito.verify(entity, Mockito.times(2)).saveChanges();
         Mockito.verify(entity).send(Matchers.argThat(
                 new BaseMatcher<Event>() {
                     @Override
@@ -117,7 +118,7 @@ public class DelayedActionSystemTest {
 
         Mockito.verify(entity).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).createComponent(DelayedActionComponent.class);
-        Mockito.verify(entity).saveComponents(dac);
+        Mockito.verify(entity).saveChanges();
         Mockito.verifyNoMoreInteractions(entity);
 
         assertEquals(1, dac.getActionIdWakeUp().size());
@@ -127,7 +128,7 @@ public class DelayedActionSystemTest {
 
         delayedActionSystem.addDelayedAction(entity, "actionId", 2000);
         Mockito.verify(entity, Mockito.times(2)).getComponent(DelayedActionComponent.class);
-        Mockito.verify(entity, Mockito.times(2)).saveComponents(dac);
+        Mockito.verify(entity, Mockito.times(2)).saveChanges();
         Mockito.verifyNoMoreInteractions(entity);
 
         assertEquals(1, dac.getActionIdWakeUp().size());
@@ -149,6 +150,7 @@ public class DelayedActionSystemTest {
         Mockito.verify(entity).exists();
         Mockito.verify(entity, Mockito.times(3)).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).removeComponents(DelayedActionComponent.class);
+        Mockito.verify(entity, Mockito.times(3)).saveChanges();
         Mockito.verify(entity).send(Matchers.argThat(
                 new BaseMatcher<Event>() {
                     @Override
@@ -182,7 +184,7 @@ public class DelayedActionSystemTest {
 
         Mockito.verify(entity).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).createComponent(DelayedActionComponent.class);
-        Mockito.verify(entity).saveComponents(dac);
+        Mockito.verify(entity).saveChanges();
         Mockito.verifyNoMoreInteractions(entity);
 
         assertEquals(1, dac.getActionIdWakeUp().size());
@@ -192,7 +194,7 @@ public class DelayedActionSystemTest {
 
         delayedActionSystem.addDelayedAction(entity, "actionId", 800);
         Mockito.verify(entity, Mockito.times(2)).getComponent(DelayedActionComponent.class);
-        Mockito.verify(entity, Mockito.times(2)).saveComponents(dac);
+        Mockito.verify(entity, Mockito.times(2)).saveChanges();
         Mockito.verifyNoMoreInteractions(entity);
 
         assertEquals(1, dac.getActionIdWakeUp().size());
@@ -209,6 +211,7 @@ public class DelayedActionSystemTest {
         Mockito.verify(entity).exists();
         Mockito.verify(entity, Mockito.times(3)).getComponent(DelayedActionComponent.class);
         Mockito.verify(entity).removeComponents(DelayedActionComponent.class);
+        Mockito.verify(entity, Mockito.times(3)).saveChanges();
         Mockito.verify(entity).send(Matchers.argThat(
                 new BaseMatcher<Event>() {
                     @Override

@@ -64,7 +64,7 @@ public class AiCharacterSystem implements GameLoopListener, LifeCycleSystem {
                     LocationComponent targetLocation = closestEnemy.getComponent(LocationComponent.class);
 
                     rangedAttack.setLastFired(multiverseTime);
-                    entityRef.saveComponents(rangedAttack);
+                    entityRef.saveChanges();
 
                     float missileSpeed = rangedAttack.getMissileSpeed();
                     Vector3 start = new Vector3(location.getX(), location.getY(), location.getZ());
@@ -100,7 +100,7 @@ public class AiCharacterSystem implements GameLoopListener, LifeCycleSystem {
             location.setX(location.getX() + movingCharacter.getSpeedX() * timeSinceLastUpdateInSeconds);
             location.setY(location.getY() + movingCharacter.getSpeedY() * timeSinceLastUpdateInSeconds);
             location.setZ(location.getZ() + movingCharacter.getSpeedZ() * timeSinceLastUpdateInSeconds);
-            entityRef.saveComponents(location);
+            entityRef.saveChanges();
             return;
         }
     }

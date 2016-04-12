@@ -80,12 +80,10 @@ public class AnnotationDrivenEventDispatcher implements ContextAwareSystem<Objec
 
     @Override
     public void eventSent(EntityRef entity, Event event) {
-        Collection<Class<? extends Component>> entityComponents = entity.listComponents();
-
         for (EventListenerDefinition eventListenerDefinition : eventListenerDefinitions.get(event.getClass())) {
             boolean valid = true;
             for (Class<? extends Component> componentRequired : eventListenerDefinition.getComponentParameters()) {
-                if (!entityComponents.contains(componentRequired)) {
+                if (!entity.hasComponent(componentRequired)) {
                     valid = false;
                     break;
                 }

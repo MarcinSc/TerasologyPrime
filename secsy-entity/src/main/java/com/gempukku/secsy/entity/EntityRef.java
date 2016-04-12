@@ -51,9 +51,8 @@ public interface EntityRef {
 
     /**
      * Saves changes (or adds) done to this reference to its actual entity.
-     * @param component
      */
-    void saveComponents(Component... component);
+    void saveChanges();
 
     /**
      * Removes specified components from the underlying entity.

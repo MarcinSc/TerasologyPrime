@@ -142,7 +142,7 @@ public class TerasologyApplication extends ApplicationAdapter {
         playerCamera.setTranslateFromLocationY(1.8f);
         playerCamera.setTranslateFromLocationZ(0f);
 
-        player.saveComponents(playerLocation, playerCamera);
+        player.saveChanges();
 
         Gdx.input.setCursorCatched(true);
     }

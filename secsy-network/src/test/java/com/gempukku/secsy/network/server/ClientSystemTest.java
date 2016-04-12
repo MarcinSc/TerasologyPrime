@@ -11,6 +11,7 @@ import com.gempukku.secsy.entity.InternalEntityManager;
 import com.gempukku.secsy.entity.SampleEvent;
 import com.gempukku.secsy.entity.SimpleEntity;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
+import com.gempukku.secsy.entity.event.AfterComponentRemoved;
 import com.gempukku.secsy.entity.event.AfterComponentUpdated;
 import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
 import com.gempukku.secsy.entity.event.BeforeEntityUnloaded;
@@ -64,6 +65,8 @@ public class ClientSystemTest {
         clientSystem.eventSent(irrelevantEntity, new AfterComponentUpdated(Collections.emptyMap(), Collections.emptyMap()));
         clientSystem.eventSent(irrelevantEntity, new BeforeComponentRemoved(Collections.emptyMap()));
 
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
+
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
 
@@ -89,11 +92,12 @@ public class ClientSystemTest {
         clientSystem.eventSent(relevantEntity, new AfterComponentUpdated(Collections.emptyMap(), Collections.emptyMap()));
         Mockito.verify(clientCommunication, new Times(2)).updateEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
-        clientSystem.eventSent(relevantEntity, new BeforeComponentRemoved(Collections.emptyMap()));
+        clientSystem.eventSent(relevantEntity, new AfterComponentRemoved(Collections.emptyMap()));
         Mockito.verify(clientCommunication, new Times(3)).updateEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
         relevanceRule.setEntityRelevant("clientId", relevantEntity, false);
         Mockito.verify(clientCommunication).removeEntity(Mockito.eq(1));
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -108,6 +112,7 @@ public class ClientSystemTest {
         clientSystem.addClient("clientId", clientEntity, clientCommunication);
 
         clientSystem.eventSent(irrelevantEntity, new EventRelevantToClient());
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -129,6 +134,7 @@ public class ClientSystemTest {
         Mockito.verify(clientCommunication).addEntity(Mockito.eq(1), Mockito.same(relevantEntity), Mockito.any());
 
         clientSystem.eventSent(relevantEntity, new SampleEvent());
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -152,6 +158,7 @@ public class ClientSystemTest {
         EventRelevantToClient event = new EventRelevantToClient();
         clientSystem.eventSent(relevantEntity, event);
         Mockito.verify(clientCommunication).sendEventToClient(Mockito.eq(1), Mockito.same(event));
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -174,6 +181,7 @@ public class ClientSystemTest {
 
         clientSystem.eventSent(relevantEntity, new BeforeEntityUnloaded(Collections.emptyMap()));
         Mockito.verify(clientCommunication).removeEntity(1);
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }
@@ -200,6 +208,7 @@ public class ClientSystemTest {
         Mockito.verify(clientCommunication).commitChanges();
         Mockito.verify(clientCommunication).visitQueuedEvents(Mockito.any());
         Mockito.verify(clientEntity).send(Mockito.same(event));
+        Mockito.verify(clientEntity).send(ClientConnectedEvent.SINGLETON);
 
         Mockito.verifyNoMoreInteractions(clientEntity, clientCommunication);
     }

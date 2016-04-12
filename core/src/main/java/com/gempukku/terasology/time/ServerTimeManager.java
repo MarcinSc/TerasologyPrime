@@ -23,7 +23,7 @@ public class ServerTimeManager implements TimeManager, InternalTimeManager {
         long lastTime = multiverse.getTime();
         timeSinceLastUpdate = timeDiff;
         multiverse.setTime(lastTime + timeDiff);
-        multiverseEntity.saveComponents(multiverse);
+        multiverseEntity.saveChanges();
     }
 
     @Override

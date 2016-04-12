@@ -58,7 +58,7 @@ public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleS
 
             CommonBlockConfigComponent component = entity.createComponent(CommonBlockConfigComponent.class);
             component.setCommonBlocks(commonBlockIds);
-            entity.saveComponents(component);
+            entity.saveChanges();
         } else {
             commonBlockIds = entity.getComponent(CommonBlockConfigComponent.class).getCommonBlocks();
         }

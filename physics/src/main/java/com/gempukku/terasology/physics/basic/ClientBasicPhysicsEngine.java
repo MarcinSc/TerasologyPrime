@@ -194,7 +194,7 @@ public class ClientBasicPhysicsEngine implements LifeCycleSystem, GameLoopListen
 
                     movement.setVerticalSpeed(verticalSpeed);
 
-                    entityRef.saveComponents(location, camera, movement);
+                    entityRef.saveChanges();
                     serverEventBus.sendEventToServer(new MovementRequestEvent(positionX, positionY, positionZ, movement.getVerticalSpeed(), movement.getSpeed(), movement.getYaw()));
                 } else {
                     Gdx.app.debug(ClientBasicPhysicsEngine.class.getSimpleName(), "Chunks around are not loaded?");

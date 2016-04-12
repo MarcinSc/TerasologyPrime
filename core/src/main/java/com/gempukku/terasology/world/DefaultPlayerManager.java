@@ -32,7 +32,7 @@ public class DefaultPlayerManager implements PlayerManager {
         movement.setSpeed(0);
         movement.setVerticalSpeed(0);
 
-        entity.saveComponents(player, movement);
+        entity.saveChanges();
 
         entity.send(new AfterPlayerCreatedEvent());
         return entity;

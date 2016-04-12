@@ -8,10 +8,7 @@ import com.gempukku.secsy.context.util.PriorityCollection;
 import com.gempukku.secsy.entity.component.ComponentManager;
 import com.gempukku.secsy.entity.component.InternalComponentManager;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
-import com.gempukku.secsy.entity.event.AfterComponentRemoved;
-import com.gempukku.secsy.entity.event.AfterComponentUpdated;
 import com.gempukku.secsy.entity.event.AfterEntityLoaded;
-import com.gempukku.secsy.entity.event.BeforeComponentRemoved;
 import com.gempukku.secsy.entity.event.BeforeEntityUnloaded;
 import com.gempukku.secsy.entity.event.Event;
 import com.gempukku.secsy.entity.game.InternalGameLoop;
@@ -46,6 +43,9 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
 
     private int maxId;
     private Set<SimpleEntity> entities = new HashSet<>();
+
+    private EntityListener dispatchEntityListener = new DispatchEntityListener();
+    private EntityEventListener dispatchEntityEventListener = new DispatchEntityEventListener();
 
     @Override
     public void addEntityEventListener(EntityEventListener entityEventListener) {
@@ -133,7 +133,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
 
     @Override
     public int getEntityId(EntityRef entityRef) {
-        return ((EntityRefImpl) entityRef).entity.getEntityId();
+        return ((SimpleEntityRef) entityRef).getEntity().getEntityId();
     }
 
     @Override
@@ -148,7 +148,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                 components.put(originalComponents.getKey(), internalComponentManager.copyComponentUnmodifiable(originalComponents.getValue(), false));
             }
 
-            EntityRefImpl entityRef = new EntityRefImpl(entity, false);
+            SimpleEntityRef entityRef = createSimpleEntityRef(entity, false);
             if (entity.getEntityId() <= createdIfIdGreaterThan) {
                 entityRef.send(new AfterEntityLoaded(components));
             } else {
@@ -201,7 +201,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
                         components.put(originalComponents.getKey(), internalComponentManager.copyComponentUnmodifiable(originalComponents.getValue(), false));
                     }
 
-                    new EntityRefImpl(entity, false).send(new BeforeEntityUnloaded(components));
+                    createSimpleEntityRef(entity, false).send(new BeforeEntityUnloaded(components));
                 });
     }
 
@@ -216,7 +216,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         Multimap<EntityRelevanceRule, SimpleEntity> entitiesToUnload = HashMultimap.create();
         for (EntityRelevanceRule entityRelevanceRule : entityRelevanceRules) {
             for (EntityRef entityRef : entityRelevanceRule.getNotRelevantEntities()) {
-                entitiesToUnload.put(entityRelevanceRule, ((EntityRefImpl) entityRef).entity);
+                entitiesToUnload.put(entityRelevanceRule, ((SimpleEntityRef) entityRef).getEntity());
             }
         }
         return entitiesToUnload;
@@ -226,7 +226,7 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
     public EntityRef createEntity() {
         SimpleEntity entity = new SimpleEntity(internalComponentManager, ++maxId);
         entities.add(entity);
-        return new EntityRefImpl(entity, false);
+        return createSimpleEntityRef(entity, false);
     }
 
     @Override
@@ -242,23 +242,24 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         entityListeners.forEach(
                 listener -> listener.entitiesModified(Collections.singleton(entity)));
 
-        sendEventToEntity(entity, new AfterComponentAdded(components));
-        return new EntityRefImpl(entity, false);
+        SimpleEntityRef entityRef = createSimpleEntityRef(entity, false);
+        dispatchEntityEventListener.eventSent(entityRef, new AfterComponentAdded(components));
+        return entityRef;
     }
 
     @Override
     public EntityRef createNewEntityRef(EntityRef entityRef) {
-        return new EntityRefImpl(((EntityRefImpl) entityRef).entity, false);
+        return createSimpleEntityRef(((SimpleEntityRef) entityRef).getEntity(), false);
     }
 
     @Override
     public boolean isSameEntity(EntityRef ref1, EntityRef ref2) {
-        return ((EntityRefImpl) ref1).entity == ((EntityRefImpl) ref2).entity;
+        return ((SimpleEntityRef) ref1).getEntity() == ((SimpleEntityRef) ref2).getEntity();
     }
 
     @Override
     public EntityRef wrapEntity(SimpleEntity entity) {
-        return new EntityRefImpl(entity, false);
+        return createSimpleEntityRef(entity, false);
     }
 
     @Override
@@ -266,7 +267,8 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
         Collection<Class<? extends Component>> components = entityRef.listComponents();
         //noinspection unchecked
         entityRef.removeComponents(components.toArray(new Class[components.size()]));
-        SimpleEntity underlyingEntity = ((EntityRefImpl) entityRef).entity;
+        entityRef.saveChanges();
+        SimpleEntity underlyingEntity = ((SimpleEntityRef) entityRef).getEntity();
         underlyingEntity.exists = false;
         entities.remove(underlyingEntity);
     }
@@ -285,178 +287,30 @@ public class SimpleEntityManager implements EntityManager, InternalEntityManager
 
                     return true;
                 }),
-                entity -> new EntityRefImpl(entity, false));
+                entity -> createSimpleEntityRef(entity, false));
     }
 
-    private void sendEventToEntity(SimpleEntity entity, Event event) {
-        entityEventListeners.forEach(entityListener -> entityListener.eventSent(new EntityRefImpl(entity, false), event));
+    private SimpleEntityRef createSimpleEntityRef(SimpleEntity entity, boolean readOnly) {
+        return new SimpleEntityRef(internalComponentManager, dispatchEntityListener, dispatchEntityEventListener,
+                entity, readOnly);
     }
 
-    @SuppressWarnings("unchecked")
-    private class EntityRefImpl implements EntityRef {
-        private SimpleEntity entity;
-        private Map<Class<? extends Component>, Boolean> newInThisEntityRef = new HashMap<>();
-        private Map<Class<? extends Component>, Component> accessibleComponents = new HashMap<>();
-        private boolean readOnly;
-
-        public EntityRefImpl(SimpleEntity entity, boolean readOnly) {
-            this.entity = entity;
-            this.readOnly = readOnly;
-        }
-
+    private class DispatchEntityListener implements EntityListener {
         @Override
-        public <T extends Component> T createComponent(Class<T> clazz) {
-            validateWritable();
-            if (accessibleComponents.containsKey(clazz))
-                throw new IllegalStateException("This entity ref already has this component defined");
-            if (entity.entityValues.containsKey(clazz))
-                throw new IllegalStateException("This entity already has this component defined");
-
-            T component = internalComponentManager.createComponent(this, clazz);
-            newInThisEntityRef.put(clazz, true);
-            accessibleComponents.put(clazz, component);
-
-            return component;
-        }
-
-        @Override
-        public <T extends Component> T getComponent(Class<T> clazz) {
-            // First check if this EntityRef already has a component of that class to work with
-            Component component = accessibleComponents.get(clazz);
-            if (component != null)
-                return (T) component;
-
-            T originalComponent = (T) entity.entityValues.get(clazz);
-            if (originalComponent == null)
-                return null;
-
-            T localComponent = internalComponentManager.copyComponent(this, originalComponent);
-            if (readOnly)
-                localComponent = internalComponentManager.copyComponentUnmodifiable(localComponent, true);
-            accessibleComponents.put(clazz, localComponent);
-            newInThisEntityRef.put(clazz, false);
-            return localComponent;
-        }
-
-        @Override
-        public void saveComponents(Component... components) {
-            validateWritable();
-            for (Component component : components) {
-                if (internalComponentManager.getComponentEntity(component) != this)
-                    throw new IllegalStateException("The component " + internalComponentManager.getComponentClass(component).getName() + " does not belong to this EntityRef");
-            }
-
-            for (Component component : components) {
-                Class<? extends Component> clazz = internalComponentManager.getComponentClass(component);
-                if (newInThisEntityRef.get(clazz)) {
-                    if (entity.entityValues.containsKey(clazz))
-                        throw new IllegalStateException("This entity already contains a component of that class");
-                } else {
-                    if (!entity.entityValues.containsKey(clazz))
-                        throw new IllegalStateException("This entity does not contain a component of that class");
-                }
-            }
-
-            Map<Class<? extends Component>, Component> addedComponents = new HashMap<>();
-
-            for (Component component : components) {
-                final Class<Component> clazz = internalComponentManager.getComponentClass(component);
-                if (newInThisEntityRef.get(clazz)) {
-                    Component storedComponent = internalComponentManager.copyComponent(null, component);
-                    entity.entityValues.put(clazz, storedComponent);
-
-                    internalComponentManager.saveComponent(storedComponent, component);
-
-                    addedComponents.put(clazz, internalComponentManager.copyComponentUnmodifiable(component, false));
-                }
-            }
-
-            Map<Class<? extends Component>, Component> updatedComponentsOld = new HashMap<>();
-            Map<Class<? extends Component>, Component> updatedComponentsNew = new HashMap<>();
-
-            for (Component component : components) {
-                final Class<Component> clazz = internalComponentManager.getComponentClass(component);
-                if (!newInThisEntityRef.get(clazz)) {
-                    Component originalComponent = entity.entityValues.get(clazz);
-
-                    updatedComponentsOld.put(clazz, internalComponentManager.copyComponentUnmodifiable(originalComponent, false));
-
-                    internalComponentManager.saveComponent(originalComponent, component);
-
-                    updatedComponentsNew.put(clazz, internalComponentManager.copyComponentUnmodifiable(originalComponent, false));
-                }
-            }
-
-            addedComponents.keySet().forEach(
-                    clazz -> newInThisEntityRef.put(clazz, false));
-
+        public void entitiesModified(Iterable<SimpleEntity> entity) {
             entityListeners.forEach(
-                    listener -> listener.entitiesModified(Collections.singleton(entity)));
-
-            if (!addedComponents.isEmpty()) {
-                AfterComponentAdded event = new AfterComponentAdded(addedComponents);
-                createNewEntityRef(this).send(event);
-            }
-
-            if (!updatedComponentsOld.isEmpty()) {
-                AfterComponentUpdated event = new AfterComponentUpdated(updatedComponentsOld, updatedComponentsNew);
-                createNewEntityRef(this).send(event);
-            }
+                    listener -> listener.entitiesModified(entity));
         }
+    }
 
+    private class DispatchEntityEventListener implements EntityEventListener {
         @Override
-        public <T extends Component> void removeComponents(Class<T>... clazz) {
-            validateWritable();
-            Map<Class<? extends Component>, Component> removedComponents = new HashMap<>();
-
-            for (Class<T> componentClass : clazz) {
-                Component originalComponent = entity.entityValues.get(componentClass);
-                if (originalComponent == null)
-                    throw new IllegalStateException("This entity does not contain a component of that class");
-
-                removedComponents.put(componentClass, internalComponentManager.copyComponentUnmodifiable(originalComponent, false));
-            }
-
-            BeforeComponentRemoved event = new BeforeComponentRemoved(removedComponents);
-            createNewEntityRef(this).send(event);
-
-            for (Class<T> componentClass : clazz) {
-                accessibleComponents.remove(clazz);
-                newInThisEntityRef.remove(clazz);
-                entity.entityValues.remove(componentClass);
-            }
-
-            entityListeners.forEach(
-                    listener -> listener.entitiesModified(Collections.singleton(entity)));
-
-            AfterComponentRemoved afterEvent = new AfterComponentRemoved(removedComponents);
-            createNewEntityRef(this).send(afterEvent);
-        }
-
-        @Override
-        public Collection<Class<? extends Component>> listComponents() {
-            return Collections.unmodifiableCollection(entity.entityValues.keySet());
-        }
-
-        @Override
-        public boolean hasComponent(Class<? extends Component> component) {
-            return entity.entityValues.containsKey(component);
-        }
-
-        @Override
-        public boolean exists() {
-            return entity.exists;
-        }
-
-        @Override
-        public void send(Event event) {
-            validateWritable();
-            sendEventToEntity(entity, event);
-        }
-
-        private void validateWritable() {
-            if (readOnly)
-                throw new IllegalStateException("This entity is in read only mode");
+        public void eventSent(EntityRef entity, Event event) {
+            entityEventListeners.forEach(
+                    listener -> {
+                        SimpleEntityRef newEntityRef = createSimpleEntityRef(((SimpleEntityRef) entity).getEntity(), false);
+                        listener.eventSent(newEntityRef, event);
+                    });
         }
     }
 }

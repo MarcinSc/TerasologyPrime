@@ -64,6 +64,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
 
             final Set<String> actionIds = removeActionsUpTo(delayedActions, currentWorldTime);
             saveOrRemoveComponent(delayedEntity, delayedActions);
+            delayedEntity.saveChanges();
 
             if (!delayedActions.getActionIdWakeUp().isEmpty()) {
                 delayedOperationsSortedByTime.put(findSmallestWakeUp(delayedActions.getActionIdWakeUp()), delayedEntity);
@@ -93,6 +94,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
 
             final Set<String> actionIds = getTriggeredActionsAndReschedule(periodicActionComponent, currentWorldTime);
             saveOrRemoveComponent(periodicEntity, periodicActionComponent);
+            periodicEntity.saveChanges();
 
             if (!periodicActionComponent.getActionIdWakeUp().isEmpty()) {
                 periodicOperationsSortedByTime.put(findSmallestWakeUp(periodicActionComponent.getActionIdWakeUp()), periodicEntity);
@@ -132,7 +134,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
         if (delayedActionComponent != null) {
             final long oldWakeUp = findSmallestWakeUp(delayedActionComponent.getActionIdWakeUp());
             delayedActionComponent.getActionIdWakeUp().put(actionId, scheduleTime);
-            entity.saveComponents(delayedActionComponent);
+            entity.saveChanges();
             final long newWakeUp = findSmallestWakeUp(delayedActionComponent.getActionIdWakeUp());
             if (oldWakeUp < newWakeUp) {
                 delayedOperationsSortedByTime.remove(oldWakeUp, entity);
@@ -143,7 +145,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
             Map<String, Long> wakeUps = new HashMap<>();
             wakeUps.put(actionId, scheduleTime);
             delayedActionComponent.setActionIdWakeUp(wakeUps);
-            entity.saveComponents(delayedActionComponent);
+            entity.saveChanges();
             delayedOperationsSortedByTime.put(scheduleTime, entity);
         }
     }
@@ -157,7 +159,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
             final long oldWakeUp = findSmallestWakeUp(periodicActionComponent.getActionIdWakeUp());
             periodicActionComponent.getActionIdWakeUp().put(actionId, scheduleTime);
             periodicActionComponent.getActionIdPeriod().put(actionId, period);
-            entity.saveComponents(periodicActionComponent);
+            entity.saveChanges();
             final long newWakeUp = findSmallestWakeUp(periodicActionComponent.getActionIdWakeUp());
             if (oldWakeUp < newWakeUp) {
                 periodicOperationsSortedByTime.remove(oldWakeUp, entity);
@@ -171,7 +173,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
             periods.put(actionId, period);
             periodicActionComponent.setActionIdWakeUp(wakeUps);
             periodicActionComponent.setActionIdPeriod(periods);
-            entity.saveComponents(periodicActionComponent);
+            entity.saveChanges();
             periodicOperationsSortedByTime.put(scheduleTime, entity);
         }
     }
@@ -189,6 +191,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
             delayedOperationsSortedByTime.remove(oldWakeUp, entity);
         }
         saveOrRemoveComponent(entity, delayedComponent);
+        entity.saveChanges();
     }
 
     @Override
@@ -205,6 +208,7 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
             periodicOperationsSortedByTime.remove(oldWakeUp, entity);
         }
         saveOrRemoveComponent(entity, periodicActionComponent);
+        entity.saveChanges();
     }
 
     @Override
@@ -222,16 +226,12 @@ public class DelayedActionSystem implements GameLoopListener, LifeCycleSystem, D
     private void saveOrRemoveComponent(EntityRef delayedEntity, DelayedActionComponent delayedActionComponent) {
         if (delayedActionComponent.getActionIdWakeUp().isEmpty()) {
             delayedEntity.removeComponents(DelayedActionComponent.class);
-        } else {
-            delayedEntity.saveComponents(delayedActionComponent);
         }
     }
 
     private void saveOrRemoveComponent(EntityRef periodicEntity, PeriodicActionComponent periodicActionComponent) {
         if (periodicActionComponent.getActionIdWakeUp().isEmpty()) {
             periodicEntity.removeComponents(PeriodicActionComponent.class);
-        } else {
-            periodicEntity.saveComponents(periodicActionComponent);
         }
     }
 

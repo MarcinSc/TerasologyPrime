@@ -23,7 +23,7 @@ public class AuthorityBasicPhysicsEngine {
         location.setY(event.positionY);
         location.setZ(event.positionZ);
 
-        client.saveComponents(location, movement);
+        client.saveChanges();
     }
 
     @ReceiveEvent
@@ -31,6 +31,6 @@ public class AuthorityBasicPhysicsEngine {
         BasicCylinderPhysicsObjectComponent playerPhysicalProperties = entity.createComponent(BasicCylinderPhysicsObjectComponent.class);
         playerPhysicalProperties.setRadius(0.4f);
         playerPhysicalProperties.setHeight(1.9f);
-        entity.saveComponents(playerPhysicalProperties);
+        entity.saveChanges();
     }
 }

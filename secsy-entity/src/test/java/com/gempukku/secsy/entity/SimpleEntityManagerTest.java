@@ -51,7 +51,7 @@ public class SimpleEntityManagerTest {
         assertFalse(copy.hasComponent(SampleComponent.class));
         assertFalse(source.hasComponent(SampleComponent.class));
 
-        copy.saveComponents(component);
+        copy.saveChanges();
         assertTrue(copy.hasComponent(SampleComponent.class));
         assertTrue(source.hasComponent(SampleComponent.class));
     }
@@ -67,7 +67,7 @@ public class SimpleEntityManagerTest {
         assertFalse(copy.hasComponent(SampleComponent.class));
         assertFalse(source.hasComponent(SampleComponent.class));
 
-        copy.saveComponents(component);
+        copy.saveChanges();
         assertTrue(copy.hasComponent(SampleComponent.class));
         assertEquals("value", copy.getComponent(SampleComponent.class).getValue());
         assertTrue(source.hasComponent(SampleComponent.class));
@@ -80,7 +80,7 @@ public class SimpleEntityManagerTest {
 
         EntityRef copy = simpleEntityManager.createNewEntityRef(source);
         SampleComponent component = copy.createComponent(SampleComponent.class);
-        copy.saveComponents(component);
+        copy.saveChanges();
 
         SampleComponent sourceComponent = source.getComponent(SampleComponent.class);
         assertNotNull(sourceComponent);
@@ -92,7 +92,7 @@ public class SimpleEntityManagerTest {
         assertEquals("value", component.getValue());
 
         // Changes are immediately visible in the source after save
-        copy.saveComponents(component);
+        copy.saveChanges();
         assertEquals("value", sourceComponent.getValue());
         assertEquals("value", component.getValue());
     }
@@ -103,12 +103,13 @@ public class SimpleEntityManagerTest {
 
         EntityRef copy = simpleEntityManager.createNewEntityRef(source);
         SampleComponent component = copy.createComponent(SampleComponent.class);
-        copy.saveComponents(component);
+        copy.saveChanges();
 
         assertTrue(source.hasComponent(SampleComponent.class));
 
         //noinspection unchecked
         copy.removeComponents(SampleComponent.class);
+        copy.saveChanges();
 
         assertFalse(source.hasComponent(SampleComponent.class));
     }
@@ -137,7 +138,7 @@ public class SimpleEntityManagerTest {
 
         assertEquals(0, listener.events.size());
 
-        entity.saveComponents(component);
+        entity.saveChanges();
 
         assertEquals(1, listener.events.size());
         EntityAndEvent entityAndEvent = listener.events.get(0);
@@ -150,7 +151,7 @@ public class SimpleEntityManagerTest {
     public void notifyOnUpdatingComponent() {
         EntityRef entity = simpleEntityManager.createEntity();
         SampleComponent component = entity.createComponent(SampleComponent.class);
-        entity.saveComponents(component);
+        entity.saveChanges();
 
         Listener listener = new Listener();
         simpleEntityManager.addEntityEventListener(listener);
@@ -159,7 +160,7 @@ public class SimpleEntityManagerTest {
 
         assertEquals(0, listener.events.size());
 
-        entity.saveComponents(component);
+        entity.saveChanges();
 
         assertEquals(1, listener.events.size());
         EntityAndEvent entityAndEvent = listener.events.get(0);
@@ -177,7 +178,7 @@ public class SimpleEntityManagerTest {
     public void notifyOnRemovingComponent() {
         EntityRef entity = simpleEntityManager.createEntity();
         SampleComponent component = entity.createComponent(SampleComponent.class);
-        entity.saveComponents(component);
+        entity.saveChanges();
 
         Listener listener = new Listener();
         simpleEntityManager.addEntityEventListener(listener);
@@ -185,6 +186,7 @@ public class SimpleEntityManagerTest {
         assertEquals(0, listener.events.size());
 
         entity.removeComponents(SampleComponent.class);
+        entity.saveChanges();
 
         assertEquals(2, listener.events.size());
         EntityAndEvent entityAndEvent = listener.events.get(0);
