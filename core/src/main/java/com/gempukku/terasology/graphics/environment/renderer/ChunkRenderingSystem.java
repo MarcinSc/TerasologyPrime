@@ -13,6 +13,7 @@ import com.gempukku.terasology.component.TerasologyComponentManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.environment.mesh.AfterChunkMeshCreated;
 import com.gempukku.terasology.graphics.environment.mesh.BeforeChunkMeshRemoved;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
 import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshManager;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.world.CommonBlockManager;
@@ -70,7 +71,7 @@ public class ChunkRenderingSystem implements EnvironmentRenderer, LifeCycleSyste
             renderableChunk = new RenderableChunk(worldId, x, y, z);
             renderableChunksInWorld.put(worldId, renderableChunk);
         }
-        renderableChunk.updateChunkMesh(chunkMeshManager.getChunkMesh(worldId, x, y, z), textureAtlasProvider.getTextures("terrain"));
+        renderableChunk.updateChunkMesh(chunkMeshManager.getChunkMesh(worldId, x, y, z), textureAtlasProvider.getTextures(ChunkMeshGenerator.CHUNK_ATLAS_NAME));
         Gdx.app.debug("ChunkRenderingSystem", "Chunk renderable created: " + x + "," + y + "," + z);
     }
 

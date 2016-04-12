@@ -8,6 +8,7 @@ import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.procedural.FastRandom;
@@ -45,7 +46,7 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
             ComponentData component = entityData.getComponent(SimpleTreeDefinitionComponent.class);
             texturesToLoad.add((String) component.getFields().get("barkTexture"));
         }
-        textureAtlasRegistry.registerTextures("terrain", texturesToLoad);
+        textureAtlasRegistry.registerTextures(ChunkMeshGenerator.CHUNK_ATLAS_NAME, texturesToLoad);
     }
 
     @Override
@@ -131,7 +132,7 @@ public class SimpleTreeGenerator implements TreeGenerator, LifeCycleSystem {
         }
 
         return new TreeDefinition(tree,
-                textureAtlasProvider.getTexture("terrain", simpleTreeDefinition.getBarkTexture()),
+                textureAtlasProvider.getTexture(ChunkMeshGenerator.CHUNK_ATLAS_NAME, simpleTreeDefinition.getBarkTexture()),
                 simpleTreeDefinition.getLeavesGenerator());
     }
 

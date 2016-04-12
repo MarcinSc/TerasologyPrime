@@ -5,6 +5,8 @@ import com.badlogic.gdx.utils.Array;
 import com.gempukku.terasology.world.chunk.geometry.ChunkGeometry;
 
 public interface ChunkMeshGenerator<T extends ChunkGeometry> {
+    String CHUNK_ATLAS_NAME = "terrain";
+
     /**
      * This method will be called from the main thread to generate MeshParts based on the chunk geometry
      * by the class.

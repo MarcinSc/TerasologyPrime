@@ -10,6 +10,7 @@ import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
@@ -48,14 +49,14 @@ public class TrunkSegmentsLeavesGenerator implements LeavesGenerator, LifeCycleS
             ComponentData component = entityData.getComponent(LeavesDefinitionComponent.class);
             texturesToLoad.add((String) component.getFields().get("leavesTexture"));
         }
-        textureAtlasRegistry.registerTextures("terrain", texturesToLoad);
+        textureAtlasRegistry.registerTextures(ChunkMeshGenerator.CHUNK_ATLAS_NAME, texturesToLoad);
     }
 
     @Override
     public LSystemTreeBlockGeometryGenerator.LSystemCallback createLeavesCallback(
             EntityRef entityRef, BlockGeometryGenerator.BlockVertexOutput vertexOutput, Texture texture) {
         LeavesDefinitionComponent leavesDefinition = entityRef.getComponent(LeavesDefinitionComponent.class);
-        TextureRegion leavesTexture = textureAtlasProvider.getTexture("terrain", leavesDefinition.getLeavesTexture());
+        TextureRegion leavesTexture = textureAtlasProvider.getTexture(ChunkMeshGenerator.CHUNK_ATLAS_NAME, leavesDefinition.getLeavesTexture());
         if (texture == leavesTexture.getTexture()) {
             return new LeavesDrawingCallback(vertexOutput, shapeProvider.getShapeById(leavesDefinition.getLeavesShape()), leavesTexture);
         } else {

@@ -17,11 +17,13 @@ import com.gempukku.secsy.context.system.LifeCycleSystem;
 import com.gempukku.secsy.entity.io.ComponentData;
 import com.gempukku.secsy.entity.io.EntityData;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
+import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.graphics.component.GeneratedBlockMeshComponent;
 import com.gempukku.terasology.graphics.shape.BlockSide;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
 import com.gempukku.terasology.graphics.shape.ShapePartDef;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
+import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.CommonBlockManager;
 import com.gempukku.terasology.world.chunk.ChunkBlocks;
 import com.gempukku.terasology.world.chunk.ChunkBlocksProvider;
@@ -30,11 +32,14 @@ import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGenerator;
 import com.gempukku.terasology.world.chunk.geometry.BlockGeometryGeneratorRegistry;
 import com.gempukku.terasology.world.chunk.geometry.ChunkGeometryGenerator;
 import com.gempukku.terasology.world.chunk.geometry.ListsChunkGeometry;
+import com.gempukku.terasology.world.component.CommonBlockComponent;
 import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RegisterSystem(
         profiles = "generateChunkGeometry", shared = {ChunkGeometryGenerator.class, ChunkMeshGenerator.class,
@@ -47,8 +52,12 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
     private CommonBlockManager commonBlockManager;
     @In
     private TextureAtlasProvider textureAtlasProvider;
+    @In(optional = true)
+    private TextureAtlasRegistry textureAtlasRegistry;
     @In
     private ShapeProvider shapeProvider;
+    @In
+    private PrefabManager prefabManager;
 
     private ShortArrayThreadLocal shorts = new ShortArrayThreadLocal();
     private FloatArrayThreadLocal floats = new FloatArrayThreadLocal();
@@ -72,6 +81,20 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
                     {1, 0, -1}, {1, 0, 0}, {1, 0, 1},
                     {1, 1, -1}, {1, 1, 0}, {1, 1, 1}
             };
+
+    @Override
+    public void initialize() {
+        if (textureAtlasRegistry != null) {
+            Set<String> texturePaths = new HashSet<>();
+
+            for (EntityData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
+                for (String partTexture : ((Map<String, String>) prefabData.getComponent(ShapeAndTextureComponent.class).getFields().get("parts")).values()) {
+                    texturePaths.add(partTexture);
+                }
+            }
+            textureAtlasRegistry.registerTextures(ChunkMeshGenerator.CHUNK_ATLAS_NAME, texturePaths);
+        }
+    }
 
     @Override
     public void registerBlockMeshGenerator(String generatorType, BlockGeometryGenerator generator) {
@@ -111,8 +134,9 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
     }
 
     @Override
-    public ListsChunkGeometry prepareChunkGeometryOffThread(List<Texture> textures, String worldId, int x, int y, int z) {
+    public ListsChunkGeometry prepareChunkGeometryOffThread(String worldId, int x, int y, int z) {
         init();
+        List<Texture> textures = textureAtlasProvider.getTextures(CHUNK_ATLAS_NAME);
 
         ChunkBlocks[] chunkSector = new ChunkBlocks[blockSector.length];
 
@@ -218,7 +242,7 @@ public class ListsChunkGeometryAndMeshGenerator implements ChunkGeometryGenerato
                 List<String> textureIds = shapePart.getTextures();
 
                 String textureToUse = findFirstTexture(textureIds, availableTextures);
-                TextureRegion textureRegion = textureAtlasProvider.getTexture("terrain", textureToUse);
+                TextureRegion textureRegion = textureAtlasProvider.getTexture(ChunkMeshGenerator.CHUNK_ATLAS_NAME, textureToUse);
                 if (textureRegion.getTexture() == texture) {
                     int vertexCount = shapePart.getVertices().size();
 

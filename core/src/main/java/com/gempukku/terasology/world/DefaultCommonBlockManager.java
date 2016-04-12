@@ -8,42 +8,22 @@ import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.event.AfterComponentAdded;
 import com.gempukku.secsy.entity.event.AfterEntityLoaded;
 import com.gempukku.secsy.entity.io.EntityData;
-import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.prefab.PrefabManager;
 import com.gempukku.terasology.world.component.CommonBlockComponent;
 import com.gempukku.terasology.world.component.CommonBlockConfigComponent;
 import com.gempukku.terasology.world.component.MultiverseComponent;
-import com.gempukku.terasology.world.component.ShapeAndTextureComponent;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 @RegisterSystem(
         shared = CommonBlockManager.class)
 public class DefaultCommonBlockManager implements CommonBlockManager, LifeCycleSystem {
     @In
     private PrefabManager prefabManager;
-    @In(optional = true)
-    private TextureAtlasRegistry textureAtlasRegistry;
 
     private volatile Map<String, EntityData> commonBlockPrefabsById;
     private volatile String[] commonBlockIds;
-
-    @Override
-    public void initialize() {
-        if (textureAtlasRegistry != null) {
-            Set<String> texturePaths = new HashSet<>();
-
-            for (EntityData prefabData : prefabManager.findPrefabsWithComponents(CommonBlockComponent.class, ShapeAndTextureComponent.class)) {
-                for (String partTexture : ((Map<String, String>) prefabData.getComponent(ShapeAndTextureComponent.class).getFields().get("parts")).values()) {
-                    texturePaths.add(partTexture);
-                }
-            }
-            textureAtlasRegistry.registerTextures("terrain", texturePaths);
-        }
-    }
 
     @ReceiveEvent
     public void multiverseCreated(AfterComponentAdded event, EntityRef entity, MultiverseComponent multiverse) {

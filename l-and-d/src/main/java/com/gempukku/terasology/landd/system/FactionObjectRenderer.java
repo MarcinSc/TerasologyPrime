@@ -25,6 +25,7 @@ import com.gempukku.secsy.entity.index.EntityIndexManager;
 import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.TextureAtlasRegistry;
 import com.gempukku.terasology.graphics.environment.mesh.ArrayVertexOutput;
+import com.gempukku.terasology.graphics.environment.mesh.ChunkMeshGenerator;
 import com.gempukku.terasology.graphics.environment.renderer.EnvironmentRenderer;
 import com.gempukku.terasology.graphics.environment.renderer.EnvironmentRendererRegistry;
 import com.gempukku.terasology.graphics.shape.ShapeDef;
@@ -55,7 +56,7 @@ public class FactionObjectRenderer implements EnvironmentRenderer, LifeCycleSyst
     @Override
     public void initialize() {
         environmentRendererRegistry.registerEnvironmentRendered(this);
-        textureAtlasRegistry.registerTextures("terrain", Arrays.asList("blockTiles/bars/GoldBar.png"));
+        textureAtlasRegistry.registerTextures(ChunkMeshGenerator.CHUNK_ATLAS_NAME, Arrays.asList("blockTiles/bars/GoldBar.png"));
         factionObjectIndex = entityIndexManager.addIndexOnComponents(LocationComponent.class, RenderedObjectComponent.class);
     }
 
@@ -86,7 +87,7 @@ public class FactionObjectRenderer implements EnvironmentRenderer, LifeCycleSyst
             FloatArray vertices = new FloatArray();
             ShortArray indices = new ShortArray();
 
-            TextureRegion texture = textureAtlasProvider.getTexture("terrain", "blockTiles/bars/GoldBar.png");
+            TextureRegion texture = textureAtlasProvider.getTexture(ChunkMeshGenerator.CHUNK_ATLAS_NAME, "blockTiles/bars/GoldBar.png");
 
             ArrayVertexOutput vertexOutput = new ArrayVertexOutput(vertices, indices);
             ShapeDef cube = shapeProvider.getShapeById("cube");

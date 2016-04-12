@@ -10,7 +10,6 @@ import com.gempukku.secsy.entity.dispatch.ReceiveEvent;
 import com.gempukku.secsy.entity.game.GameLoop;
 import com.gempukku.secsy.entity.game.GameLoopListener;
 import com.gempukku.terasology.component.TerasologyComponentManager;
-import com.gempukku.terasology.graphics.TextureAtlasProvider;
 import com.gempukku.terasology.graphics.environment.event.AfterChunkGeometryCreated;
 import com.gempukku.terasology.graphics.environment.event.BeforeChunkGeometryRemoved;
 import com.gempukku.terasology.graphics.shape.ShapeProvider;
@@ -32,8 +31,6 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
     private ChunkBlocksProvider chunkBlocksProvider;
     @In
     private CommonBlockManager commonBlockManager;
-    @In
-    private TextureAtlasProvider textureAtlasProvider;
     @In
     private TerasologyComponentManager terasologyComponentManager;
     @In
@@ -144,7 +141,7 @@ public class OffThreadChunkGeometryManager implements ChunkGeometryManager, Life
                         }
                     }
                     if (canProcess) {
-                        ChunkGeometry result = chunkGeometryGenerator.prepareChunkGeometryOffThread(textureAtlasProvider.getTextures("terrain"),
+                        ChunkGeometry result = chunkGeometryGenerator.prepareChunkGeometryOffThread(
                                 chunkToProcess.worldId, chunkToProcess.x, chunkToProcess.y, chunkToProcess.z);
                         if (result != null) {
                             synchronized (chunkToProcess) {
